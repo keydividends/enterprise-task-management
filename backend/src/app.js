@@ -3,6 +3,10 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+const errorHandler = require("./middleware/errorHandler");
+const notFoundHandler = require("./middleware/notFound");
+const authRoutes = require("./modules/auth/auth.routes");
+
 const app = express();
 
 app.use(helmet());
@@ -16,5 +20,10 @@ app.get("/health", (req, res) => {
     message: "ETMS API is running",
   });
 });
+
+app.use("/api/v1/auth", authRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;
