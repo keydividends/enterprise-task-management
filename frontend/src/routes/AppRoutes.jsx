@@ -7,6 +7,10 @@ import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
 import DashboardPage from '../pages/DashboardPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import MainLayout from '../layouts/MainLayout';
+import TeamListPage from '../features/teams/pages/TeamListPage';
+import TeamDetailsPage from '../features/teams/pages/TeamDetailsPage';
+import CreateTeamPage from '../features/teams/pages/CreateTeamPage';
+import EditTeamPage from '../features/teams/pages/EditTeamPage';
 
 const AppRoutes = ({ toggleTheme }) => (
   <BrowserRouter>
@@ -18,6 +22,10 @@ const AppRoutes = ({ toggleTheme }) => (
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout toggleTheme={toggleTheme} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/teams" element={<TeamListPage />} />
+          <Route path="/teams/new" element={<CreateTeamPage />} />
+          <Route path="/teams/:teamId" element={<TeamDetailsPage />} />
+          <Route path="/teams/:teamId/edit" element={<EditTeamPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>

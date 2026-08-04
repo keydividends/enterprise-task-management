@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "ETMS Team Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List teams",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams"]
+        }
+      }
+    },
+    {
+      "name": "Create team",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Release Operations\",\n  \"description\": \"Handles release readiness\",\n  \"leadId\": \"mock-admin\",\n  \"members\": [\"mock-maya\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" }
+  ]
+}
