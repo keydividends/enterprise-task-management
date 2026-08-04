@@ -1012,6 +1012,19 @@ html[data-theme='dark'] .divider span {
   background: rgba(148, 163, 184, 0.04);
 }
 
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.empty-state {
+  padding: 18px 0;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
 .task-pill-wrap {
   display: flex;
   align-items: center;

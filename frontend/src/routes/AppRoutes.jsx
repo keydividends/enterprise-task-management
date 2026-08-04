@@ -12,6 +12,10 @@ import TaskBoardPage from '../features/tasks/pages/TaskBoardPage';
 import TaskDetailsPage from '../features/tasks/pages/TaskDetailsPage';
 import CreateTaskPage from '../features/tasks/pages/CreateTaskPage';
 import EditTaskPage from '../features/tasks/pages/EditTaskPage';
+import TeamListPage from '../features/teams/pages/TeamListPage';
+import TeamDetailsPage from '../features/teams/pages/TeamDetailsPage';
+import CreateTeamPage from '../features/teams/pages/CreateTeamPage';
+import EditTeamPage from '../features/teams/pages/EditTeamPage';
 
 const AppRoutes = ({ toggleTheme }) => (
   <BrowserRouter>
@@ -28,6 +32,11 @@ const AppRoutes = ({ toggleTheme }) => (
           <Route path="/tasks/new" element={<CreateTaskPage />} />
           <Route path="/tasks/:taskId" element={<TaskDetailsPage />} />
           <Route path="/tasks/:taskId/edit" element={<EditTaskPage />} />
+          <Route path="/teams" element={<TeamListPage />} />
+          <Route path="/teams/create" element={<CreateTeamPage />} />
+          <Route path="/teams/new" element={<CreateTeamPage />} />
+          <Route path="/teams/:teamId" element={<TeamDetailsPage />} />
+          <Route path="/teams/:teamId/edit" element={<EditTeamPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>
