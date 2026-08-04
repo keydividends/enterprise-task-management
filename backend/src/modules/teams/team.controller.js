@@ -74,6 +74,24 @@ const removeMember = async (req, res, next) => {
   }
 };
 
+const getTeamSummary = async (req, res, next) => {
+  try {
+    const summary = await teamService.getTeamSummary(req.params.teamId);
+    sendSuccess(res, 200, { success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTeamProjects = async (req, res, next) => {
+  try {
+    const result = await teamService.getTeamProjects(req.params.teamId);
+    sendSuccess(res, 200, { success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listTeams,
   getTeam,
@@ -83,4 +101,6 @@ module.exports = {
   listMembers,
   addMember,
   removeMember,
+  getTeamSummary,
+  getTeamProjects,
 };

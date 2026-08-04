@@ -1,35 +1,37 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, RefreshCw, Search, Users } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import useTeams from '../hooks/useTeams';
 
 const TeamListPage = () => {
-  const { teams, loading, error, fetchTeams, createTeam } = useTeams();
+  const navigate = useNavigate();
+  const { teams, loading, error, refresh, deleteTeam } = useTeams();
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ name: '', description: '' });
-  const [submitting, setSubmitting] = useState(false);
+  const [busyTeamId, setBusyTeamId] = useState(null);
 
   const summary = useMemo(() => ({
     count: teams.length,
-    members: teams.reduce((total, team) => total + (team.members?.length || 0), 0),
+    members: teams.reduce((total, team) => total + (team.memberCount || team.members?.length || 0), 0),
   }), [teams]);
 
   const handleSearch = async (event) => {
     const nextValue = event.target.value;
     setSearch(nextValue);
-    await fetchTeams(nextValue);
+    await refresh(nextValue);
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setSubmitting(true);
+  const handleDelete = async (teamId) => {
+    if (!window.confirm('Archive this team?')) {
+      return;
+    }
+
+    setBusyTeamId(teamId);
     try {
-      await createTeam({ ...form, leadId: 'mock-admin' });
-      setForm({ name: '', description: '' });
-    } catch (err) {
-      console.error(err);
+      await deleteTeam(teamId);
+      navigate('/teams');
     } finally {
-      setSubmitting(false);
+      setBusyTeamId(null);
     }
   };
 
@@ -57,31 +59,17 @@ const TeamListPage = () => {
       <section className="content-grid">
         <div className="panel-block glass-card" style={{ minHeight: '280px' }}>
           <div className="panel-header">
-            <h3>Create team</h3>
+            <h3>Team directory</h3>
+            <div className="button-row">
+              <button type="button" className="secondary-button compact" onClick={() => refresh(search)}>
+                <RefreshCw size={14} /> Refresh
+              </button>
+              <Link to="/teams/create" className="primary-button compact" style={{ textDecoration: 'none' }}>
+                <Plus size={16} /> Create team
+              </Link>
+            </div>
           </div>
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="field-group">
-              <span>Team name</span>
-              <div className="input-wrap">
-                <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. Release Operations" />
-              </div>
-            </div>
-            <div className="field-group">
-              <span>Description</span>
-              <div className="input-wrap">
-                <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="What this team is responsible for" />
-              </div>
-            </div>
-            <button type="submit" className="primary-button" disabled={submitting}>
-              <Plus size={16} /> {submitting ? 'Creating...' : 'Create team'}
-            </button>
-          </form>
-        </div>
 
-        <div className="panel-block glass-card" style={{ minHeight: '280px' }}>
-          <div className="panel-header">
-            <h3>Find a team</h3>
-          </div>
           <div className="field-group">
             <span>Search</span>
             <div className="input-wrap">
@@ -89,17 +77,28 @@ const TeamListPage = () => {
               <input value={search} onChange={handleSearch} placeholder="Search by team name" />
             </div>
           </div>
+
           {loading ? <p className="helper-copy">Loading teams...</p> : null}
           {error ? <p className="helper-copy">{error}</p> : null}
+          {!loading && !error && teams.length === 0 ? (
+            <div className="empty-state">No teams match your search yet.</div>
+          ) : null}
           {!loading && !error && teams.map((team) => (
             <div key={team.id} className="task-row">
               <div className="task-pill-wrap">
-                <span className="status-tag active">{team.isActive ? 'Active' : 'Archived'}</span>
-                <span className="priority-tag medium">{team.memberCount || 0} members</span>
+                <span className="status-tag review">{team.isActive ? 'Active' : 'Archived'}</span>
+                <span className="priority-tag medium">{team.memberCount || team.members?.length || 0} members</span>
               </div>
               <strong>{team.name}</strong>
               <div className="task-meta">
                 <span><Users size={14} /> {team.description || 'No description provided'}</span>
+              </div>
+              <div className="button-row">
+                <Link to={`/teams/${team.id}`} className="secondary-button compact" style={{ textDecoration: 'none' }}>View details</Link>
+                <Link to={`/teams/${team.id}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>Edit</Link>
+                <button type="button" className="ghost-button" onClick={() => handleDelete(team.id)} disabled={busyTeamId === team.id}>
+                  {busyTeamId === team.id ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </div>
           ))}

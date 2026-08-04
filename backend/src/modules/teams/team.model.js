@@ -23,7 +23,7 @@ const mockUsers = [
 ];
 
 const createTeamRecord = (data) => ({
-  id: data.id || `team-${Date.now()}`,
+  id: data.id || `team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   name: data.name,
   description: data.description || '',
   leadId: data.leadId || 'mock-admin',

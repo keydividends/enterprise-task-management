@@ -36,6 +36,81 @@
           "path": ["api", "v1", "teams"]
         }
       }
+    },
+    {
+      "name": "Get team details",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform"]
+        }
+      }
+    },
+    {
+      "name": "Get team summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/summary",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "summary"]
+        }
+      }
+    },
+    {
+      "name": "List team members",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/members",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "members"]
+        }
+      }
+    },
+    {
+      "name": "Add team member",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"mock-alex\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/members",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "members"]
+        }
+      }
+    },
+    {
+      "name": "Get team projects",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "projects"]
+        }
+      }
     }
   ],
   "variable": [

@@ -20,14 +20,14 @@ const mockTeams = [
 const withFallback = async (request, fallback) => {
   try {
     const response = await request();
-    return response.data.data;
+    return response?.data?.data ?? response?.data ?? response;
   } catch (error) {
     return fallback(error);
   }
 };
 
 const teamService = {
-  async listTeams(search = '') {
+  async getTeams(search = '') {
     return withFallback(
       () => axiosClient.get('/teams', { params: { search } }),
       () => ({
@@ -35,6 +35,10 @@ const teamService = {
         count: mockTeams.length,
       })
     );
+  },
+
+  async listTeams(search = '') {
+    return this.getTeams(search);
   },
 
   async getTeam(teamId) {
@@ -70,11 +74,15 @@ const teamService = {
     );
   },
 
-  async listMembers(teamId) {
+  async getMembers(teamId) {
     return withFallback(
       () => axiosClient.get(`/teams/${teamId}/members`),
       () => (mockTeams.find((team) => team.id === teamId)?.members || [])
     );
+  },
+
+  async listMembers(teamId) {
+    return this.getMembers(teamId);
   },
 
   async addMember(teamId, payload) {

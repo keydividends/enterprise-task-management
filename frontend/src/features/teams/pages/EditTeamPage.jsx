@@ -1,28 +1,43 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import TeamForm from '../components/TeamForm';
+import useTeams from '../hooks/useTeams';
 import teamService from '../services/teamService';
 
 const EditTeamPage = () => {
   const navigate = useNavigate();
   const { teamId } = useParams();
+  const { updateTeam } = useTeams();
   const [form, setForm] = useState({ name: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const loadTeam = async () => {
       const team = await teamService.getTeam(teamId);
-      setForm({ name: team.name, description: team.description || '' });
+      setForm({ name: team?.name || '', description: team?.description || '' });
     };
 
     loadTeam();
   }, [teamId]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (payload) => {
+    if (!payload.name?.trim()) {
+      setError('Team name is required.');
+      return;
+    }
+
     setSubmitting(true);
-    await teamService.updateTeam(teamId, form);
-    navigate(`/teams/${teamId}`);
-    setSubmitting(false);
+    setError('');
+    try {
+      await updateTeam(teamId, payload);
+      navigate(`/teams/${teamId}`);
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || 'Unable to update the team.';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -31,24 +46,18 @@ const EditTeamPage = () => {
         <div>
           <p className="eyebrow secondary">Edit team</p>
           <h1>Update team details</h1>
+          <p className="helper-copy">Adjust the team context without losing member visibility.</p>
         </div>
       </section>
       <section className="panel-block glass-card">
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="field-group">
-            <span>Team name</span>
-            <div className="input-wrap">
-              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Team name" />
-            </div>
-          </div>
-          <div className="field-group">
-            <span>Description</span>
-            <div className="input-wrap">
-              <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" />
-            </div>
-          </div>
-          <button type="submit" className="primary-button" disabled={submitting}>{submitting ? 'Saving...' : 'Save changes'}</button>
-        </form>
+        <TeamForm
+          initialValues={form}
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          submitLabel="Save changes"
+          error={error}
+          onCancel={() => navigate(`/teams/${teamId}`)}
+        />
       </section>
     </div>
   );

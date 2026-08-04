@@ -23,6 +23,7 @@ const AppRoutes = ({ toggleTheme }) => (
         <Route element={<MainLayout toggleTheme={toggleTheme} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/teams" element={<TeamListPage />} />
+          <Route path="/teams/create" element={<CreateTeamPage />} />
           <Route path="/teams/new" element={<CreateTeamPage />} />
           <Route path="/teams/:teamId" element={<TeamDetailsPage />} />
           <Route path="/teams/:teamId/edit" element={<EditTeamPage />} />

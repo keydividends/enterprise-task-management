@@ -1,18 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import teamService from '../services/teamService';
+import TeamForm from '../components/TeamForm';
+import useTeams from '../hooks/useTeams';
 
 const CreateTeamPage = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', description: '' });
+  const { createTeam } = useTeams();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (payload) => {
+    if (!payload.name?.trim()) {
+      setError('Team name is required.');
+      return;
+    }
+
     setSubmitting(true);
-    const team = await teamService.createTeam({ ...form, leadId: 'mock-admin' });
-    navigate(`/teams/${team.id}`);
-    setSubmitting(false);
+    setError('');
+    try {
+      const team = await createTeam({ ...payload, leadId: 'mock-admin' });
+      navigate(`/teams/${team.id}`);
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || 'Unable to create team.';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -21,24 +34,18 @@ const CreateTeamPage = () => {
         <div>
           <p className="eyebrow secondary">Create team</p>
           <h1>Start a new team workspace</h1>
+          <p className="helper-copy">Create a team, invite members, and keep the work organized.</p>
         </div>
       </section>
       <section className="panel-block glass-card">
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="field-group">
-            <span>Team name</span>
-            <div className="input-wrap">
-              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Team name" />
-            </div>
-          </div>
-          <div className="field-group">
-            <span>Description</span>
-            <div className="input-wrap">
-              <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" />
-            </div>
-          </div>
-          <button type="submit" className="primary-button" disabled={submitting}>{submitting ? 'Creating...' : 'Create team'}</button>
-        </form>
+        <TeamForm
+          initialValues={{ name: '', description: '' }}
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          submitLabel="Create team"
+          error={error}
+          onCancel={() => navigate('/teams')}
+        />
       </section>
     </div>
   );
