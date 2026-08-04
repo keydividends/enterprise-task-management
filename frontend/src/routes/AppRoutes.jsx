@@ -7,6 +7,12 @@ import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
 import DashboardPage from '../pages/DashboardPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import MainLayout from '../layouts/MainLayout';
+
+import UserListPage from '../features/users/pages/UserListPage';
+import CreateUserPage from '../features/users/pages/CreateUserPage';
+import EditUserPage from '../features/users/pages/EditUserPage';
+import UserDetailsPage from '../features/users/pages/UserDetailsPage';
+import ProfilePage from '../features/users/pages/ProfilePage';
 import TaskListPage from '../features/tasks/pages/TaskListPage';
 import TaskBoardPage from '../features/tasks/pages/TaskBoardPage';
 import TaskDetailsPage from '../features/tasks/pages/TaskDetailsPage';
@@ -24,9 +30,15 @@ const AppRoutes = ({ toggleTheme }) => (
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout toggleTheme={toggleTheme} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/users" element={<UserListPage />} />
+          <Route path="/users/create" element={<CreateUserPage />} />
+          <Route path="/users/:userId" element={<UserDetailsPage />} />
+          <Route path="/users/:userId/edit" element={<EditUserPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/tasks" element={<TaskListPage />} />
           <Route path="/tasks/board" element={<TaskBoardPage />} />
           <Route path="/tasks/new" element={<CreateTaskPage />} />
@@ -40,6 +52,7 @@ const AppRoutes = ({ toggleTheme }) => (
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>
+
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </BrowserRouter>

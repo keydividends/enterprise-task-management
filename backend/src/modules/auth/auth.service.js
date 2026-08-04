@@ -42,10 +42,11 @@ const createAuthError = (code, message, statusCode = 401) => {
 };
 
 const createTokenPair = (user) => {
+  const userId = user.id || user._id;
   const accessToken = jwt.sign(
     {
-      sub: user.id,
-      id: user.id,
+      sub: userId,
+      id: userId,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -60,14 +61,23 @@ const createTokenPair = (user) => {
 
   const refreshToken = jwt.sign(
     {
-      sub: user.id,
-      id: user.id,
+      sub: userId,
+      id: userId,
       email: user.email,
       type: "refresh",
     },
     JWT_REFRESH_SECRET,
     { expiresIn: JWT_REFRESH_EXPIRES_IN }
   );
+
+  createSessionRecord({
+    userId,
+    refreshToken,
+    deviceName: "Unknown device",
+    ipAddress: null,
+    userAgent: null,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  }).catch(() => {});
 
   return { accessToken, refreshToken };
 };

@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const errorHandler = require("./middleware/errorHandler");
 const notFoundHandler = require("./middleware/notFound");
 const authRoutes = require("./modules/auth/auth.routes");
+const userRoutes = require("./modules/users/user.routes");
 const { taskRouter, projectLabelRouter, checklistItemRouter } = require("./modules/tasks/task.routes");
 const teamRoutes = require("./modules/teams/team.routes");
 
@@ -24,6 +25,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/projects/:projectId/labels", projectLabelRouter);
 app.use("/api/v1/checklists/:checklistId/items", checklistItemRouter);

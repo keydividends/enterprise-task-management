@@ -1,0 +1,348 @@
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Lock, Building, Briefcase, Phone, AlertCircle, Save, ArrowLeft } from 'lucide-react';
+
+export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = false, submitting = false }) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    mobile: '',
+    department: '',
+    title: '',
+    bio: '',
+    role: 'USER',
+    status: 'ACTIVE',
+  });
+
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      setFormData({
+        firstName: initialValues.firstName || '',
+        lastName: initialValues.lastName || '',
+        email: initialValues.email || '',
+        password: '',
+        mobile: initialValues.mobile || '',
+        department: initialValues.department || '',
+        title: initialValues.title || '',
+        bio: initialValues.bio || '',
+        role: initialValues.role || 'USER',
+        status: initialValues.status || 'ACTIVE',
+      });
+    }
+  }, [initialValues]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required.';
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Enter a valid email address.';
+    }
+    if (!isEditing && formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters.';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validate()) {
+      onSubmit(formData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="user-form glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            First Name *
+          </label>
+          <div style={{ position: 'relative' }}>
+            <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="e.g. Raheema"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: errors.firstName ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+              }}
+            />
+          </div>
+          {errors.firstName && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.firstName}</span>}
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Last Name
+          </label>
+          <div style={{ position: 'relative' }}>
+            <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="e.g. Shariff"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Email Address *
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              disabled={isEditing}
+              placeholder="user@enterprise.com"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: errors.email ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+                background: isEditing ? 'var(--bg-disabled, #f1f5f9)' : 'var(--bg-input, #ffffff)',
+              }}
+            />
+          </div>
+          {errors.email && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.email}</span>}
+        </div>
+
+        {!isEditing && (
+          <div className="form-group">
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+              Password (Default: User@123)
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Leave blank for default"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px 10px 36px',
+                  borderRadius: '8px',
+                  border: errors.password ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+                  background: 'var(--bg-input, #ffffff)',
+                }}
+              />
+            </div>
+            {errors.password && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.password}</span>}
+          </div>
+        )}
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Department
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Building size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="text"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              placeholder="e.g. Engineering"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Job Title
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Briefcase size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="e.g. Senior Developer"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Mobile Number
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="text"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
+              placeholder="e.g. +1 555 123 4567"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Role
+          </label>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              background: 'var(--bg-input, #ffffff)',
+            }}
+          >
+            <option value="USER">User</option>
+            <option value="ADMIN">Administrator</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Status
+          </label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              background: 'var(--bg-input, #ffffff)',
+            }}
+          >
+            <option value="ACTIVE">Active</option>
+            <option value="DISABLED">Disabled</option>
+          </select>
+        </div>
+
+        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Bio / Notes
+          </label>
+          <textarea
+            name="bio"
+            rows="3"
+            value={formData.bio}
+            onChange={handleChange}
+            placeholder="Short bio or administrative notes..."
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              background: 'var(--bg-input, #ffffff)',
+              resize: 'vertical',
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              background: 'transparent',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            <ArrowLeft size={16} /> Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitting}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 22px',
+            borderRadius: '8px',
+            border: 'none',
+            background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
+            color: '#ffffff',
+            cursor: 'pointer',
+            fontWeight: 600,
+            opacity: submitting ? 0.7 : 1,
+          }}
+        >
+          <Save size={16} /> {submitting ? 'Saving...' : isEditing ? 'Update User' : 'Create User'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default UserForm;

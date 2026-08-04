@@ -14,12 +14,14 @@ import {
   Settings,
   Sun,
   Users,
+  UserCheck,
 } from 'lucide-react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 
 const appLinks = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutGrid },
+  { label: 'Users', to: '/users', icon: UserCheck },
   { label: 'Projects', to: '/projects', icon: FolderKanban },
   { label: 'Teams', to: '/teams', icon: Users },
   { label: 'Tasks', to: '/tasks', icon: Briefcase },
@@ -28,13 +30,14 @@ const appLinks = [
 ];
 
 const MainLayout = ({ toggleTheme }) => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.dataset.theme === 'dark');
 
   const topbarSummary = useMemo(() => ({
-    name: user?.fullName || user?.firstName || 'Ava',
-    role: user?.role || 'Product Lead',
+    name: user?.fullName || user?.firstName || 'Raheema',
+    role: user?.role || 'Administrator',
   }), [user]);
 
   const handleThemeToggle = () => {
@@ -74,12 +77,12 @@ const MainLayout = ({ toggleTheme }) => {
           <div className="topbar-left">
             <div className="search-box">
               <Search size={16} />
-              <input type="text" placeholder="Search tasks, projects, people" />
+              <input type="text" placeholder="Search tasks, projects, people..." />
             </div>
           </div>
 
           <div className="topbar-right">
-            <button type="button" className="quick-add-btn">
+            <button type="button" className="quick-add-btn" onClick={() => navigate('/users/create')}>
               <Plus size={16} /> Quick Create
             </button>
 
@@ -91,7 +94,7 @@ const MainLayout = ({ toggleTheme }) => {
               <Bell size={18} />
             </button>
 
-            <div className="profile-chip">
+            <div className="profile-chip" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
               <div className="profile-avatar">{topbarSummary.name.charAt(0).toUpperCase()}</div>
               <div className="profile-meta">
                 <strong>{topbarSummary.name}</strong>

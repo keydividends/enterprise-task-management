@@ -1,0 +1,209 @@
+{
+  "info": {
+    "_postman_id": "etms-users-collection-v1",
+    "name": "ETMS - User Management Module (Raheema)",
+    "description": "API collection for User Management endpoints in Enterprise Task Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users?page=1&pageSize=20&search=",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "pageSize", "value": "20" },
+            { "key": "search", "value": "" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get User by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId"],
+          "variable": [{ "key": "userId", "value": "user_admin_1" }]
+        }
+      }
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Priya\",\n  \"lastName\": \"Rao\",\n  \"email\": \"priya.rao@etms.com\",\n  \"mobile\": \"9876543210\",\n  \"department\": \"Engineering\",\n  \"title\": \"Backend Engineer\",\n  \"role\": \"USER\",\n  \"status\": \"ACTIVE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users"]
+        }
+      }
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Priya\",\n  \"lastName\": \"Reddy\",\n  \"department\": \"Product Architecture\",\n  \"title\": \"Senior Backend Engineer\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId"],
+          "variable": [{ "key": "userId", "value": "user_demo_1" }]
+        }
+      }
+    },
+    {
+      "name": "Deactivate User",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId/deactivate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId", "deactivate"],
+          "variable": [{ "key": "userId", "value": "user_demo_1" }]
+        }
+      }
+    },
+    {
+      "name": "Activate User",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId/activate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId", "activate"],
+          "variable": [{ "key": "userId", "value": "user_demo_1" }]
+        }
+      }
+    },
+    {
+      "name": "Search Users for Assignment",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/search?q=Admin&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "search"],
+          "query": [
+            { "key": "q", "value": "Admin" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get My Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/me/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "me", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Update My Profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Raheema\",\n  \"lastName\": \"Shariff\",\n  \"mobile\": \"9876543210\",\n  \"department\": \"Engineering\",\n  \"title\": \"User Management Lead\",\n  \"bio\": \"Module owner for ETMS User Management.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/me/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "me", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Get User Projects",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId", "projects"],
+          "variable": [{ "key": "userId", "value": "user_admin_1" }]
+        }
+      }
+    },
+    {
+      "name": "Get User Teams",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId/teams",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId", "teams"],
+          "variable": [{ "key": "userId", "value": "user_admin_1" }]
+        }
+      }
+    },
+    {
+      "name": "Get User Workload",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/:userId/workload",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", ":userId", "workload"],
+          "variable": [{ "key": "userId", "value": "user_admin_1" }]
+        }
+      }
+    }
+  ]
+}
