@@ -34,7 +34,7 @@ export const EditUserPage = () => {
     setError(null);
     try {
       await userService.updateUser(userId, formData);
-      navigate(`/users/${userId}`);
+      navigate('/users?toast=updated');
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to update user');
     } finally {

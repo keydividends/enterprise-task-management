@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Lock, Building, Briefcase, Phone, AlertCircle, Save, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, Building, Briefcase, Phone, Save, ArrowLeft } from 'lucide-react';
 
 export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = false, submitting = false }) => {
   const [formData, setFormData] = useState({
@@ -44,17 +44,36 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.firstName.trim()) {
+
+    // 1. Required & Empty First Name Validation
+    if (!formData.firstName || !formData.firstName.trim()) {
       newErrors.firstName = 'First name is required.';
     }
-    if (!formData.email.trim()) {
+
+    // 2. Email Address Validation
+    if (!formData.email || !formData.email.trim()) {
       newErrors.email = 'Email address is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'Enter a valid email address.';
+      newErrors.email = 'Please enter a valid email address.';
     }
-    if (!isEditing && formData.password && formData.password.length < 6) {
+
+    // 3. Phone / Mobile Number Format Validation
+    if (formData.mobile && formData.mobile.trim()) {
+      const phoneRegex = /^[+]*[(]?[0-9]{1,4}[)]?[-\s./0-9]{6,15}$/;
+      if (!phoneRegex.test(formData.mobile.trim())) {
+        newErrors.mobile = 'Please enter a valid phone number format (e.g. +1 555 123 4567).';
+      }
+    }
+
+    // 4. Password Length Validation
+    if (!isEditing) {
+      if (formData.password && formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters.';
+      }
+    } else if (formData.password && formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters.';
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -141,31 +160,29 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
           {errors.email && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.email}</span>}
         </div>
 
-        {!isEditing && (
-          <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-              Password (Default: User@123)
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Leave blank for default"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px 10px 36px',
-                  borderRadius: '8px',
-                  border: errors.password ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
-                  background: 'var(--bg-input, #ffffff)',
-                }}
-              />
-            </div>
-            {errors.password && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.password}</span>}
+        <div className="form-group">
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            {isEditing ? 'New Password (Optional)' : 'Password (Default: User@123)'}
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder={isEditing ? 'Leave blank to keep unchanged' : 'Leave blank for default'}
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: errors.password ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+              }}
+            />
           </div>
-        )}
+          {errors.password && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.password}</span>}
+        </div>
 
         <div className="form-group">
           <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
@@ -215,7 +232,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
 
         <div className="form-group">
           <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-            Mobile Number
+            Mobile Phone
           </label>
           <div style={{ position: 'relative' }}>
             <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
@@ -229,11 +246,12 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
                 width: '100%',
                 padding: '10px 12px 10px 36px',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color, #e2e8f0)',
+                border: errors.mobile ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
                 background: 'var(--bg-input, #ffffff)',
               }}
             />
           </div>
+          {errors.mobile && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.mobile}</span>}
         </div>
 
         <div className="form-group">

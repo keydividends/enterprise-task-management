@@ -1,4 +1,141 @@
 // ---------------------------------------------------------------------------
+// Seed users for User Management testing & initial database setup.
+// Idempotent: safe to run multiple times.
+//
+// Usage: node scripts/seedUsers.js
+// ---------------------------------------------------------------------------
+
+require("dotenv").config();
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const { User } = require("../src/modules/users/user.model");
+
+const SEED_USERS = [
+  {
+    firstName: "Admin",
+    lastName: "User",
+    email: "admin@etms.com",
+    password: "Admin@123",
+    role: "ADMIN",
+    permissions: [
+      "USER_VIEW",
+      "USER_CREATE",
+      "USER_UPDATE",
+      "USER_DELETE",
+      "PROJECT_VIEW",
+      "PROJECT_CREATE",
+      "TASK_VIEW",
+      "TASK_CREATE",
+      "TASK_UPDATE",
+    ],
+    status: "ACTIVE",
+    department: "Management",
+    title: "System Administrator",
+    mobile: "9876543210",
+    bio: "System Administrator for ETMS Platform.",
+  },
+  {
+    firstName: "Raheema",
+    lastName: "Shariff",
+    email: "raheema@etms.com",
+    password: "User@123",
+    role: "ADMIN",
+    permissions: ["USER_VIEW", "USER_CREATE", "USER_UPDATE", "USER_DELETE", "PROJECT_VIEW", "TASK_VIEW"],
+    status: "ACTIVE",
+    department: "User Management",
+    title: "User Management Module Lead",
+    mobile: "9876543211",
+    bio: "Module owner for User Management in ETMS.",
+  },
+  {
+    firstName: "Yamini",
+    lastName: "K",
+    email: "yamini@etms.com",
+    password: "User@123",
+    role: "USER",
+    permissions: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
+    status: "ACTIVE",
+    department: "Authentication",
+    title: "Auth Module Lead",
+    mobile: "9876543212",
+    bio: "Module owner for Authentication & Security.",
+  },
+  {
+    firstName: "Demo",
+    lastName: "User",
+    email: "demo@etms.com",
+    password: "User@123",
+    role: "USER",
+    permissions: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW", "TASK_CREATE"],
+    status: "ACTIVE",
+    department: "Engineering",
+    title: "Software Engineer",
+    mobile: "9876543213",
+    bio: "Software Engineer on ETMS development team.",
+  },
+  {
+    firstName: "Disabled",
+    lastName: "Account",
+    email: "disabled@etms.com",
+    password: "User@123",
+    role: "USER",
+    permissions: [],
+    status: "DISABLED",
+    department: "QA",
+    title: "Inactive Account",
+    mobile: "9876543214",
+    bio: "Disabled test account for status testing.",
+  },
+];
+
+const connect = async () => {
+  const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/enterprise-task-management";
+  await mongoose.connect(uri);
+  console.log(`Connected to MongoDB at ${uri}`);
+};
+
+const seed = async () => {
+  await connect();
+
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const userData of SEED_USERS) {
+    const normalizedEmail = userData.email.toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail, isDeleted: false });
+
+    if (existing) {
+      skippedCount += 1;
+      continue;
+    }
+
+    const passwordHash = await bcrypt.hash(userData.password, 10);
+    await User.create({
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: normalizedEmail,
+      passwordHash,
+      role: userData.role,
+      permissions: userData.permissions,
+      status: userData.status,
+      department: userData.department,
+      title: userData.title,
+      mobile: userData.mobile,
+      bio: userData.bio,
+    });
+
+    createdCount += 1;
+  }
+
+  console.log(`Seeding finished. Created: ${createdCount}, Skipped (Existing): ${skippedCount}`);
+  await mongoose.disconnect();
+};
+
+seed().catch((error) => {
+  console.error("User seed failed:", error);
+  process.exit(1);
+});
+// ---------------------------------------------------------------------------
 // Seed users for authentication / user-management testing.
 // Idempotent: safe to run multiple times.
 //
