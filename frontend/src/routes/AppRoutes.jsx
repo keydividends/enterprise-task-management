@@ -22,6 +22,10 @@ import TeamListPage from '../features/teams/pages/TeamListPage';
 import TeamDetailsPage from '../features/teams/pages/TeamDetailsPage';
 import CreateTeamPage from '../features/teams/pages/CreateTeamPage';
 import EditTeamPage from '../features/teams/pages/EditTeamPage';
+import RoleListPage from '../features/roles/pages/RoleListPage';
+import CreateRolePage from '../features/roles/pages/CreateRolePage';
+import EditRolePage from '../features/roles/pages/EditRolePage';
+import RoleDetailsPage from '../features/roles/pages/RoleDetailsPage';
 import ProjectListPage from '../features/projects/pages/ProjectListPage';
 import CreateProjectPage from '../features/projects/pages/CreateProjectPage';
 import EditProjectPage from '../features/projects/pages/EditProjectPage';
@@ -58,6 +62,10 @@ const AppRoutes = ({ toggleTheme }) => (
           <Route path="/teams/new" element={<CreateTeamPage />} />
           <Route path="/teams/:teamId" element={<TeamDetailsPage />} />
           <Route path="/teams/:teamId/edit" element={<EditTeamPage />} />
+          <Route path="/roles" element={<RoleListPage />} />
+          <Route path="/roles/create" element={<CreateRolePage />} />
+          <Route path="/roles/:roleId" element={<RoleDetailsPage />} />
+          <Route path="/roles/:roleId/edit" element={<EditRolePage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>
