@@ -22,6 +22,10 @@ import TeamListPage from '../features/teams/pages/TeamListPage';
 import TeamDetailsPage from '../features/teams/pages/TeamDetailsPage';
 import CreateTeamPage from '../features/teams/pages/CreateTeamPage';
 import EditTeamPage from '../features/teams/pages/EditTeamPage';
+import ProjectListPage from '../features/projects/pages/ProjectListPage';
+import CreateProjectPage from '../features/projects/pages/CreateProjectPage';
+import EditProjectPage from '../features/projects/pages/EditProjectPage';
+import ProjectDetailsPage from '../features/projects/pages/ProjectDetailsPage';
 
 const AppRoutes = ({ toggleTheme }) => (
   <BrowserRouter>
@@ -44,6 +48,11 @@ const AppRoutes = ({ toggleTheme }) => (
           <Route path="/tasks/new" element={<CreateTaskPage />} />
           <Route path="/tasks/:taskId" element={<TaskDetailsPage />} />
           <Route path="/tasks/:taskId/edit" element={<EditTaskPage />} />
+          <Route path="/projects" element={<ProjectListPage />} />
+          <Route path="/projects/create" element={<CreateProjectPage />} />
+          <Route path="/projects/new" element={<CreateProjectPage />} />
+          <Route path="/projects/:projectId" element={<ProjectDetailsPage />} />
+          <Route path="/projects/:projectId/edit" element={<EditProjectPage />} />
           <Route path="/teams" element={<TeamListPage />} />
           <Route path="/teams/create" element={<CreateTeamPage />} />
           <Route path="/teams/new" element={<CreateTeamPage />} />
