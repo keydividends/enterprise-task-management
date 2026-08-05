@@ -16,6 +16,7 @@ const {
   storeResetToken,
   findResetTokenByToken,
   markResetTokenAsUsed,
+  invalidateAllResetTokensForUser,
 } = require("./auth.repository");
 const { mapUser } = require("./auth.mapper");
 const {
@@ -209,20 +210,24 @@ const forgotPassword = async ({ email }) => {
 
   const user = await findUserByEmail(email);
 
-  if (user) {
+  if (user && user.status === "ACTIVE") {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + 15 * 60 * 1000;
 
     await storeResetToken(token, {
-      userId: user.id,
+      userId: user.id || user._id,
       expiresAt,
     });
 
-    await sendPasswordResetEmail({
-      to: user.email,
-      firstName: user.firstName,
-      token,
-    });
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        firstName: user.firstName,
+        token,
+      });
+    } catch (error) {
+      console.error(`Failed to send password reset email to ${user.email}:`, error);
+    }
   }
 
   return {
@@ -241,7 +246,7 @@ const resetPassword = async ({ token, newPassword, confirmPassword }) => {
 
   const user = await findUserById(resetTokenRecord.userId);
 
-  if (!user) {
+  if (!user || user.status !== "ACTIVE") {
     throw createAuthError("RESET_TOKEN_INVALID", "Reset token is invalid or expired.", 400);
   }
 
@@ -251,8 +256,9 @@ const resetPassword = async ({ token, newPassword, confirmPassword }) => {
   }
 
   const hashedPassword = await hashPassword(newPassword);
-  await updateUserPassword(user.id, hashedPassword);
-  await revokeAllSessionsForUser(user.id);
+  await updateUserPassword(user.id || user._id, hashedPassword);
+  await revokeAllSessionsForUser(user.id || user._id);
+  await invalidateAllResetTokensForUser(user.id || user._id);
 
   return {
     message: "Password reset successfully",

@@ -170,6 +170,13 @@ const storeResetToken = async (token, payload) => {
     });
   }
 
+  for (const rec of resetTokens.values()) {
+    if (rec.userId === String(payload.userId) && !rec.used) {
+      rec.used = true;
+      rec.usedAt = new Date();
+    }
+  }
+
   const record = {
     userId: String(payload.userId),
     tokenHash,
@@ -212,6 +219,22 @@ const markResetTokenAsUsed = async (token) => {
   return null;
 };
 
+const invalidateAllResetTokensForUser = async (userId) => {
+  if (isDbConnected()) {
+    return PasswordResetToken.updateMany(
+      { userId: String(userId), used: false },
+      { $set: { used: true, usedAt: new Date() } }
+    );
+  }
+
+  for (const rec of resetTokens.values()) {
+    if (rec.userId === String(userId) && !rec.used) {
+      rec.used = true;
+      rec.usedAt = new Date();
+    }
+  }
+};
+
 module.exports = {
   findUserByEmail,
   createUser,
@@ -220,5 +243,6 @@ module.exports = {
   storeResetToken,
   findResetTokenByToken,
   markResetTokenAsUsed,
+  invalidateAllResetTokensForUser,
   resetTokens,
 };

@@ -98,7 +98,23 @@
       }
     },
     {
-      "name": "Forgot Password",
+      "name": "Forgot Password - Valid Email",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n  pm.response.to.have.status(200);\n});",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "pm.expect(json.message).to.equal(\"If the account exists, reset instructions have been sent\");",
+              "pm.expect(json.token).to.be.undefined;",
+              "pm.expect(json.resetToken).to.be.undefined;"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -116,7 +132,135 @@
       }
     },
     {
-      "name": "Reset Password",
+      "name": "Forgot Password - Invalid Email",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n  pm.response.to.have.status(200);\n});",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "pm.expect(json.message).to.equal(\"If the account exists, reset instructions have been sent\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"nonexistent@etms.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "forgot-password"]
+        }
+      }
+    },
+    {
+      "name": "Reset Password - Invalid Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {\n  pm.response.to.have.status(400);\n});",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(false);",
+              "pm.expect(json.code).to.equal(\"RESET_TOKEN_INVALID\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"invalid-token-12345\",\n  \"newPassword\": \"NewPass@123\",\n  \"confirmPassword\": \"NewPass@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "reset-password"]
+        }
+      }
+    },
+    {
+      "name": "Reset Password - Expired Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {\n  pm.response.to.have.status(400);\n});",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(false);",
+              "pm.expect(json.code).to.equal(\"RESET_TOKEN_INVALID\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"expired-token-12345\",\n  \"newPassword\": \"NewPass@123\",\n  \"confirmPassword\": \"NewPass@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "reset-password"]
+        }
+      }
+    },
+    {
+      "name": "Reset Password - Used Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {\n  pm.response.to.have.status(400);\n});",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(false);",
+              "pm.expect(json.code).to.equal(\"RESET_TOKEN_INVALID\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"already-used-token-12345\",\n  \"newPassword\": \"NewPass@123\",\n  \"confirmPassword\": \"NewPass@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "reset-password"]
+        }
+      }
+    },
+    {
+      "name": "Reset Password - Success",
       "event": [
         {
           "listen": "prerequest",
@@ -124,6 +268,18 @@
             "exec": [
               "const token = pm.collectionVariables.get('resetToken');",
               "if (!token) { throw new Error('Missing resetToken variable. Run Forgot Password first to generate a token in the app context.'); }"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n  pm.response.to.have.status(200);\n});",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "pm.expect(json.message).to.equal(\"Password reset successfully\");"
             ],
             "type": "text/javascript"
           }
