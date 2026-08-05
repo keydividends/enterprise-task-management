@@ -14,16 +14,11 @@ import taskService from '../services/taskService';
 import TaskStatusBadge from '../components/TaskStatusBadge';
 import ChecklistPanel from '../components/ChecklistPanel';
 import { PRIORITY_LABELS, TYPE_LABELS, STATUS_LABELS, TASK_STATUSES, TASK_PRIORITIES } from '../taskConstants';
-import { MOCK_USERS, getProjectMembers } from '../hooks/useTasks';
+import { getUserName, getProjectMembers } from '../hooks/useTasks';
 
 const formatDate = (date) => {
   if (!date) return '—';
   return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-};
-
-const getUserName = (userId) => {
-  const user = MOCK_USERS.find((u) => u.id === userId);
-  return user ? user.fullName : 'Unassigned';
 };
 
 const TaskDetailsPage = () => {
@@ -60,7 +55,7 @@ const TaskDetailsPage = () => {
     } finally {
       setBusy(false);
     }
-  };
+};
 
   const handlePriorityChange = async (priority) => {
     setBusy(true);
@@ -77,7 +72,9 @@ const TaskDetailsPage = () => {
   const handleAssign = async (userId) => {
     setBusy(true);
     try {
-      const updated = await taskService.assignTask(taskId, userId);
+      const updated = userId
+        ? await taskService.assignTask(taskId, userId)
+        : await taskService.unassignTask(taskId);
       setTask((prev) => ({ ...prev, ...updated }));
     } catch (err) {
       alert(err.response?.data?.message || err.message);

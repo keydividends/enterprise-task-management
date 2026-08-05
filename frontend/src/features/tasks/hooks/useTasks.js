@@ -18,6 +18,11 @@ export const MOCK_USERS = [
   { id: "64a100000000000000000005", firstName: "Kavya", lastName: "Iyer", fullName: "Kavya Iyer" },
 ];
 
+export const getUserName = (userId) => {
+  const user = MOCK_USERS.find((u) => u.id === userId);
+  return user ? user.fullName : "Unassigned";
+};
+
 export const MOCK_SPRINTS = [
   { id: "64a300000000000000000001", projectId: "64a200000000000000000001", name: "Sprint 1", status: "COMPLETED" },
   { id: "64a300000000000000000002", projectId: "64a200000000000000000001", name: "Sprint 2", status: "ACTIVE" },
@@ -25,8 +30,8 @@ export const MOCK_SPRINTS = [
 
 export const MOCK_PROJECT_MEMBERS = {
   "64a200000000000000000001": MOCK_USERS,
-  "64a200000000000000000002": [MOCK_USERS[0], MOCK_USERS[1], MOCK_USERS[3]],
-  "64a200000000000000000003": [MOCK_USERS[2], MOCK_USERS[4]],
+  "64a200000000000000000002": [MOCK_USERS[0], MOCK_USERS[1], MOCK_USERS[2]],
+  "64a200000000000000000003": [MOCK_USERS[0], MOCK_USERS[1]],
 };
 
 export const getProjectMembers = (projectId) => MOCK_PROJECT_MEMBERS[projectId] || [];
@@ -46,7 +51,13 @@ const useTasks = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await taskService.listTasks(params);
+      // Backend filter field is primaryAssigneeId; frontend filter uses assigneeId for UX.
+      const normalized = { ...params };
+      if (normalized.assigneeId) {
+        normalized.primaryAssigneeId = normalized.assigneeId;
+        delete normalized.assigneeId;
+      }
+      const result = await taskService.listTasks(normalized);
       setTasks(result.data || []);
       setPagination(result.pagination || { page: 1, pageSize: 20, totalItems: 0, totalPages: 0 });
       return result;

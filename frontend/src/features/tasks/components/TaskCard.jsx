@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { CalendarDays, MessageSquareText, Paperclip, User } from 'lucide-react';
 import TaskStatusBadge from './TaskStatusBadge';
-import { PRIORITY_LABELS, TYPE_LABELS } from '../taskConstants';
+import { getUserName } from '../hooks/useTasks';
+import { PRIORITY_LABELS, TYPE_LABELS, TASK_STATUSES, STATUS_LABELS, TASK_STATUS_TRANSITIONS } from '../taskConstants';
 
 const PriorityTag = ({ priority }) => {
   const cls = String(priority || 'medium').toLowerCase();
@@ -16,7 +17,7 @@ const formatDate = (date) => {
 
 const TaskCard = ({ task, onStatusChange, showProject = false }) => {
   const labels = task.labels || [];
-  const assignee = task.assigneeName || task.primaryAssigneeName;
+  const assignee = task.assigneeName || task.primaryAssigneeName || getUserName(task.primaryAssigneeId);
 
   return (
     <div className="task-card">
@@ -69,7 +70,9 @@ const TaskCard = ({ task, onStatusChange, showProject = false }) => {
               onChange={(e) => onStatusChange(task.id, e.target.value)}
               title="Change status"
             >
-              <option value={task.status}>{task.status}</option>
+              {[task.status, ...(TASK_STATUS_TRANSITIONS[task.status] || [])].map((s) => (
+                <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
+              ))}
             </select>
           )}
         </div>
