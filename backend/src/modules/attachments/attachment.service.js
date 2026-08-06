@@ -5,6 +5,7 @@ const repo = require("./attachment.repository");
 const { mapAttachment } = require("./attachment.mapper");
 const { validateUploadedFile, isValidObjectId } = require("./attachment.validation");
 const { UPLOAD_DIR } = require("./attachment.upload");
+const { isImageKitConfigured, uploadToImageKit, deleteFromImageKit } = require("./imagekit.storage");
 
 const createError = (code, message, statusCode = 400) => {
   const err = new Error(message);
@@ -53,18 +54,32 @@ const uploadTaskAttachment = async (taskId, file, context = {}) => {
   const userId = context.userId || context.user?.id;
   const { firstName, lastName } = context.user || {};
   const uploaderName = [firstName, lastName].filter(Boolean).join(' ').trim() || null;
+  const useImageKit = isImageKitConfigured();
+  const remoteFile = useImageKit ? await uploadToImageKit(file) : null;
 
-  const attachment = await repo.createAttachment({
-    entityType: "TASK",
-    entityId: taskId,
-    originalFileName: file.originalname,
-    storedFileName: file.filename,
-    storageKey: file.filename,
-    mimeType: file.mimetype,
-    fileSize: file.size,
-    uploadedBy: userId,
-    uploaderName,
-  });
+  let attachment;
+  try {
+    attachment = await repo.createAttachment({
+      entityType: "TASK",
+      entityId: taskId,
+      originalFileName: file.originalname,
+      storedFileName: useImageKit ? remoteFile.fileName : file.filename,
+      storageKey: useImageKit ? remoteFile.fileId : file.filename,
+      storageProvider: useImageKit ? "IMAGEKIT" : "LOCAL",
+      remoteFileId: useImageKit ? remoteFile.fileId : null,
+      remoteUrl: useImageKit ? remoteFile.url : null,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      uploadedBy: userId,
+      uploaderName,
+    });
+  } catch (error) {
+    // Do not leave a remote file behind when metadata persistence fails.
+    if (useImageKit) {
+      try { await deleteFromImageKit(remoteFile.fileId); } catch { /* ignore cleanup failure */ }
+    }
+    throw error;
+  }
 
   return mapAttachment(attachment);
 };
@@ -96,12 +111,20 @@ const listTaskAttachments = async (taskId, query, context = {}) => {
 
 const getAttachmentForDownload = async (attachmentId, context = {}) => {
   const attachment = await assertAttachmentExists(attachmentId);
+
+  if (attachment.storageProvider === "IMAGEKIT") {
+    if (!attachment.remoteUrl) {
+      throw createError("FILE_NOT_FOUND", "The file could not be found on ImageKit.", 404);
+    }
+    return { attachment, remoteUrl: attachment.remoteUrl };
+  }
+
   const filePath = path.join(UPLOAD_DIR, attachment.storedFileName);
 
   if (!fs.existsSync(filePath)) {
     throw createError("FILE_NOT_FOUND", "The file could not be found on the server.", 404);
   }
-  return { attachment, filePath };
+  return { attachment, filePath, remoteUrl: null };
 };
 
 
@@ -114,8 +137,12 @@ const deleteAttachment = async (attachmentId, context = {}) => {
   await repo.softDeleteAttachment(attachmentId, userId);
 
   try {
-    const filePath = path.join(UPLOAD_DIR, attachment.storedFileName);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (attachment.storageProvider === "IMAGEKIT") {
+      await deleteFromImageKit(attachment.remoteFileId);
+    } else {
+      const filePath = path.join(UPLOAD_DIR, attachment.storedFileName);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
   } catch {
     /* ignore */
   }

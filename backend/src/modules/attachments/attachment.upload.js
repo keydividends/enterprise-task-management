@@ -3,10 +3,11 @@ const fs = require("node:fs");
 const crypto = require("node:crypto");
 const multer = require("multer");
 const { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } = require("./attachment.validation");
+const { isImageKitConfigured } = require("./imagekit.storage");
 
 const UPLOAD_DIR = path.resolve(__dirname, "../../../../uploads/attachments");
 
-if (!fs.existsSync(UPLOAD_DIR)) {
+if (!isImageKitConfigured() && !fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
@@ -31,7 +32,9 @@ const fileFilter = (_req, file, cb) => {
 };
 
 const upload = multer({
-  storage,
+  // ImageKit needs the uploaded bytes in memory; local mode retains the
+  // existing disk-based Multer behavior and generated local filenames.
+  storage: isImageKitConfigured() ? multer.memoryStorage() : storage,
   fileFilter,
   limits: { fileSize: MAX_FILE_SIZE },
 });

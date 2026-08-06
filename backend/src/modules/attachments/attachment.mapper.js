@@ -5,6 +5,7 @@ const mapAttachment = (attachment) => ({
   originalFileName: attachment.originalFileName,
   storedFileName: attachment.storedFileName,
   storageKey: attachment.storageKey,
+  storageProvider: attachment.storageProvider || "LOCAL",
   mimeType: attachment.mimeType,
   fileSize: attachment.fileSize,
   uploadedBy: attachment.uploadedBy?.toString?.() ?? attachment.uploadedBy,

@@ -27,6 +27,20 @@ const attachmentSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    storageProvider: {
+      type: String,
+      enum: ["LOCAL", "IMAGEKIT"],
+      default: "LOCAL",
+      required: true,
+    },
+    remoteFileId: {
+      type: String,
+      default: null,
+    },
+    remoteUrl: {
+      type: String,
+      default: null,
+    },
     mimeType: {
       type: String,
       required: true,

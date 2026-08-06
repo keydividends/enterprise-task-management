@@ -41,10 +41,12 @@ const listAttachments = async (req, res, next) => {
 
 const downloadAttachment = async (req, res, next) => {
   try {
-    const { attachment, filePath } = await attachmentService.getAttachmentForDownload(
+    const { attachment, filePath, remoteUrl } = await attachmentService.getAttachmentForDownload(
       req.params.attachmentId,
       getUserContext(req)
     );
+
+    if (remoteUrl) return res.redirect(remoteUrl);
 
     res.setHeader(
       "Content-Disposition",
