@@ -3,15 +3,54 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, LockKeyhole, Mail, Sparkles, Eye, EyeOff, Globe, Building2 } from 'lucide-react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useMsal } from '@azure/msal-react';
 
 const LoginPage = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, loginWithMicrosoft, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [form, setForm] = useState({ email: 'admin@etms.com', password: 'Admin@123' });
+  const { instance } = useMsal();
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        // implicit flow returns access_token
+        await loginWithGoogle(tokenResponse.access_token);
+        navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+      } catch (err) {
+        setError(err.response?.data?.message || 'Google login failed.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Google login was cancelled or failed.');
+    }
+  });
+
+  const microsoftLogin = () => {
+    instance.loginPopup({
+      scopes: ["user.read"]
+    }).then(async (response) => {
+      try {
+        setLoading(true);
+        await loginWithMicrosoft(response.accessToken);
+        navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+      } catch (err) {
+        setError(err.response?.data?.message || 'Microsoft login failed.');
+      } finally {
+        setLoading(false);
+      }
+    }).catch(e => {
+      setError('Microsoft login was cancelled or failed.');
+    });
+  };
 
   if (isAuthenticated) {
     const destination = location.state?.from?.pathname || '/dashboard';
@@ -153,10 +192,10 @@ const LoginPage = () => {
           <div className="divider"><span>or continue with</span></div>
 
           <div className="social-buttons">
-            <button type="button" className="social-button">
+            <button type="button" className="social-button" onClick={() => googleLogin()}>
               <Globe size={18} /> Google
             </button>
-            <button type="button" className="social-button">
+            <button type="button" className="social-button" onClick={() => microsoftLogin()}>
               <Building2 size={18} /> Microsoft
             </button>
           </div>

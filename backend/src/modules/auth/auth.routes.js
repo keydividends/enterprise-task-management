@@ -13,5 +13,7 @@ router.get("/permissions", authenticate, authController.getPermissions);
 router.post("/forgot-password", authController.requestPasswordReset);
 router.post("/reset-password", authController.resetPassword);
 router.post("/refresh", authController.refresh);
+router.post("/google", authController.googleLogin);
+router.post("/microsoft", authController.microsoftLogin);
 
 module.exports = router;

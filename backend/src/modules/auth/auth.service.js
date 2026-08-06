@@ -1,6 +1,10 @@
 const bcrypt = require("bcryptjs");
 const crypto = require("node:crypto");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+const axios = require("axios");
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'dummy-google-client-id');
 
 const {
   JWT_ACCESS_SECRET,
@@ -359,6 +363,122 @@ const logoutAllSessions = async ({ userId, refreshToken }) => {
   };
 };
 
+const googleLogin = async ({ credential, accessToken }) => {
+  if (!credential && !accessToken) {
+    throw createAuthError("AUTH_INVALID_TOKEN", "Google credential or access token is required.", 401);
+  }
+
+  let email, given_name, family_name, googleId;
+
+  try {
+    if (credential) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID || 'dummy-google-client-id',
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      given_name = payload.given_name;
+      family_name = payload.family_name;
+      googleId = payload.sub;
+    } else if (accessToken) {
+      const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      email = response.data.email;
+      given_name = response.data.given_name;
+      family_name = response.data.family_name;
+      googleId = response.data.sub;
+    }
+  } catch (err) {
+    throw createAuthError("AUTH_INVALID_TOKEN", "Invalid Google credential.", 401);
+  }
+
+  if (!email) {
+    throw createAuthError("AUTH_INVALID_TOKEN", "Could not retrieve email from Google.", 401);
+  }
+
+  let user = await findUserByEmail(email);
+
+  if (!user) {
+    user = await createUser({
+      firstName: given_name || "Google",
+      lastName: family_name || "User",
+      email: email,
+      googleId: googleId,
+      role: "USER",
+      permissions: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
+    });
+  } else if (!user.googleId) {
+    if (typeof user.save === 'function') {
+      user.googleId = googleId;
+      await user.save();
+    }
+  }
+
+  if (user.status !== "ACTIVE") {
+    throw createAuthError("USER_INACTIVE", "User account is inactive.", 401);
+  }
+
+  const tokens = createTokenPair(user);
+  return {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    user: mapUser(user),
+  };
+};
+
+const microsoftLogin = async ({ accessToken }) => {
+  if (!accessToken) {
+    throw createAuthError("AUTH_INVALID_TOKEN", "Microsoft access token is required.", 401);
+  }
+
+  let profile;
+  try {
+    const response = await axios.get("https://graph.microsoft.com/v1.0/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    profile = response.data;
+  } catch (err) {
+    throw createAuthError("AUTH_INVALID_TOKEN", "Invalid Microsoft access token.", 401);
+  }
+
+  const email = profile.mail || profile.userPrincipalName;
+  if (!email) {
+    throw createAuthError("AUTH_INVALID_TOKEN", "Could not retrieve email from Microsoft.", 401);
+  }
+
+  const microsoftId = profile.id;
+  let user = await findUserByEmail(email);
+
+  if (!user) {
+    user = await createUser({
+      firstName: profile.givenName || "Microsoft",
+      lastName: profile.surname || "User",
+      email: email,
+      microsoftId: microsoftId,
+      role: "USER",
+      permissions: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
+    });
+  } else if (!user.microsoftId) {
+    if (typeof user.save === 'function') {
+      user.microsoftId = microsoftId;
+      await user.save();
+    }
+  }
+
+  if (user.status !== "ACTIVE") {
+    throw createAuthError("USER_INACTIVE", "User account is inactive.", 401);
+  }
+
+  const tokens = createTokenPair(user);
+  return {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    user: mapUser(user),
+  };
+};
+
 module.exports = {
   createAuthError,
   createTokenPair,
@@ -373,4 +493,6 @@ module.exports = {
   logoutUser,
   refreshAccessToken,
   logoutAllSessions,
+  googleLogin,
+  microsoftLogin,
 };

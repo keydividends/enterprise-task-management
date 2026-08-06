@@ -96,7 +96,7 @@ const findUserByEmail = async (email) => {
   return user && !user.isDeleted ? user : null;
 };
 
-const createUser = async ({ firstName, lastName, email, passwordHash, role = "USER", permissions = [] }) => {
+const createUser = async ({ firstName, lastName, email, passwordHash, googleId, microsoftId, role = "USER", permissions = [] }) => {
   const normalizedEmail = normalizeEmail(email);
 
   if (isDbConnected()) {
@@ -104,8 +104,10 @@ const createUser = async ({ firstName, lastName, email, passwordHash, role = "US
       return await UserAuth.create({
         email: normalizedEmail,
         passwordHash,
-        firstName: String(firstName).trim(),
-        lastName: String(lastName).trim(),
+        googleId,
+        microsoftId,
+        firstName: String(firstName || "").trim(),
+        lastName: String(lastName || "").trim(),
         role,
         permissions,
         status: "ACTIVE",
@@ -133,8 +135,10 @@ const createUser = async ({ firstName, lastName, email, passwordHash, role = "US
     id: newId,
     email: normalizedEmail,
     passwordHash,
-    firstName: String(firstName).trim(),
-    lastName: String(lastName).trim(),
+    googleId,
+    microsoftId,
+    firstName: String(firstName || "").trim(),
+    lastName: String(lastName || "").trim(),
     role,
     permissions,
     status: "ACTIVE",

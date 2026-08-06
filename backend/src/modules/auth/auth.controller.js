@@ -8,6 +8,8 @@ const {
   logoutUser,
   refreshAccessToken,
   logoutAllSessions,
+  googleLogin: googleLoginService,
+  microsoftLogin: microsoftLoginService,
 } = require("./auth.service");
 
 const sendSuccess = (res, statusCode, payload) => {
@@ -130,6 +132,32 @@ const refresh = async (req, res, next) => {
   }
 };
 
+const googleLogin = async (req, res, next) => {
+  try {
+    const result = await googleLoginService(req.body);
+    sendSuccess(res, 200, {
+      success: true,
+      message: "Google login successful",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const microsoftLogin = async (req, res, next) => {
+  try {
+    const result = await microsoftLoginService(req.body);
+    sendSuccess(res, 200, {
+      success: true,
+      message: "Microsoft login successful",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -140,4 +168,6 @@ module.exports = {
   requestPasswordReset,
   resetPassword: resetPasswordHandler,
   refresh,
+  googleLogin,
+  microsoftLogin,
 };
