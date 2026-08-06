@@ -82,7 +82,7 @@ const roleService = {
   updateRolePermissions: async (roleId, permissionIds) => {
     try {
       const response = await axiosClient.put(
-        `/api/v1/roles/${roleId}/permissions`,
+        `/roles/${roleId}/permissions`,
         { permissionIds }
       );
       return response.data;

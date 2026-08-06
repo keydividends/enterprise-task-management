@@ -1,5 +1,5 @@
 .role-form {
-  background-color: white;
+  background-color: var(--card-solid);
   padding: 20px;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -9,11 +9,11 @@
   margin-bottom: 20px;
 }
 
-.form-group label {
+..form-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #333;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -21,23 +21,23 @@
 .form-group textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s;
 }
 
-.form-group input:focus,
+..form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .form-group input:disabled,
 .form-group textarea:disabled {
-  background-color: #e9ecef;
+  background-color: var(--bg-soft);
   cursor: not-allowed;
 }
 
@@ -46,15 +46,15 @@
 }
 
 .error-message {
-  color: #dc3545;
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 }
 
 .info-message {
-  background-color: #d1ecf1;
-  border: 1px solid #bee5eb;
-  color: #0c5460;
+  background-color: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--text);
   padding: 12px;
   border-radius: 4px;
   font-size: 14px;

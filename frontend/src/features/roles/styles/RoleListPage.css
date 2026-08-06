@@ -12,12 +12,12 @@
 .page-header h1 {
   margin: 0;
   font-size: 28px;
-  color: #333;
+  color: var(--text);
 }
 
 .btn-primary {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary);
+  color: var(--white);
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
@@ -35,10 +35,10 @@
   cursor: not-allowed;
 }
 
-.error-message {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+..error-message {
+  background-color: var(--danger-100, #f8d7da);
+  border: 1px solid var(--danger-200, #f5c6cb);
+  color: var(--danger, #ef4444);
   padding: 12px;
   border-radius: 4px;
   margin-bottom: 20px;
@@ -47,13 +47,13 @@
 .empty-state {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .roles-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
+  background-color: var(--card-solid);
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -65,27 +65,27 @@
 }
 
 .roles-table thead {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
+  background-color: var(--bg-soft);
+  border-bottom: 2px solid var(--border);
 }
 
 .roles-table th {
   padding: 12px;
   text-align: left;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
   font-size: 14px;
 }
 
 .roles-table td {
   padding: 12px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
-  color: #333;
+  color: var(--text);
 }
 
 .roles-table tr:hover {
-  background-color: #f9f9f9;
+  background-color: var(--bg-soft);
 }
 
 .badge {

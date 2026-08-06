@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Role = require("./role.model");
 const Permission = require("./permission.model");
 const RolePermission = require("./rolePermission.model");
@@ -9,7 +10,18 @@ const createRole = async (roleData) => {
 };
 
 const getRoleById = async (roleId) => {
-  return await Role.findById(roleId);
+  if (!roleId) {
+    return null;
+  }
+
+  const normalizedId = String(roleId).trim();
+  if (mongoose.isValidObjectId(normalizedId)) {
+    return await Role.findById(normalizedId);
+  }
+
+  // Fallback for route params that use role name or a prefixed name string instead of ObjectId.
+  const normalizedName = normalizedId.replace(/^_+/, "").toUpperCase();
+  return await Role.findOne({ name: normalizedName });
 };
 
 const getRoleByName = async (name) => {
