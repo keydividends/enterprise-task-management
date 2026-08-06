@@ -67,6 +67,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (credential) => {
+    setLoading(true);
+    try {
+      const response = await authService.googleLogin({ credential });
+      setToken(response.accessToken);
+      setUser(response.user);
+      return response;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithMicrosoft = async (accessToken) => {
+    setLoading(true);
+    try {
+      const response = await authService.microsoftLogin({ accessToken });
+      setToken(response.accessToken);
+      setUser(response.user);
+      return response;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const register = async (payload) => {
     setLoading(true);
     try {
@@ -110,6 +134,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated: Boolean(token && user),
     login,
+    loginWithGoogle,
+    loginWithMicrosoft,
     register,
     logout,
     refreshUser,

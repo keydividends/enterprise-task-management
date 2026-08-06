@@ -11,7 +11,17 @@ const userAuthSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true,
+      required: false, // Optional for SSO users
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    microsoftId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     firstName: {
       type: String,

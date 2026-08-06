@@ -11,6 +11,16 @@ const authService = {
     return response.data.data;
   },
 
+  async googleLogin(payload) {
+    const response = await axiosClient.post('/auth/google', payload);
+    return response.data.data;
+  },
+
+  async microsoftLogin(payload) {
+    const response = await axiosClient.post('/auth/microsoft', payload);
+    return response.data.data;
+  },
+
   async forgotPassword(email) {
     const response = await axiosClient.post('/auth/forgot-password', { email });
     return response.data;
