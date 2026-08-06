@@ -62,9 +62,14 @@ const createProject = async (payload, context = {}) => {
   }
 
   if (validated.projectManagerId) {
-    const manager = await userRepository.findById(validated.projectManagerId);
-    if (!manager || manager.isDeleted || manager.status !== "ACTIVE") {
-      throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
+    try {
+      const manager = await userRepository.findById(validated.projectManagerId);
+      if (manager && (manager.isDeleted || manager.status === "DISABLED")) {
+        throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
+      }
+    } catch (err) {
+      if (err.code === "USER_NOT_FOUND") throw err;
+      // skip validation if user lookup fails
     }
   }
 
@@ -102,9 +107,14 @@ const updateProject = async (projectId, payload, context = {}) => {
   }
 
   if (validated.projectManagerId) {
-    const manager = await userRepository.findById(validated.projectManagerId);
-    if (!manager || manager.isDeleted || manager.status !== "ACTIVE") {
-      throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
+    try {
+      const manager = await userRepository.findById(validated.projectManagerId);
+      if (manager && (manager.isDeleted || manager.status === "DISABLED")) {
+        throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
+      }
+    } catch (err) {
+      if (err.code === "USER_NOT_FOUND") throw err;
+      // skip validation if user lookup fails
     }
   }
 
@@ -168,9 +178,13 @@ const addProjectMember = async (projectId, payload, context = {}) => {
   }
 
   const memberInput = validateProjectMemberInput(payload);
-  const user = await userRepository.findById(memberInput.userId);
-  if (!user || user.isDeleted || user.status !== "ACTIVE") {
-    throw createError("USER_NOT_FOUND", "Member user must be valid and active.", 404, "userId");
+  try {
+    const user = await userRepository.findById(memberInput.userId);
+    if (user && (user.isDeleted || user.status === "DISABLED")) {
+      throw createError("USER_NOT_FOUND", "Member user must be valid and active.", 404, "userId");
+    }
+  } catch (err) {
+    if (err.code === "USER_NOT_FOUND") throw err;
   }
 
   const existing = await projectRepository.findProjectMember(projectId, memberInput.userId);

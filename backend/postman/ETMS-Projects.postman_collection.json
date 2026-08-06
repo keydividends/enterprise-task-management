@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "ETMS-Projects",
+    "_postman_id": "etms-projects-collection",
+    "description": "Project management API – CRUD, members, task summary",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "token", "value": "mock-token" },
+    { "key": "projectId", "value": "" },
+    { "key": "userId", "value": "user_demo_1" }
+  ],
+  "item": [
+    {
+      "name": "List Projects",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects?page=1&pageSize=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "pageSize", "value": "10" },
+            { "key": "search", "value": "", "disabled": true },
+            { "key": "status", "value": "ACTIVE", "disabled": true },
+            { "key": "priority", "value": "HIGH", "disabled": true }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Project",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.data && json.data.id) {",
+              "  pm.collectionVariables.set('projectId', json.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Project\",\n  \"key\": \"TPRJ\",\n  \"description\": \"A test project created via Postman\",\n  \"status\": \"PLANNING\",\n  \"priority\": \"MEDIUM\",\n  \"startDate\": \"2026-09-01\",\n  \"targetEndDate\": \"2026-12-31\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects"]
+        }
+      }
+    },
+    {
+      "name": "Get Project",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Project",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Project Name\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"HIGH\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete (Archive) Project",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}"]
+        }
+      }
+    },
+    {
+      "name": "Restore Project",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}/restore",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}", "restore"]
+        }
+      }
+    },
+    {
+      "name": "List Project Members",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}/members",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}", "members"]
+        }
+      }
+    },
+    {
+      "name": "Add Project Member",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectRole\": \"DEVELOPER\",\n  \"allocationPercentage\": 80\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}/members",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}", "members"]
+        }
+      }
+    },
+    {
+      "name": "Add Duplicate Member (should fail 409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectRole\": \"DEVELOPER\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}/members",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}", "members"]
+        }
+      }
+    },
+    {
+      "name": "Remove Project Member",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}/members/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}", "members", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Project Task Summary",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/summary",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects", "{{projectId}}", "tasks", "summary"]
+        }
+      }
+    },
+    {
+      "name": "Unauthorized – No Token (should fail 401)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects"]
+        }
+      }
+    },
+    {
+      "name": "Forbidden – Member Token (should fail 403 on create)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-member-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Forbidden Project\",\n  \"key\": \"FORB\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects"]
+        }
+      }
+    },
+    {
+      "name": "Create Project – Missing Name (should fail 400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"key\": \"NONAME\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["projects"]
+        }
+      }
+    }
+  ]
+}
