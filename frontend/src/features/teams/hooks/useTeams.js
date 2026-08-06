@@ -10,7 +10,8 @@ const useTeams = () => {
     setLoading(true);
     try {
       const result = await teamService.getTeams(search);
-      setTeams(result?.items || []);
+      const nextTeams = Array.isArray(result?.items) ? result.items : [];
+      setTeams(nextTeams);
       setError(null);
       return result;
     } catch (err) {

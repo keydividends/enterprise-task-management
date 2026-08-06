@@ -16,18 +16,28 @@ const memoryUsers = new Map([
       firstName: "Admin",
       lastName: "User",
       email: "admin@etms.com",
-      passwordHash: "$2a$10$w4O8v893a7K.Xy3wzG0P..73Jd8V0v.FkL2Y1g7Q2P2G7f",
+      passwordHash: "$2b$10$2LHil5UBjkY2Wuvcdln.VeScEors5MVuMy3qX5nkRwyxhHtoJGUUy",
       role: "ADMIN",
       permissions: [
         "USER_VIEW",
         "USER_CREATE",
         "USER_UPDATE",
+        "USER_DELETE",
         "PROJECT_VIEW",
         "PROJECT_CREATE",
+        "PROJECT_UPDATE",
+        "PROJECT_DELETE",
         "TASK_VIEW",
         "TASK_CREATE",
         "TASK_UPDATE",
+        "TASK_DELETE",
+        "TEAM_VIEW",
+        "TEAM_CREATE",
+        "TEAM_UPDATE",
+        "TEAM_DELETE",
+        "TEAM_MANAGE_MEMBERS",
       ],
+      workspaceId: "64a000000000000000000001",
       status: "ACTIVE",
       isDeleted: false,
     },
@@ -40,9 +50,19 @@ const memoryUsers = new Map([
       firstName: "Demo",
       lastName: "User",
       email: "demo@etms.com",
-      passwordHash: "$2a$10$w4O8v893a7K.Xy3wzG0P..73Jd8V0v.FkL2Y1g7Q2P2G7f",
+      passwordHash: "$2b$10$XUA4r0D2oshUWDt1W7pej.qBPju9qQRx/FBR7s7o/alBkNZ6kCIUq",
       role: "USER",
-      permissions: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW", "TASK_CREATE"],
+      permissions: [
+        "USER_VIEW",
+        "PROJECT_VIEW",
+        "PROJECT_CREATE",
+        "PROJECT_UPDATE",
+        "TASK_VIEW",
+        "TASK_CREATE",
+        "TASK_UPDATE",
+        "TEAM_VIEW",
+      ],
+      workspaceId: "64a000000000000000000001",
       status: "ACTIVE",
       isDeleted: false,
     },
@@ -55,7 +75,7 @@ const memoryUsers = new Map([
       firstName: "Disabled",
       lastName: "User",
       email: "disabled@etms.com",
-      passwordHash: "$2a$10$w4O8v893a7K.Xy3wzG0P..73Jd8V0v.FkL2Y1g7Q2P2G7f",
+      passwordHash: "$2b$10$R0sU2qLsYx5U.B8MCMteT.NxiI85.SCxSguv60TDvnVPZMnd4KUN2",
       role: "USER",
       permissions: [],
       status: "DISABLED",
@@ -170,6 +190,13 @@ const storeResetToken = async (token, payload) => {
     });
   }
 
+  for (const rec of resetTokens.values()) {
+    if (rec.userId === String(payload.userId) && !rec.used) {
+      rec.used = true;
+      rec.usedAt = new Date();
+    }
+  }
+
   const record = {
     userId: String(payload.userId),
     tokenHash,
@@ -212,6 +239,22 @@ const markResetTokenAsUsed = async (token) => {
   return null;
 };
 
+const invalidateAllResetTokensForUser = async (userId) => {
+  if (isDbConnected()) {
+    return PasswordResetToken.updateMany(
+      { userId: String(userId), used: false },
+      { $set: { used: true, usedAt: new Date() } }
+    );
+  }
+
+  for (const rec of resetTokens.values()) {
+    if (rec.userId === String(userId) && !rec.used) {
+      rec.used = true;
+      rec.usedAt = new Date();
+    }
+  }
+};
+
 module.exports = {
   findUserByEmail,
   createUser,
@@ -220,5 +263,6 @@ module.exports = {
   storeResetToken,
   findResetTokenByToken,
   markResetTokenAsUsed,
+  invalidateAllResetTokensForUser,
   resetTokens,
 };

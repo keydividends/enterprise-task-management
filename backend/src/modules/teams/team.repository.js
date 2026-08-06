@@ -1,4 +1,5 @@
 const { seedTeams, mockUsers, createTeamRecord, createTeamMemberRecord } = require('./team.model');
+const userRepository = require('../users/user.repository');
 
 let teams = [...seedTeams];
 
@@ -57,7 +58,40 @@ const removeMember = async (teamId, userId) => {
   return true;
 };
 
-const findUserById = async (userId) => mockUsers.find((user) => user.id === userId) || null;
+const findUserById = async (userId) => {
+  if (!userId) return null;
+
+  // 1. Prefer the real users module (single source of truth).
+  //    Handles both in-memory fallback and MongoDB-backed users.
+  const realUser = await userRepository.findById(String(userId));
+  if (realUser) {
+    return {
+      id: realUser.id || realUser._id || String(userId),
+      firstName: realUser.firstName,
+      lastName: realUser.lastName,
+      role: realUser.role,
+      status: realUser.status,
+    };
+  }
+
+  // 2. Fall back to the mock users used by the mock-token auth path.
+  return mockUsers.find((user) => user.id === String(userId)) || null;
+};
+
+const listUsers = async (search = '') => {
+  const normalized = String(search || '').trim().toLowerCase();
+
+  // Real users from the users module first.
+  const realUsers = Array.isArray(userRepository.inMemoryUsers)
+    ? userRepository.inMemoryUsers
+    : Array.from(userRepository.inMemoryUsers?.values?.() || []);
+  const realList = (realUsers || [])
+    .filter((u) => u && u.status === 'ACTIVE' && !u.isDeleted)
+    .filter((u) => !normalized || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(normalized))
+    .map((u) => ({ id: u.id || u._id, firstName: u.firstName, lastName: u.lastName, role: u.role }));
+
+  return realList;
+};
 
 module.exports = {
   listTeams,
@@ -69,4 +103,5 @@ module.exports = {
   addMember,
   removeMember,
   findUserById,
+  listUsers,
 };

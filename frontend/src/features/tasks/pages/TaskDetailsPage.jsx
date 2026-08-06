@@ -5,11 +5,12 @@ import {
   CalendarDays,
   Edit,
   Flag,
-  MessageSquareText,
-  Paperclip,
   Trash2,
   User,
 } from 'lucide-react';
+import CommentsPanel from '../../comments/components/CommentsPanel';
+import AttachmentsPanel from '../../comments/components/AttachmentsPanel';
+import '../../comments/components/collaboration.css';
 import taskService from '../services/taskService';
 import TaskStatusBadge from '../components/TaskStatusBadge';
 import ChecklistPanel from '../components/ChecklistPanel';
@@ -215,14 +216,12 @@ const TaskDetailsPage = () => {
         <ChecklistPanel taskId={task.id} checklists={checklists} onChange={(next) => setTask((prev) => ({ ...prev, checklists: next }))} />
       </div>
 
-      <div className="task-detail-slots">
-        <div className="glass-card task-detail-panel">
-          <h4><MessageSquareText size={16} /> Comments</h4>
-          <p className="empty-hint">Comments slot — ready for the collaboration module.</p>
+      <div className="collab-slots">
+        <div className="glass-card collab-card">
+          <CommentsPanel taskId={task.id} />
         </div>
-        <div className="glass-card task-detail-panel">
-          <h4><Paperclip size={16} /> Attachments</h4>
-          <p className="empty-hint">Attachments slot — ready for the collaboration module.</p>
+        <div className="glass-card collab-card">
+          <AttachmentsPanel taskId={task.id} />
         </div>
       </div>
     </div>

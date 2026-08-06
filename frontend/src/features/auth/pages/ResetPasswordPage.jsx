@@ -77,13 +77,15 @@ const ResetPasswordPage = () => {
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <label className="field-group">
-            <span>Reset token</span>
-            <div className="input-wrap">
-              <ShieldCheck size={18} />
-              <input id="token" name="token" type="text" value={form.token} onChange={handleChange} placeholder="Paste token from email" />
-            </div>
-          </label>
+          {!token && (
+            <label className="field-group">
+              <span>Reset token</span>
+              <div className="input-wrap">
+                <ShieldCheck size={18} />
+                <input id="token" name="token" type="text" value={form.token} onChange={handleChange} placeholder="Paste token from email" />
+              </div>
+            </label>
+          )}
 
           <label className="field-group">
             <span>New password</span>

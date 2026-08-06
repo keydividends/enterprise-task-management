@@ -11,8 +11,8 @@ const TeamListPage = () => {
   const [busyTeamId, setBusyTeamId] = useState(null);
 
   const summary = useMemo(() => ({
-    count: teams.length,
-    members: teams.reduce((total, team) => total + (team.memberCount || team.members?.length || 0), 0),
+    count: Array.isArray(teams) ? teams.length : 0,
+    members: Array.isArray(teams) ? teams.reduce((total, team) => total + (team.memberCount || team.members?.length || 0), 0) : 0,
   }), [teams]);
 
   const handleSearch = async (event) => {
@@ -80,10 +80,10 @@ const TeamListPage = () => {
 
           {loading ? <p className="helper-copy">Loading teams...</p> : null}
           {error ? <p className="helper-copy">{error}</p> : null}
-          {!loading && !error && teams.length === 0 ? (
+          {!loading && !error && Array.isArray(teams) && teams.length === 0 ? (
             <div className="empty-state">No teams match your search yet.</div>
           ) : null}
-          {!loading && !error && teams.map((team) => (
+          {!loading && !error && Array.isArray(teams) && teams.map((team) => (
             <div key={team.id} className="task-row">
               <div className="task-pill-wrap">
                 <span className="status-tag review">{team.isActive ? 'Active' : 'Archived'}</span>

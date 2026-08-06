@@ -18,8 +18,8 @@ const TeamDetailsPage = () => {
       try {
         const currentTeam = await teamService.getTeam(teamId);
         const teamMembers = await teamService.getMembers(teamId);
-        setTeam(currentTeam);
-        setMembers(teamMembers);
+        setTeam(currentTeam || null);
+        setMembers(Array.isArray(teamMembers) ? teamMembers : []);
         setError('');
       } catch (err) {
         setError(err?.response?.data?.message || err?.message || 'Unable to load team.');

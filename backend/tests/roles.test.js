@@ -1,8 +1,8 @@
 const request = require("supertest");
-const app = require("../../app");
-const Role = require("../roles/role.model");
-const Permission = require("../roles/permission.model");
-const RolePermission = require("../roles/rolePermission.model");
+const app = require("../src/app");
+const Role = require("../src/modules/roles/role.model");
+const Permission = require("../src/modules/roles/permission.model");
+const RolePermission = require("../src/modules/roles/rolePermission.model");
 
 describe("Role and Permission APIs", () => {
   let testRole;

@@ -9,6 +9,9 @@ const authRoutes = require("./modules/auth/auth.routes");
 const userRoutes = require("./modules/users/user.routes");
 const { taskRouter, projectLabelRouter, projectTaskRouter, checklistItemRouter } = require("./modules/tasks/task.routes");
 const teamRoutes = require("./modules/teams/team.routes");
+
+const { taskCommentRouter, commentRouter } = require("./modules/comments/comment.routes");
+const { taskAttachmentRouter, attachmentRouter } = require("./modules/attachments/attachment.routes");
 const projectRoutes = require("./modules/projects/project.routes");
 const roleRoutes = require("./modules/roles/role.routes");
 const permissionRoutes = require("./modules/roles/permissions.routes");
@@ -35,6 +38,10 @@ app.use("/api/v1/projects/:projectId/labels", projectLabelRouter);
 app.use("/api/v1/projects/:projectId/tasks", projectTaskRouter);
 app.use("/api/v1/checklists/:checklistId/items", checklistItemRouter);
 app.use("/api/v1/teams", teamRoutes);
+app.use("/api/v1/tasks/:taskId/comments", taskCommentRouter);
+app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/tasks/:taskId/attachments", taskAttachmentRouter);
+app.use("/api/v1/attachments", attachmentRouter);
 app.use("/api/v1/roles", roleRoutes);
 app.use("/api/v1/permissions", permissionRoutes);
 

@@ -18,10 +18,6 @@ const validateLoginInput = ({ email, password }) => {
     throw createValidationError("Password is required.", "password");
   }
 
-  if (!passwordPolicy.test(String(password))) {
-    throw createValidationError("Password must be at least 8 characters and include letters, numbers, and symbols.", "password");
-  }
-
   return true;
 };
 

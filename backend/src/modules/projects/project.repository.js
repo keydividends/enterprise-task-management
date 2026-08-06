@@ -114,12 +114,11 @@ const createProject = async (projectData) => {
 
 const updateProject = async (projectId, payload) => {
   if (isDbConnected()) {
-    const project = await Project.findOneAndUpdate(
+    return Project.findOneAndUpdate(
       { _id: toObjectId(projectId), isDeleted: false },
       { $set: payload },
-      { new: true }
+      { returnDocument: "after", new: true }
     ).lean();
-    return project;
   }
 
   const project = inMemoryProjects.get(String(projectId));
@@ -135,12 +134,11 @@ const updateProject = async (projectId, payload) => {
 
 const deleteProject = async (projectId, deletedBy) => {
   if (isDbConnected()) {
-    const project = await Project.findOneAndUpdate(
+    return Project.findOneAndUpdate(
       { _id: toObjectId(projectId), isDeleted: false },
       { $set: { isDeleted: true, status: "ARCHIVED", deletedAt: new Date(), deletedBy: deletedBy ? toObjectId(deletedBy) : null } },
-      { new: true }
+      { returnDocument: "after", new: true }
     ).lean();
-    return project;
   }
 
   const project = inMemoryProjects.get(String(projectId));
@@ -159,12 +157,11 @@ const deleteProject = async (projectId, deletedBy) => {
 
 const restoreProject = async (projectId) => {
   if (isDbConnected()) {
-    const project = await Project.findOneAndUpdate(
+    return Project.findOneAndUpdate(
       { _id: toObjectId(projectId), isDeleted: true },
       { $set: { isDeleted: false, status: "PLANNING", deletedAt: null, deletedBy: null } },
-      { new: true }
+      { returnDocument: "after", new: true }
     ).lean();
-    return project;
   }
 
   const project = inMemoryProjects.get(String(projectId));
@@ -186,11 +183,7 @@ const listProjectMembers = async ({ projectId, page = 1, pageSize = 20, role, st
     const filter = { projectId: toObjectId(projectId), isDeleted: false };
     if (role) filter.projectRole = role;
     if (status) filter.status = status;
-    if (search) {
-      filter.$or = [
-        { userId: { $regex: search, $options: "i" } },
-      ];
-    }
+    // search is not applied on ObjectId fields in DB mode
 
     const totalItems = await ProjectMember.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize) || 1;
@@ -246,12 +239,11 @@ const createProjectMember = async (payload) => {
 
 const removeProjectMember = async (projectId, userId, removedBy) => {
   if (isDbConnected()) {
-    const member = await ProjectMember.findOneAndUpdate(
+    return ProjectMember.findOneAndUpdate(
       { projectId: toObjectId(projectId), userId: toObjectId(userId), isDeleted: false },
       { $set: { isDeleted: true, status: "REMOVED", removedAt: new Date(), removedBy: removedBy ? toObjectId(removedBy) : null } },
-      { new: true }
+      { returnDocument: "after", new: true }
     ).lean();
-    return member;
   }
 
   const key = makeMemberKey(projectId, userId);
@@ -271,15 +263,17 @@ const removeProjectMember = async (projectId, userId, removedBy) => {
 
 const getTaskSummary = async (projectId) => {
   if (isDbConnected()) {
-    const aggregation = await ProjectMember.collection.db.collection("tasks").aggregate([
-      { $match: { projectId: toObjectId(projectId), isDeleted: false } },
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]).toArray();
-
-    const summary = aggregation.reduce((acc, item) => ({ ...acc, [item._id]: item.count }), {});
-    return summary;
+    try {
+      const { Task } = require("../tasks/task.model");
+      const aggregation = await Task.aggregate([
+        { $match: { projectId: toObjectId(projectId), isDeleted: false } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]);
+      return aggregation.reduce((acc, item) => ({ ...acc, [item._id]: item.count }), {});
+    } catch {
+      return {};
+    }
   }
-
   return {};
 };
 
