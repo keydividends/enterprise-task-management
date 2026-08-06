@@ -20,13 +20,26 @@ const defaultValues = {
   dueDate: '',
 };
 
-const TaskForm = ({ initialValues = {}, submitLabel = 'Save task', onSubmit, loading = false }) => {
+// Stable reference so the default prop value never changes between renders.
+const EMPTY_INITIAL = {};
+
+const hasDifferences = (prev, next) =>
+  Object.keys(next).some((key) => prev[key] !== next[key]);
+
+const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', onSubmit, loading = false }) => {
   const navigate = useNavigate();
   const [values, setValues] = useState({ ...defaultValues, ...initialValues });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    setValues((prev) => ({ ...prev, ...initialValues }));
+    // Only update state when initialValues actually introduces a change, so the
+    // effect does not re-trigger on every render (prevents infinite update loop).
+    setValues((prev) => {
+      if (Object.keys(initialValues).length === 0 || !hasDifferences(prev, initialValues)) {
+        return prev;
+      }
+      return { ...defaultValues, ...prev, ...initialValues };
+    });
   }, [initialValues]);
 
   const projectMembers = values.projectId ? getProjectMembers(values.projectId) : [];

@@ -19,7 +19,6 @@
     "helmet": "^8.3.0",
     "imagekit": "^6.0.0",
     "joi": "^18.2.3",
-    "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.9.1",
     "morgan": "^1.11.0",
@@ -30,7 +29,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "mongodb-memory-server": "^8.12.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }
 }
+

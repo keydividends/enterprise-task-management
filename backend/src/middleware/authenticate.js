@@ -2,23 +2,22 @@ const { verifyAccessToken } = require("../modules/auth/auth.service");
 
 const mockUsers = {
   "mock-token": {
-    id: "mock-admin",
+    id: "64a100000000000000000001",
     email: "admin@etms.dev",
     firstName: "Ava",
     lastName: "Cole",
     role: "ADMIN",
-    permissions: ["TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE", "TEAM_MANAGE_MEMBERS"],
-    workspaceId: "64a000000000000000000001",
     permissions: [
       "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE",
       "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_DELETE",
       "USER_VIEW", "USER_CREATE", "USER_UPDATE", "USER_DELETE",
       "TASK_VIEW", "TASK_CREATE", "TASK_UPDATE", "TASK_DELETE",
     ],
+    workspaceId: "64a000000000000000000001",
     status: "ACTIVE",
   },
   "mock-member-token": {
-    id: "mock-maya",
+    id: "64a100000000000000000002",
     email: "maya@etms.dev",
     firstName: "Maya",
     lastName: "Singh",

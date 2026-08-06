@@ -15,7 +15,7 @@ const validateObjectId = (id, field) => {
   if (!id || !isValidObjectId(id)) throw createError(`${field} must be a valid ID.`, field);
 };
 
-const validateCreateTask = ({ title, projectId, type, status, priority, storyPoints, dueDate }) => {
+const validateCreateTask = ({ title, projectId, type, status, priority, storyPoints, dueDate, sprintId, epicId, primaryAssigneeId, parentTaskId }) => {
   if (!title || !String(title).trim()) throw createError("Title is required.", "title");
   if (String(title).trim().length > 250) throw createError("Title must be 250 characters or fewer.", "title");
   if (!projectId) throw createError("Project ID is required.", "projectId");
@@ -27,9 +27,13 @@ const validateCreateTask = ({ title, projectId, type, status, priority, storyPoi
     throw createError("Story points must be a non-negative number.", "storyPoints");
   }
   if (dueDate && isNaN(Date.parse(dueDate))) throw createError("Due date must be a valid date.", "dueDate");
+  if (sprintId) validateObjectId(sprintId, "sprintId");
+  if (epicId) validateObjectId(epicId, "epicId");
+  if (primaryAssigneeId) validateObjectId(primaryAssigneeId, "primaryAssigneeId");
+  if (parentTaskId) validateObjectId(parentTaskId, "parentTaskId");
 };
 
-const validateUpdateTask = ({ title, type, status, priority, storyPoints, dueDate }) => {
+const validateUpdateTask = ({ title, type, status, priority, storyPoints, dueDate, sprintId, epicId, parentTaskId }) => {
   if (title !== undefined) {
     if (!String(title).trim()) throw createError("Title cannot be empty.", "title");
     if (String(title).trim().length > 250) throw createError("Title must be 250 characters or fewer.", "title");
@@ -41,6 +45,9 @@ const validateUpdateTask = ({ title, type, status, priority, storyPoints, dueDat
     throw createError("Story points must be a non-negative number.", "storyPoints");
   }
   if (dueDate && isNaN(Date.parse(dueDate))) throw createError("Due date must be a valid date.", "dueDate");
+  if (sprintId) validateObjectId(sprintId, "sprintId");
+  if (epicId) validateObjectId(epicId, "epicId");
+  if (parentTaskId) validateObjectId(parentTaskId, "parentTaskId");
 };
 
 const validateStatusChange = ({ status }) => {
@@ -91,7 +98,7 @@ const validateChecklistItemInput = ({ text, assigneeId, dueDate }) => {
 };
 
 const validateTaskQuery = (query = {}) => {
-  const { page, pageSize, sortBy, sortOrder, status, priority, labelId, dueFrom, dueTo } = query;
+  const { page, pageSize, sortBy, sortOrder, status, priority, labelId, dueFrom, dueTo, projectId, assigneeId, sprintId, epicId } = query;
   const { page: p, pageSize: ps } = validatePagination({ page, pageSize });
 
   const sortField = sortBy || "createdAt";
@@ -104,6 +111,10 @@ const validateTaskQuery = (query = {}) => {
     throw createError(`Priority must be one of: ${TASK_PRIORITIES.join(", ")}.`, "priority");
   }
   if (labelId) validateObjectId(labelId, "labelId");
+  if (projectId) validateObjectId(projectId, "projectId");
+  if (assigneeId) validateObjectId(assigneeId, "assigneeId");
+  if (sprintId) validateObjectId(sprintId, "sprintId");
+  if (epicId) validateObjectId(epicId, "epicId");
   if (dueFrom && isNaN(Date.parse(dueFrom))) throw createError("dueFrom must be a valid date.", "dueFrom");
   if (dueTo && isNaN(Date.parse(dueTo))) throw createError("dueTo must be a valid date.", "dueTo");
 

@@ -91,6 +91,8 @@ const recordHistory = async (taskId, userId, field, oldValue, newValue) => {
 // List / detail
 // ---------------------------------------------------------------------------
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const buildFilter = (query = {}) => {
   const filter = {};
   for (const key of TASK_FILTER_FIELDS) {
@@ -98,9 +100,9 @@ const buildFilter = (query = {}) => {
     switch (key) {
       case "search":
         filter.$or = [
-          { title: { $regex: String(query.search), $options: "i" } },
-          { taskKey: { $regex: String(query.search), $options: "i" } },
-          { description: { $regex: String(query.search), $options: "i" } },
+          { title: { $regex: escapeRegex(query.search), $options: "i" } },
+          { taskKey: { $regex: escapeRegex(query.search), $options: "i" } },
+          { description: { $regex: escapeRegex(query.search), $options: "i" } },
         ];
         break;
       case "dueFrom":
@@ -110,7 +112,14 @@ const buildFilter = (query = {}) => {
         filter.dueDate = { ...(filter.dueDate || {}), $lte: new Date(query.dueTo) };
         break;
       default:
-        filter[key] = query[key];
+        // The API/frontend contract uses "assigneeId"; the DB field is
+        // "primaryAssigneeId". Normalize here so documented clients filter
+        // correctly (matches getBoard behavior).
+        if (key === "assigneeId") {
+          filter.primaryAssigneeId = query[key];
+        } else {
+          filter[key] = query[key];
+        }
     }
   }
   return filter;
@@ -175,7 +184,9 @@ const getTaskDetail = async (taskId, context = {}) => {
   );
 
   const mapped = mapTask(task);
-  mapped.labels = labels.map((row) => mapLabel(row.labelId)).filter(Boolean);
+  // Filter out mappings whose label was soft-deleted/missing before mapping,
+  // so mapLabel never receives a null/undefined reference.
+  mapped.labels = labels.map((row) => row.labelId).filter(Boolean).map(mapLabel);
   mapped.assignments = assignments.map((a) => ({
     userId: a.userId,
     assignmentType: a.assignmentType,
