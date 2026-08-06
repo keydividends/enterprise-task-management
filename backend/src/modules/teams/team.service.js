@@ -24,7 +24,7 @@ const ensureUniqueMembers = (members = []) => {
 
 const listTeams = async ({ search } = {}) => {
   const items = await teamRepository.listTeams({ search });
-  return { items: items.map(mapTeamSummary), count: items.length };
+  return items.map(mapTeamSummary);
 };
 
 const getTeam = async (teamId) => {

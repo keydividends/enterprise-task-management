@@ -7,7 +7,7 @@ const mockUsers = {
     firstName: "Ava",
     lastName: "Cole",
     role: "ADMIN",
-    permissions: ["TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE"],
+    permissions: ["TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE", "TEAM_MANAGE_MEMBERS"],
     status: "ACTIVE",
   },
   "mock-member-token": {

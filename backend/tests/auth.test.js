@@ -78,6 +78,25 @@ test('registerUser rejects duplicate email addresses', async () => {
   );
 });
 
+test('loginUser authenticates the seeded admin account with the documented demo credentials', async () => {
+  const result = await loginUser({ email: 'admin@etms.com', password: 'Admin@123' });
+
+  assert.equal(result.user.email, 'admin@etms.com');
+  assert.equal(result.user.status, 'ACTIVE');
+  assert.ok(result.accessToken);
+  assert.ok(result.refreshToken);
+});
+
+test('loginUser exposes the team permissions required by the team module', async () => {
+  const result = await loginUser({ email: 'admin@etms.com', password: 'Admin@123' });
+
+  assert.ok(result.user.permissions.includes('TEAM_VIEW'));
+  assert.ok(result.user.permissions.includes('TEAM_CREATE'));
+  assert.ok(result.user.permissions.includes('TEAM_UPDATE'));
+  assert.ok(result.user.permissions.includes('TEAM_DELETE'));
+  assert.ok(result.user.permissions.includes('TEAM_MANAGE_MEMBERS'));
+});
+
 test('loginUser rejects disabled accounts', async () => {
   await assert.rejects(
     () => loginUser({ email: 'disabled@etms.com', password: 'Admin@123' }),
@@ -268,6 +287,11 @@ test('getUserPermissions returns the current permission set', async () => {
     'TASK_VIEW',
     'TASK_CREATE',
     'TASK_UPDATE',
+    'TEAM_VIEW',
+    'TEAM_CREATE',
+    'TEAM_UPDATE',
+    'TEAM_DELETE',
+    'TEAM_MANAGE_MEMBERS',
   ]);
 });
 

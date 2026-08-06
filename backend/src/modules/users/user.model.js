@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema(
     },
     permissions: {
       type: [String],
-      default: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
+      default: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW", "TEAM_VIEW"],
     },
     status: {
       type: String,

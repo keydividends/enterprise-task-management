@@ -5,8 +5,8 @@ const teamService = require('../src/modules/teams/team.service');
 
 test('listTeams returns seeded teams for the mock workspace', async () => {
   const result = await teamService.listTeams({ search: 'Platform' });
-  assert.equal(result.items.length, 1);
-  assert.equal(result.items[0].name, 'Platform Engineering');
+  assert.equal(result.length, 1);
+  assert.equal(result[0].name, 'Platform Engineering');
 });
 
 test('createTeam creates a team with a valid lead and members', async () => {
