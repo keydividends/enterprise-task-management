@@ -1,3 +1,8 @@
+const safeDate = (val) => {
+  if (!val) return null;
+  try { return new Date(val).toISOString(); } catch { return null; }
+};
+
 const toProjectDTO = (project) => {
   if (!project) return null;
   return {
@@ -9,13 +14,13 @@ const toProjectDTO = (project) => {
     status: project.status || "PLANNING",
     priority: project.priority || "MEDIUM",
     projectManagerId: project.projectManagerId ? String(project.projectManagerId) : null,
-    startDate: project.startDate ? project.startDate.toISOString() : null,
-    targetEndDate: project.targetEndDate ? project.targetEndDate.toISOString() : null,
-    completedAt: project.completedAt ? project.completedAt.toISOString() : null,
+    startDate: safeDate(project.startDate),
+    targetEndDate: safeDate(project.targetEndDate),
+    completedAt: safeDate(project.completedAt),
     createdBy: project.createdBy ? String(project.createdBy) : null,
     updatedBy: project.updatedBy ? String(project.updatedBy) : null,
-    createdAt: project.createdAt ? project.createdAt.toISOString() : null,
-    updatedAt: project.updatedAt ? project.updatedAt.toISOString() : null,
+    createdAt: safeDate(project.createdAt),
+    updatedAt: safeDate(project.updatedAt),
     isDeleted: Boolean(project.isDeleted),
   };
 };
@@ -29,12 +34,12 @@ const toProjectMemberDTO = (member) => {
     projectRole: member.projectRole || "DEVELOPER",
     allocationPercentage: member.allocationPercentage ?? 100,
     status: member.status || "ACTIVE",
-    joinedAt: member.joinedAt ? member.joinedAt.toISOString() : null,
-    removedAt: member.removedAt ? member.removedAt.toISOString() : null,
+    joinedAt: safeDate(member.joinedAt),
+    removedAt: safeDate(member.removedAt),
     addedBy: member.addedBy ? String(member.addedBy) : null,
     removedBy: member.removedBy ? String(member.removedBy) : null,
-    createdAt: member.createdAt ? member.createdAt.toISOString() : null,
-    updatedAt: member.updatedAt ? member.updatedAt.toISOString() : null,
+    createdAt: safeDate(member.createdAt),
+    updatedAt: safeDate(member.updatedAt),
   };
 };
 

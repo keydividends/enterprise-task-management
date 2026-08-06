@@ -8,6 +8,13 @@ const mockUsers = {
     lastName: "Cole",
     role: "ADMIN",
     permissions: ["TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE", "TEAM_MANAGE_MEMBERS"],
+    workspaceId: "64a000000000000000000001",
+    permissions: [
+      "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE",
+      "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_DELETE",
+      "USER_VIEW", "USER_CREATE", "USER_UPDATE", "USER_DELETE",
+      "TASK_VIEW", "TASK_CREATE", "TASK_UPDATE", "TASK_DELETE",
+    ],
     status: "ACTIVE",
   },
   "mock-member-token": {
@@ -16,7 +23,8 @@ const mockUsers = {
     firstName: "Maya",
     lastName: "Singh",
     role: "MEMBER",
-    permissions: ["TEAM_VIEW"],
+    workspaceId: "64a000000000000000000001",
+    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW"],
     status: "ACTIVE",
   },
 };
@@ -46,6 +54,7 @@ const authenticate = (req, res, next) => {
       lastName: payload.lastName,
       role: payload.role,
       permissions: payload.permissions || [],
+      workspaceId: payload.workspaceId || null,
       status: payload.status,
     };
 

@@ -53,6 +53,7 @@ const createTokenPair = (user) => {
       lastName: user.lastName,
       role: user.role,
       permissions: user.permissions,
+      workspaceId: user.workspaceId || "64a000000000000000000001",
       status: user.status,
       type: "access",
     },
@@ -149,7 +150,12 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
     email,
     passwordHash: await hashPassword(password),
     role: "USER",
-    permissions: ["TASK_VIEW", "TASK_CREATE"],
+    permissions: [
+      "USER_VIEW",
+      "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE",
+      "TASK_VIEW", "TASK_CREATE", "TASK_UPDATE",
+      "TEAM_VIEW",
+    ],
   });
 
   const tokens = createTokenPair(createdUser);

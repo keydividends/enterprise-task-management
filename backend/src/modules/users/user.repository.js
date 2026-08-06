@@ -11,7 +11,7 @@ const inMemoryUsers = new Map([
       firstName: "Admin",
       lastName: "User",
       email: "admin@etms.com",
-      passwordHash: "$2a$10$w4O8v893a7K.Xy3wzG0P..73Jd8V0v.FkL2Y1g7Q2P2G7f",
+      passwordHash: "$2b$10$2LHil5UBjkY2Wuvcdln.VeScEors5MVuMy3qX5nkRwyxhHtoJGUUy",
       role: "ADMIN",
       permissions: [
         "USER_VIEW",
@@ -45,7 +45,7 @@ const inMemoryUsers = new Map([
       firstName: "Demo",
       lastName: "User",
       email: "demo@etms.com",
-      passwordHash: "$2a$10$w4O8v893a7K.Xy3wzG0P..73Jd8V0v.FkL2Y1g7Q2P2G7f",
+      passwordHash: "$2b$10$XUA4r0D2oshUWDt1W7pej.qBPju9qQRx/FBR7s7o/alBkNZ6kCIUq",
       role: "USER",
       permissions: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW", "TASK_CREATE", "TEAM_VIEW"],
       status: "ACTIVE",
