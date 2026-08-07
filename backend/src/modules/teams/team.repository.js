@@ -1,27 +1,21 @@
 const mongoose = require("mongoose");
-<<<<<<< Updated upstream
 const { seedTeams, mockUsers, createTeamRecord, createTeamMemberRecord } = require("./team.model");
+const { Team } = require("./team.model");
 const userRepository = require("../users/user.repository");
 const authRepository = require("../auth/auth.repository");
-=======
-const { Team } = require("./team.model");
-const { seedTeams, mockUsers, createTeamRecord, createTeamMemberRecord } = require("./team.model");
-const userRepository = require("../users/user.repository");
->>>>>>> Stashed changes
 
 const isDbConnected = () => mongoose.connection && mongoose.connection.readyState === 1;
 
-// In-memory seed store (fallback when Mongoose is disconnected)
-let teams = [...seedTeams];
-
-<<<<<<< Updated upstream
-const isDbConnected = () => mongoose.connection && mongoose.connection.readyState === 1;
-=======
 const toObjectId = (value) => {
   if (!value) return value;
   if (mongoose.Types.ObjectId.isValid(value)) return new mongoose.Types.ObjectId(value);
   return value;
 };
+
+// In-memory seed store (fallback when Mongoose is disconnected)
+let teams = [...seedTeams];
+
+// ── MongoDB helpers ───────────────────────────────────────────────────────────
 
 const normalizeTeam = (doc) => {
   if (!doc) return null;
@@ -35,6 +29,7 @@ const normalizeTeam = (doc) => {
     workspaceId: obj.workspaceId ? String(obj.workspaceId) : null,
     isActive: obj.isActive !== false,
     isDeleted: Boolean(obj.isDeleted),
+    status: obj.status || (obj.isActive !== false ? "ACTIVE" : "INACTIVE"),
     members: Array.isArray(obj.members)
       ? obj.members.map((member) => ({
           userId: member.userId,
@@ -62,33 +57,43 @@ const seedDatabase = async () => {
   );
 };
 
-const listTeams = async ({ search } = {}) => {
+// ── listTeams ─────────────────────────────────────────────────────────────────
+
+const listTeams = async ({
+  search = "",
+  status,
+  leadId,
+  page = 1,
+  pageSize = 20,
+  sortBy = "createdAt",
+  sortOrder = -1,
+} = {}) => {
+  const normalized = String(search).trim().toLowerCase();
+
   if (isDbConnected()) {
     await seedDatabase();
     const filter = { isDeleted: false };
-    const normalized = String(search || "").trim().toLowerCase();
     if (normalized) {
-      filter.name = { $regex: normalized, $options: "i" };
+      filter.$or = [
+        { name: { $regex: normalized, $options: "i" } },
+        { description: { $regex: normalized, $options: "i" } },
+      ];
     }
-    const docs = await Team.find(filter).sort({ createdAt: -1 }).lean();
-    return docs.map(normalizeTeam);
+    if (status) filter.status = status.toUpperCase();
+    if (leadId) filter.leadId = String(leadId);
+
+    const totalItems = await Team.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    const docs = await Team.find(filter)
+      .sort({ [sortBy]: sortOrder })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .lean();
+
+    return { items: docs.map(normalizeTeam), totalItems, page, pageSize, totalPages };
   }
 
-  const normalized = String(search || "").trim().toLowerCase();
-  const filtered = normalized
-    ? teams.filter((team) => team.name.toLowerCase().includes(normalized))
-    : teams;
->>>>>>> Stashed changes
-
-const listTeams = async ({ search = "", status, leadId, page = 1, pageSize = 20, sortBy = "createdAt", sortOrder = -1 } = {}) => {
-  if (isDbConnected()) {
-    // Future MongoDB-backed team storage.
-    // The current sprint keeps the in-memory mock repository (see below).
-    // This branch is intentionally fallback-free so mocks stay authoritative.
-  }
-
-  const normalized = String(search).trim().toLowerCase();
-
+  // In-memory fallback
   let items = teams.filter((team) => !team.isDeleted);
 
   if (normalized) {
@@ -98,11 +103,13 @@ const listTeams = async ({ search = "", status, leadId, page = 1, pageSize = 20,
         String(team.description || "").toLowerCase().includes(normalized)
     );
   }
-
   if (status) {
-    items = items.filter((team) => String(team.status || (team.isActive ? "ACTIVE" : "INACTIVE")).toUpperCase() === String(status).toUpperCase());
+    items = items.filter(
+      (team) =>
+        String(team.status || (team.isActive ? "ACTIVE" : "INACTIVE")).toUpperCase() ===
+        String(status).toUpperCase()
+    );
   }
-
   if (leadId) {
     items = items.filter((team) => String(team.leadId) === String(leadId));
   }
@@ -117,23 +124,23 @@ const listTeams = async ({ search = "", status, leadId, page = 1, pageSize = 20,
 
   const totalItems = items.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
-  const startIndex = (page - 1) * pageSize;
-  const pagedItems = items.slice(startIndex, startIndex + pageSize);
+  const pagedItems = items.slice((page - 1) * pageSize, page * pageSize);
 
   return { items: pagedItems, totalItems, page, pageSize, totalPages };
 };
 
+// ── findTeamById ──────────────────────────────────────────────────────────────
+
 const findTeamById = async (teamId) => {
   if (!teamId) return null;
-<<<<<<< Updated upstream
-=======
   if (isDbConnected()) {
     const doc = await Team.findOne({ _id: toObjectId(teamId), isDeleted: false }).lean();
     return doc ? normalizeTeam(doc) : null;
   }
->>>>>>> Stashed changes
   return teams.find((team) => team.id === teamId && !team.isDeleted) || null;
 };
+
+// ── createTeam ────────────────────────────────────────────────────────────────
 
 const createTeam = async (payload) => {
   if (isDbConnected()) {
@@ -153,6 +160,8 @@ const createTeam = async (payload) => {
   teams.push(team);
   return team;
 };
+
+// ── updateTeam ────────────────────────────────────────────────────────────────
 
 const updateTeam = async (teamId, payload) => {
   if (isDbConnected()) {
@@ -174,11 +183,13 @@ const updateTeam = async (teamId, payload) => {
   return team;
 };
 
+// ── deleteTeam ────────────────────────────────────────────────────────────────
+
 const deleteTeam = async (teamId) => {
   if (isDbConnected()) {
     const doc = await Team.findOneAndUpdate(
       { _id: toObjectId(teamId), isDeleted: false },
-      { $set: { isDeleted: true, isActive: false, deletedAt: new Date(), updatedAt: new Date() } },
+      { $set: { isDeleted: true, isActive: false, status: "ARCHIVED", deletedAt: new Date(), updatedAt: new Date() } },
       { returnDocument: "after" }
     ).lean();
     return doc ? normalizeTeam(doc) : null;
@@ -193,7 +204,18 @@ const deleteTeam = async (teamId) => {
   return team;
 };
 
+// ── restoreTeam ───────────────────────────────────────────────────────────────
+
 const restoreTeam = async (teamId) => {
+  if (isDbConnected()) {
+    const doc = await Team.findOneAndUpdate(
+      { _id: toObjectId(teamId), isDeleted: true },
+      { $set: { isDeleted: false, isActive: true, status: "ACTIVE", updatedAt: new Date() } },
+      { returnDocument: "after" }
+    ).lean();
+    return doc ? normalizeTeam(doc) : null;
+  }
+
   const team = teams.find((entry) => entry.id === teamId && entry.isDeleted);
   if (!team) return null;
   team.isDeleted = false;
@@ -203,7 +225,18 @@ const restoreTeam = async (teamId) => {
   return team;
 };
 
+// ── setTeamStatus ─────────────────────────────────────────────────────────────
+
 const setTeamStatus = async (teamId, status) => {
+  if (isDbConnected()) {
+    const doc = await Team.findOneAndUpdate(
+      { _id: toObjectId(teamId), isDeleted: false },
+      { $set: { status, isActive: status === "ACTIVE", updatedAt: new Date() } },
+      { returnDocument: "after" }
+    ).lean();
+    return doc ? normalizeTeam(doc) : null;
+  }
+
   const team = await findTeamById(teamId);
   if (!team) return null;
   team.isActive = status === "ACTIVE";
@@ -212,10 +245,14 @@ const setTeamStatus = async (teamId, status) => {
   return team;
 };
 
+// ── findMember ────────────────────────────────────────────────────────────────
+
 const findMember = async (teamId, userId) => {
   const team = await findTeamById(teamId);
   return team?.members?.find((member) => member.userId === userId) || null;
 };
+
+// ── addMember ─────────────────────────────────────────────────────────────────
 
 const addMember = async (teamId, memberPayload) => {
   if (isDbConnected()) {
@@ -240,7 +277,19 @@ const addMember = async (teamId, memberPayload) => {
   return createdMember;
 };
 
+// ── updateMember ──────────────────────────────────────────────────────────────
+
 const updateMember = async (teamId, userId, role) => {
+  if (isDbConnected()) {
+    const doc = await Team.findOneAndUpdate(
+      { _id: toObjectId(teamId), isDeleted: false, "members.userId": userId },
+      { $set: { "members.$.role": role, updatedAt: new Date() } },
+      { returnDocument: "after" }
+    ).lean();
+    if (!doc) return null;
+    return normalizeTeam(doc).members.find((m) => m.userId === userId) || null;
+  }
+
   const team = await findTeamById(teamId);
   if (!team) return null;
   const member = team.members.find((entry) => entry.userId === userId);
@@ -250,6 +299,8 @@ const updateMember = async (teamId, userId, role) => {
   team.updatedAt = new Date();
   return member;
 };
+
+// ── removeMember ──────────────────────────────────────────────────────────────
 
 const removeMember = async (teamId, userId) => {
   if (isDbConnected()) {
@@ -268,49 +319,41 @@ const removeMember = async (teamId, userId) => {
   return true;
 };
 
+// ── findUserById ──────────────────────────────────────────────────────────────
+
 const findUserById = async (userId) => {
   if (!userId) return null;
+  const normalizedId = String(userId);
 
-<<<<<<< Updated upstream
-  // 1. Prefer the team module's own mock users (mock-admin, mock-maya, ...).
-  //    These are the canonical IDs used by the team module and the mock-token
-  //    auth path, and they are always valid regardless of DB connectivity.
-  const mockUser = mockUsers.find((user) => user.id === String(userId));
-  if (mockUser) {
-    return mockUser;
+  // 1. Mock users — always valid regardless of DB state (used by mock-token auth)
+  const mockUser = mockUsers.find((user) => user.id === normalizedId);
+  if (mockUser) return mockUser;
+
+  // 2. Real users module (MongoDB or in-memory fallback)
+  if (isDbConnected() && mongoose.Types.ObjectId.isValid(normalizedId)) {
+    try {
+      const realUser = await userRepository.findById(normalizedId);
+      if (realUser) {
+        return {
+          id: String(realUser.id || realUser._id),
+          firstName: realUser.firstName,
+          lastName: realUser.lastName,
+          role: realUser.role,
+          status: realUser.status,
+        };
+      }
+    } catch (error) {
+      if (error && error.name === "CastError") return null;
+      throw error;
+    }
   }
 
-  // 2. Fall back to the real users module (single source of truth).
-  //    Handles both in-memory fallback and MongoDB-backed users.
+  // 3. Auth module in-memory users (covers users registered before DB was connected)
   try {
-    const realUser = await userRepository.findById(String(userId));
-    if (realUser) {
-      return {
-        id: realUser.id || realUser._id || String(userId),
-        firstName: realUser.firstName,
-        lastName: realUser.lastName,
-        role: realUser.role,
-        status: realUser.status,
-      };
-    }
-  } catch (error) {
-    // If the user ID is not a valid Mongo ObjectId (e.g. a string mock ID),
-    // treat it as not found rather than crashing with a CastError.
-    if (error && error.name === "CastError") {
-      return null;
-    }
-    throw error;
-  }
-
-  // 3. Fall back to the auth module's in-memory users (real registered users).
-  //    This keeps team membership in sync with users created through the
-  //    auth/register flow even before the real users module is wired to the
-  //    same store.
-  try {
-    const authUser = await authRepository.findUserById(String(userId));
+    const authUser = await authRepository.findUserById(normalizedId);
     if (authUser) {
       return {
-        id: authUser.id || authUser._id || String(userId),
+        id: String(authUser.id || authUser._id),
         firstName: authUser.firstName,
         lastName: authUser.lastName,
         role: authUser.role,
@@ -318,62 +361,26 @@ const findUserById = async (userId) => {
       };
     }
   } catch (error) {
-    if (error && error.name === "CastError") {
-      return null;
-    }
+    if (error && error.name === "CastError") return null;
     throw error;
   }
 
   return null;
 };
 
-const listUsers = async (search = "") => {
-  const normalized = String(search || "").trim().toLowerCase();
-
-  // Real users from the users module first.
-  const realUsers = Array.isArray(userRepository.inMemoryUsers)
-    ? userRepository.inMemoryUsers
-    : Array.from(userRepository.inMemoryUsers?.values?.() || []);
-  const realList = (realUsers || [])
-    .filter((u) => u && u.status === "ACTIVE" && !u.isDeleted)
-    .filter((u) => !normalized || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(normalized))
-    .map((u) => ({ id: u.id || u._id, firstName: u.firstName, lastName: u.lastName, role: u.role }));
-
-  return realList;
-=======
-  const normalizedId = String(userId);
-
-  // The users module is backed by MongoDB ObjectId documents. Guard the query
-  // so non-ObjectId ids (mock ids like "mock-maya", or arbitrary strings) do
-  // NOT throw a CastError and instead fall through to the mock lookup below.
-  if (isDbConnected() && mongoose.Types.ObjectId.isValid(normalizedId)) {
-    const realUser = await userRepository.findById(normalizedId);
-    if (realUser) {
-      return {
-        id: realUser.id || realUser._id || normalizedId,
-        firstName: realUser.firstName,
-        lastName: realUser.lastName,
-        role: realUser.role,
-        status: realUser.status,
-      };
-    }
-  }
-
-  // Fall back to the mock users used by the mock-token auth path.
-  return mockUsers.find((user) => user.id === normalizedId) || null;
-};
+// ── listUsers ─────────────────────────────────────────────────────────────────
 
 const listUsers = async (search = "") => {
-  // Use the users repository's public search API (single source of truth).
-  const realUsers = await userRepository.searchUsers(search, 100);
-  return (Array.isArray(realUsers) ? realUsers : []).map((u) => ({
-    id: u.id || u._id,
+  const results = await userRepository.searchUsers(search, 100);
+  return (Array.isArray(results) ? results : []).map((u) => ({
+    id: String(u.id || u._id),
     firstName: u.firstName,
     lastName: u.lastName,
     role: u.role,
   }));
->>>>>>> Stashed changes
 };
+
+// ── exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
   listTeams,
