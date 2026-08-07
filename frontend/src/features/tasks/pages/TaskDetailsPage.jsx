@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
+  AlertTriangle,
   ArrowLeft,
   CalendarDays,
+  CheckCircle2,
   Edit,
   Flag,
+  Loader2,
+  MessageSquareText,
+  Paperclip,
   Trash2,
   User,
+  X,
 } from 'lucide-react';
 import CommentsPanel from '../../comments/components/CommentsPanel';
 import AttachmentsPanel from '../../comments/components/AttachmentsPanel';
@@ -24,10 +30,17 @@ const formatDate = (date) => {
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams();
+  const navigate = useNavigate();
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const loadTask = useCallback(async () => {
     setLoading(true);
@@ -46,6 +59,11 @@ const TaskDetailsPage = () => {
     loadTask();
   }, [loadTask]);
 
+  const showToast = (message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3000);
+  };
+
   const handleStatusChange = async (status) => {
     setBusy(true);
     try {
@@ -56,7 +74,7 @@ const TaskDetailsPage = () => {
     } finally {
       setBusy(false);
     }
-};
+  };
 
   const handlePriorityChange = async (priority) => {
     setBusy(true);
@@ -84,13 +102,30 @@ const TaskDetailsPage = () => {
     }
   };
 
+  const openDeleteModal = () => {
+    setDeleteError(null);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleting) return;
+    setShowDeleteModal(false);
+    setDeleteError(null);
+  };
+
   const handleDelete = async () => {
-    if (!window.confirm('Delete this task?')) return;
+    if (deleting) return; // prevent multiple delete requests
+    setDeleting(true);
+    setDeleteError(null);
     try {
       await taskService.deleteTask(taskId);
-      window.location.href = '/tasks';
+      setShowDeleteModal(false);
+      showToast('Task deleted successfully.');
+      navigate('/tasks');
     } catch (err) {
-      alert(err.response?.data?.message || err.message);
+      setDeleteError(err.response?.data?.message || err.message || 'Failed to delete task.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -105,15 +140,21 @@ const TaskDetailsPage = () => {
 
   return (
     <div className="task-detail-page">
+      {toast && (
+        <div className="toast-notice form-banner success">
+          <CheckCircle2 size={16} /> {toast}
+        </div>
+      )}
+
       <div className="task-detail-top">
-        <Link to="/tasks" className="secondary-button compact">
+        <button type="button" className="secondary-button compact" onClick={() => navigate('/tasks')}>
           <ArrowLeft size={16} /> Back to tasks
-        </Link>
+        </button>
         <div className="task-detail-actions">
           <Link to={`/tasks/${task.id}/edit`} className="secondary-button compact">
             <Edit size={16} /> Edit
           </Link>
-          <button type="button" className="ghost-button danger" onClick={handleDelete}>
+          <button type="button" className="ghost-button danger" onClick={openDeleteModal}>
             <Trash2 size={16} /> Delete
           </button>
         </div>
@@ -131,7 +172,7 @@ const TaskDetailsPage = () => {
           {labels.length > 0 && (
             <div className="task-detail-labels">
               {labels.map((label) => (
-                <span key={label.id} className="task-label-chip" style={{ background: `color-mix(in srgb, ${label.color} 18%, transparent)`, color: label.color }}>
+                <span key={label.id || label._id} className="task-label-chip" style={{ background: `color-mix(in srgb, ${label.color} 18%, transparent)`, color: label.color }}>
                   {label.name}
                 </span>
               ))}
@@ -224,6 +265,61 @@ const TaskDetailsPage = () => {
           <AttachmentsPanel taskId={task.id} />
         </div>
       </div>
+
+{showDeleteModal && (
+        <div className="modal-overlay" role="presentation" onMouseDown={closeDeleteModal}>
+          <div
+            className="modal-card glass-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="modal-close"
+              onClick={closeDeleteModal}
+              disabled={deleting}
+              aria-label="Close dialog"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="modal-icon danger">
+              <AlertTriangle size={22} />
+            </div>
+
+            <h3 id="delete-modal-title">Delete Task</h3>
+            <p className="modal-message">
+              Are you sure you want to delete this task? This action can't be undone.
+            </p>
+
+            <div className="modal-task-summary">
+              <span className="modal-task-key">{task.taskKey}</span>
+              <span className="modal-task-title">{task.title}</span>
+            </div>
+
+            {deleteError && <div className="form-banner danger">{deleteError}</div>}
+
+            <div className="modal-actions">
+              <button type="button" className="secondary-button" onClick={closeDeleteModal} disabled={deleting}>
+                Cancel
+              </button>
+              <button type="button" className="primary-button danger-button" onClick={handleDelete} disabled={deleting}>
+                {deleting ? (
+                  <>
+                    <Loader2 size={16} className="spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} /> Delete Task
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

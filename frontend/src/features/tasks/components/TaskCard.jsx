@@ -35,7 +35,7 @@ const TaskCard = ({ task, onStatusChange, showProject = false }) => {
       {labels.length > 0 && (
         <div className="task-card-labels">
           {labels.map((label) => (
-            <span key={label.id} className="task-label-chip" style={{ background: `color-mix(in srgb, ${label.color} 18%, transparent)`, color: label.color }}>
+            <span key={label.id || label._id} className="task-label-chip" style={{ background: `color-mix(in srgb, ${label.color} 18%, transparent)`, color: label.color }}>
               {label.name}
             </span>
           ))}

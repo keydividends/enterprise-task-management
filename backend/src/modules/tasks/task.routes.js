@@ -14,8 +14,7 @@ taskRouter.use(authenticate);
 
 taskRouter.get("/", authorize("TASK_VIEW"), taskController.listTasks);
 taskRouter.get("/board", authorize("TASK_VIEW"), taskController.getBoard);
-// taskRouter.post("/", authorize("TASK_CREATE"), taskController.createTask);
-taskRouter.post("/", taskController.createTask);
+taskRouter.post("/", authorize("TASK_CREATE"), taskController.createTask);
 
 // Specific sub-routes must be registered before the generic /:taskId PATCH
 // to prevent Express matching "status", "priority", etc. as taskId values.

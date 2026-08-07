@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus } from 'lucide-react';
 import TaskForm from '../components/TaskForm';
 import taskService from '../services/taskService';
@@ -25,9 +25,9 @@ const CreateTaskPage = () => {
           <h2>Create Task</h2>
           <p className="helper-copy">Fill in the details to create a new task.</p>
         </div>
-        <Link to="/tasks" className="secondary-button compact">
+        <button type="button" className="secondary-button compact" onClick={() => navigate('/tasks')}>
           <ArrowLeft size={16} /> Back to tasks
-        </Link>
+        </button>
       </div>
 
       <div className="glass-card task-form-card">

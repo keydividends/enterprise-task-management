@@ -62,6 +62,27 @@ test("validateCreateTask rejects invalid enum", () => {
   );
 });
 
+test("validateCreateTask rejects invalid sprint id", () => {
+  assert.throws(
+    () => validateCreateTask({ title: "Valid title", projectId: "64a200000000000000000001", sprintId: "not-an-id" }),
+    (error) => error.field === "sprintId"
+  );
+});
+
+test("validateCreateTask rejects invalid assignee id", () => {
+  assert.throws(
+    () => validateCreateTask({ title: "Valid title", projectId: "64a200000000000000000001", primaryAssigneeId: "not-an-id" }),
+    (error) => error.field === "primaryAssigneeId"
+  );
+});
+
+test("validateCreateTask rejects invalid parent task id", () => {
+  assert.throws(
+    () => validateCreateTask({ title: "Valid title", projectId: "64a200000000000000000001", parentTaskId: "not-an-id" }),
+    (error) => error.field === "parentTaskId"
+  );
+});
+
 test("validateCreateTask accepts valid payload", () => {
   assert.doesNotThrow(() =>
     validateCreateTask({
@@ -83,6 +104,22 @@ test("validateTaskQuery normalizes pagination and sort", () => {
 
 test("validateTaskQuery rejects invalid status filter", () => {
   assert.throws(() => validateTaskQuery({ status: "NOPE" }), (error) => error.field === "status");
+});
+
+test("validateTaskQuery rejects invalid project id filter", () => {
+  assert.throws(() => validateTaskQuery({ projectId: "bad-id" }), (error) => error.field === "projectId");
+});
+
+test("validateTaskQuery rejects invalid assignee id filter", () => {
+  assert.throws(() => validateTaskQuery({ assigneeId: "bad-id" }), (error) => error.field === "assigneeId");
+});
+
+test("validateTaskQuery rejects invalid sprint id filter", () => {
+  assert.throws(() => validateTaskQuery({ sprintId: "bad-id" }), (error) => error.field === "sprintId");
+});
+
+test("validateTaskQuery rejects invalid epic id filter", () => {
+  assert.throws(() => validateTaskQuery({ epicId: "bad-id" }), (error) => error.field === "epicId");
 });
 
 test("validatePagination caps page size at 100", () => {

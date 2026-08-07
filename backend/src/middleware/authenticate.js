@@ -2,7 +2,7 @@ const { verifyAccessToken } = require("../modules/auth/auth.service");
 
 const mockUsers = {
   "mock-token": {
-    id: "mock-admin",
+    id: "64a100000000000000000001",
     email: "admin@etms.dev",
     firstName: "Ava",
     lastName: "Cole",
@@ -16,10 +16,11 @@ const mockUsers = {
       "SPRINT_VIEW", "SPRINT_CREATE", "SPRINT_UPDATE", "SPRINT_MANAGE",
       "DASHBOARD_VIEW", "REPORT_VIEW",
     ],
+    workspaceId: "64a000000000000000000001",
     status: "ACTIVE",
   },
   "mock-member-token": {
-    id: "mock-maya",
+    id: "64a100000000000000000002",
     email: "maya@etms.dev",
     firstName: "Maya",
     lastName: "Singh",
