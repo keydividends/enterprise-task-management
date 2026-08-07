@@ -1,5 +1,13 @@
-const teamRepository = require('./team.repository');
-const { mapTeamDetail, mapTeamSummary } = require('./team.mapper');
+const teamRepository = require("./team.repository");
+const { mapTeamDetail, mapTeamSummary, mapTeamMember } = require("./team.mapper");
+const {
+  validateCreateTeam,
+  validateUpdateTeam,
+  validateTeamId,
+  validateAddMember,
+  validateUpdateMember,
+  validateListQuery,
+} = require("./team.validation");
 
 const createAuthError = (code, message, statusCode = 400) => {
   const error = new Error(message);
@@ -11,46 +19,63 @@ const createAuthError = (code, message, statusCode = 400) => {
 const ensureUniqueMembers = (members = []) => {
   const seen = new Set();
   for (const member of members) {
-    const normalizedMember = String(member || '').trim();
+    const normalizedMember = String(member || "").trim();
     if (!normalizedMember) {
       continue;
     }
     if (seen.has(normalizedMember)) {
-      throw createAuthError('DUPLICATE_MEMBER', 'Duplicate team members are not allowed.', 409);
+      throw createAuthError("DUPLICATE_MEMBER", "Duplicate team members are not allowed.", 409);
     }
     seen.add(normalizedMember);
   }
 };
 
-const listTeams = async ({ search } = {}) => {
-  const items = await teamRepository.listTeams({ search });
-  return items.map(mapTeamSummary);
+const listTeams = async (query = {}) => {
+  const validated = validateListQuery(query);
+  const result = await teamRepository.listTeams(validated);
+
+  return {
+    items: result.items.map(mapTeamSummary),
+    pagination: {
+      page: result.page,
+      pageSize: result.pageSize,
+      totalItems: result.totalItems,
+      totalPages: result.totalPages,
+    },
+  };
 };
 
 const getTeam = async (teamId) => {
+  validateTeamId(teamId);
   const team = await teamRepository.findTeamById(teamId);
   if (!team) {
-    throw createAuthError('TEAM_NOT_FOUND', 'Team not found.', 404);
+    throw createAuthError("TEAM_NOT_FOUND", "Team not found.", 404);
   }
   return mapTeamDetail(team);
 };
 
-const createTeam = async ({ name, description, leadId, projectIds, members = [] }) => {
-  if (!String(name || '').trim()) {
-    throw createAuthError('VALIDATION_ERROR', 'Team name is required.', 400);
-  }
+const createTeam = async (payload) => {
+  const validated = validateCreateTeam(payload);
 
-  ensureUniqueMembers(members);
+  ensureUniqueMembers(validated.members);
 
-  const lead = await teamRepository.findUserById(leadId || 'mock-admin');
-  if (!lead) {
-    throw createAuthError('INVALID_LEAD', 'Team lead must be a valid active user.', 400);
+  let lead = null;
+  if (validated.leadId) {
+    lead = await teamRepository.findUserById(validated.leadId);
+    if (!lead) {
+      throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
+    }
+  } else {
+    lead = await teamRepository.findUserById("mock-admin");
+    if (!lead) {
+      throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
+    }
   }
 
   const normalizedMembers = [];
   const seenMembers = new Set();
-  for (const memberId of members) {
-    const normalizedMemberId = String(memberId || '').trim();
+  for (const memberId of validated.members) {
+    const normalizedMemberId = String(memberId || "").trim();
     if (!normalizedMemberId || normalizedMemberId === lead.id || seenMembers.has(normalizedMemberId)) {
       continue;
     }
@@ -58,72 +83,170 @@ const createTeam = async ({ name, description, leadId, projectIds, members = [] 
 
     const user = await teamRepository.findUserById(normalizedMemberId);
     if (!user) {
-      throw createAuthError('INVALID_MEMBER_USER', 'One or more team members are invalid.', 400);
+      throw createAuthError("INVALID_MEMBER_USER", "One or more team members are invalid.", 400);
     }
-    normalizedMembers.push({ userId: normalizedMemberId, role: 'MEMBER' });
+    normalizedMembers.push({ userId: normalizedMemberId, role: "MEMBER" });
   }
 
   const team = await teamRepository.createTeam({
-    name: String(name).trim(),
-    description: String(description || '').trim(),
+    name: validated.name,
+    description: validated.description,
     leadId: lead.id,
-    projectIds: Array.isArray(projectIds) ? projectIds.filter(Boolean).map((item) => String(item)) : [],
-    members: [{ userId: lead.id, role: 'LEAD' }, ...normalizedMembers],
+    projectIds: validated.projectIds,
+    members: [{ userId: lead.id, role: "LEAD" }, ...normalizedMembers],
   });
 
   return mapTeamDetail(team);
 };
 
 const updateTeam = async (teamId, payload) => {
+  validateTeamId(teamId);
+  const validated = validateUpdateTeam(payload);
+
   const team = await getTeam(teamId);
-  if (payload.name !== undefined && !String(payload.name || '').trim()) {
-    throw createAuthError('VALIDATION_ERROR', 'Team name is required.', 400);
+
+  // If the lead is being changed, validate the new lead.
+  if (validated.leadId && validated.leadId !== team.leadId) {
+    const newLead = await teamRepository.findUserById(validated.leadId);
+    if (!newLead) {
+      throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
+    }
+
+    // The new lead automatically becomes a member (LEAD role).
+    const isAlreadyMember = team.members.some((member) => member.userId === validated.leadId);
+    if (!isAlreadyMember) {
+      await teamRepository.addMember(teamId, { userId: validated.leadId, role: "LEAD" });
+    } else {
+      await teamRepository.updateMember(teamId, validated.leadId, "LEAD");
+    }
   }
 
   const nextPayload = {
-    ...payload,
-    name: payload.name !== undefined ? String(payload.name).trim() : team.name,
-    description: payload.description !== undefined ? String(payload.description).trim() : team.description,
-    projectIds: Array.isArray(payload.projectIds) ? payload.projectIds.filter(Boolean).map((item) => String(item)) : team.projectIds,
+    ...validated,
+    name: validated.name ?? team.name,
+    description: validated.description ?? team.description,
+    projectIds: validated.projectIds ?? team.projectIds,
   };
+
+  if (validated.leadId) {
+    nextPayload.leadId = validated.leadId;
+  }
 
   return mapTeamDetail(await teamRepository.updateTeam(teamId, nextPayload));
 };
 
-const deleteTeam = async (teamId) => mapTeamDetail(await teamRepository.deleteTeam(teamId));
+const deleteTeam = async (teamId) => {
+  validateTeamId(teamId);
+  const deleted = await teamRepository.deleteTeam(teamId);
+  if (!deleted) {
+    throw createAuthError("TEAM_NOT_FOUND", "Team not found.", 404);
+  }
+  return mapTeamDetail(deleted);
+};
+
+const restoreTeam = async (teamId) => {
+  validateTeamId(teamId);
+  const restored = await teamRepository.restoreTeam(teamId);
+  if (!restored) {
+    throw createAuthError("TEAM_NOT_FOUND", "Team not found or it is not archived.", 404);
+  }
+  return mapTeamDetail(restored);
+};
+
+const setTeamStatus = async (teamId, status) => {
+  validateTeamId(teamId);
+  const normalizedStatus = String(status || "").trim().toUpperCase();
+  if (!["ACTIVE", "INACTIVE"].includes(normalizedStatus)) {
+    throw createAuthError("VALIDATION_ERROR", "Status must be ACTIVE or INACTIVE.", 400);
+  }
+  const team = await getTeam(teamId);
+  const updated = await teamRepository.setTeamStatus(teamId, normalizedStatus);
+  return mapTeamDetail(updated);
+};
 
 const listTeamMembers = async (teamId) => {
   const team = await getTeam(teamId);
-  return team.members || [];
+  return (team.members || []).map(mapTeamMember);
 };
 
-const addTeamMember = async (teamId, { userId, role = 'MEMBER' }) => {
+const addTeamMember = async (teamId, payload) => {
+  validateTeamId(teamId);
+  const { userId, role } = validateAddMember(payload);
+
   const team = await getTeam(teamId);
   const existing = team.members?.find((member) => member.userId === userId);
   if (existing) {
-    throw createAuthError('DUPLICATE_MEMBER', 'Member already belongs to the team.', 409);
+    throw createAuthError("TEAM_MEMBER_EXISTS", "Member already belongs to the team.", 409);
   }
 
-  const normalizedUserId = String(userId || '').trim();
-  if (!normalizedUserId) {
-    throw createAuthError('VALIDATION_ERROR', 'A user ID is required.', 400);
-  }
-
-  const user = await teamRepository.findUserById(normalizedUserId);
+  const user = await teamRepository.findUserById(userId);
   if (!user) {
-    throw createAuthError('INVALID_MEMBER_USER', 'The selected user is not valid.', 400);
+    throw createAuthError("INVALID_MEMBER_USER", "The selected user is not valid.", 400);
   }
 
-  return teamRepository.addMember(teamId, { userId: normalizedUserId, role });
+  const created = await teamRepository.addMember(teamId, { userId, role });
+  return mapTeamMember(created);
 };
 
-const removeTeamMember = async (teamId, userId) => {
+const updateTeamMember = async (teamId, userId, payload) => {
+  validateTeamId(teamId);
+  const { role } = validateUpdateMember(payload);
+
   const team = await getTeam(teamId);
   const member = team.members?.find((entry) => entry.userId === userId);
   if (!member) {
-    throw createAuthError('TEAM_MEMBER_NOT_FOUND', 'Team member not found.', 404);
+    throw createAuthError("TEAM_MEMBER_NOT_FOUND", "Team member not found.", 404);
   }
+
+  if (member.role === "LEAD" && role !== "LEAD") {
+    throw createAuthError("PROTECTED_TEAM_LEAD", "The team lead cannot have their role changed to a non-lead role.", 403);
+  }
+
+  const updated = await teamRepository.updateMember(teamId, userId, role);
+  return mapTeamMember(updated);
+};
+
+const removeTeamMember = async (teamId, userId) => {
+  validateTeamId(teamId);
+
+  const team = await getTeam(teamId);
+  const member = team.members?.find((entry) => entry.userId === userId);
+  if (!member) {
+    throw createAuthError("TEAM_MEMBER_NOT_FOUND", "Team member not found.", 404);
+  }
+
+  if (member.role === "LEAD" && team.leadId === userId) {
+    throw createAuthError("PROTECTED_TEAM_LEAD", "The team lead cannot be removed from the team.", 403);
+  }
+
   return teamRepository.removeMember(teamId, userId);
+};
+
+const assignTeamLead = async (teamId, payload) => {
+  validateTeamId(teamId);
+  const userId = String(payload?.userId || "").trim();
+  if (!userId) {
+    throw createAuthError("VALIDATION_ERROR", "A user ID is required to assign a team lead.", 400);
+  }
+
+  const team = await getTeam(teamId);
+  const user = await teamRepository.findUserById(userId);
+  if (!user) {
+    throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
+  }
+
+  // Ensure the new lead is a member (role LEAD).
+  const existing = team.members.find((member) => member.userId === userId);
+  if (existing) {
+    if (existing.role !== "LEAD") {
+      await teamRepository.updateMember(teamId, userId, "LEAD");
+    }
+  } else {
+    await teamRepository.addMember(teamId, { userId, role: "LEAD" });
+  }
+
+  const updated = await teamRepository.updateTeam(teamId, { leadId: userId });
+  return mapTeamDetail(updated);
 };
 
 const getTeamSummary = async (teamId) => {
@@ -156,9 +279,13 @@ module.exports = {
   createTeam,
   updateTeam,
   deleteTeam,
+  restoreTeam,
+  setTeamStatus,
   listTeamMembers,
   addTeamMember,
+  updateTeamMember,
   removeTeamMember,
+  assignTeamLead,
   getTeamSummary,
   getTeamProjects,
 };

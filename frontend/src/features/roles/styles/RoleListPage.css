@@ -35,7 +35,7 @@
   cursor: not-allowed;
 }
 
-..error-message {
+.error-message {
   background-color: var(--danger-100, #f8d7da);
   border: 1px solid var(--danger-200, #f5c6cb);
   color: var(--danger, #ef4444);

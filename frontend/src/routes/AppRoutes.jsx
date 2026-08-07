@@ -22,6 +22,7 @@ import TeamListPage from '../features/teams/pages/TeamListPage';
 import TeamDetailsPage from '../features/teams/pages/TeamDetailsPage';
 import CreateTeamPage from '../features/teams/pages/CreateTeamPage';
 import EditTeamPage from '../features/teams/pages/EditTeamPage';
+import TeamMembersPage from '../features/teams/pages/TeamMembersPage';
 import RoleListPage from '../features/roles/pages/RoleListPage';
 import CreateRolePage from '../features/roles/pages/CreateRolePage';
 import EditRolePage from '../features/roles/pages/EditRolePage';
@@ -62,6 +63,7 @@ const AppRoutes = ({ toggleTheme }) => (
           <Route path="/teams/new" element={<CreateTeamPage />} />
           <Route path="/teams/:teamId" element={<TeamDetailsPage />} />
           <Route path="/teams/:teamId/edit" element={<EditTeamPage />} />
+          <Route path="/teams/:teamId/members" element={<TeamMembersPage />} />
           <Route path="/roles" element={<RoleListPage />} />
           <Route path="/roles/create" element={<CreateRolePage />} />
           <Route path="/roles/:roleId" element={<RoleDetailsPage />} />

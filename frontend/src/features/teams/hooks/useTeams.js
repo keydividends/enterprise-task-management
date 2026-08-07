@@ -5,26 +5,38 @@ const useTeams = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 20,
+    totalItems: 0,
+    totalPages: 1,
+  });
 
-  const fetchTeams = useCallback(async (search = '') => {
+  const fetchTeams = useCallback(async (search = '', page = 1, pageSize = 20) => {
     setLoading(true);
     try {
-      const result = await teamService.getTeams(search);
+      const result = await teamService.getTeams(search, page, pageSize);
       const nextTeams = Array.isArray(result?.items) ? result.items : [];
       setTeams(nextTeams);
+      setPagination({
+        page: result?.pagination?.page ?? page,
+        pageSize: result?.pagination?.pageSize ?? pageSize,
+        totalItems: result?.pagination?.totalItems ?? nextTeams.length,
+        totalPages: result?.pagination?.totalPages ?? 1,
+      });
       setError(null);
       return result;
     } catch (err) {
       const message = err?.response?.data?.message || 'Unable to load teams.';
       setError(message);
-      return { items: [], count: 0 };
+      return { items: [], pagination: {} };
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTeams('');
+    fetchTeams('', 1, 20);
   }, [fetchTeams]);
 
   const createTeam = useCallback(async (payload) => {
@@ -66,18 +78,19 @@ const useTeams = () => {
     }
   }, []);
 
-  const refresh = useCallback(async (search = '') => fetchTeams(search), [fetchTeams]);
+  const refresh = useCallback(async (search = '', page = 1, pageSize = 20) => fetchTeams(search, page, pageSize), [fetchTeams]);
 
   return useMemo(() => ({
     teams,
     loading,
     error,
+    pagination,
     fetchTeams,
     refresh,
     createTeam,
     updateTeam,
     deleteTeam,
-  }), [teams, loading, error, fetchTeams, refresh, createTeam, updateTeam, deleteTeam]);
+  }), [teams, loading, error, pagination, fetchTeams, refresh, createTeam, updateTeam, deleteTeam]);
 };
 
 export default useTeams;

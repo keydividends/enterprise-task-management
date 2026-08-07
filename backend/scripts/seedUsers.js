@@ -7,7 +7,7 @@
 //
 // Creates:
 //   admin@etms.com     - ADMIN  (full permissions, ACTIVE)
-//   demo@etms.com      - USER   (basic task permissions, ACTIVE)
+//   demo@etms.com      - USER   (task + team permissions, ACTIVE)
 //   disabled@etms.com  - USER   (no permissions, DISABLED)
 //
 // Documented demo password: Admin@123
@@ -66,6 +66,10 @@ const SEED_USERS = [
       "TASK_DELETE",
       "TASK_ASSIGN",
       "TEAM_VIEW",
+      "TEAM_CREATE",
+      "TEAM_UPDATE",
+      "TEAM_DELETE",
+      "TEAM_MANAGE_MEMBERS",
     ],
   },
   {
@@ -144,4 +148,3 @@ seed().catch((error) => {
   console.error("Seed failed:", error);
   process.exit(1);
 });
-

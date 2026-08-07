@@ -3,7 +3,9 @@ import { useAuth } from "../../auth/hooks/useAuth";
 
 /**
  * PermissionGate Component
- * Conditionally renders children based on user permissions
+ * Conditionally renders children based on user permissions.
+ * ADMIN and MANAGER roles bypass permission checks (consistent with the
+ * backend `authorize` middleware and the UserListPage permission pattern).
  *
  * Usage:
  * <PermissionGate permission="TASK_CREATE">
@@ -13,12 +15,16 @@ import { useAuth } from "../../auth/hooks/useAuth";
 const PermissionGate = ({ permission, children, fallback = null }) => {
   const { user } = useAuth();
   const userPermissions = user?.permissions || [];
+  const userRole = user?.role;
 
   if (!permission) {
     return children;
   }
 
-  const hasPermission = userPermissions.includes(permission);
+  // ADMIN/MANAGER roles bypass permission checks (mirrors backend authorize).
+  const bypassRoles = ['ADMIN', 'MANAGER'];
+  const hasPermission =
+    bypassRoles.includes(userRole) || userPermissions.includes(permission);
 
   return hasPermission ? children : fallback;
 };

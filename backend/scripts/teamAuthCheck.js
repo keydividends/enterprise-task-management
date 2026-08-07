@@ -36,29 +36,39 @@ const run = async () => {
     const adminToken = adminLogin.accessToken;
     const adminId = adminLogin.user.id;
 
+    // Register a fresh real user with known credentials to use as a member.
+    const memberEmail = `member_${Date.now()}@etms.dev`;
+    const memberReg = await authService.registerUser({
+      firstName: "Team",
+      lastName: "Member",
+      email: memberEmail,
+      password: "Member@123",
+      confirmPassword: "Member@123",
+    });
+    const memberId = memberReg.user.id;
+    console.log(`  INFO registered real member id=${memberId}`);
+
     // Create team with real admin as lead
-    let r = await request("POST", "/api/v1/teams", { token: adminToken, body: { name: "Real Admin Team", leadId: adminId } });
+    let r = await request("POST", "/api/v1/teams", { token: adminToken, body: { name: `Real Admin Team ${Date.now()}`, leadId: adminId } });
     const create = r.status === 201;
     console.log(`  ${create ? "PASS" : "FAIL"} [${r.status}] POST /teams (real lead)`);
     allPass = create && allPass;
     const teamId = r.body?.data?.id;
 
-    // Add real demo user as member
-    const demoLogin = await authService.loginUser({ email: "demo@etms.com", password: "Admin@123" });
-    const demoId = demoLogin.user.id;
-    r = await request("POST", `/api/v1/teams/${teamId}/members`, { token: adminToken, body: { userId: demoId } });
+    // Add the real member
+    r = await request("POST", `/api/v1/teams/${teamId}/members`, { token: adminToken, body: { userId: memberId } });
     const add = r.status === 201;
     console.log(`  ${add ? "PASS" : "FAIL"} [${r.status}] add real member`);
     allPass = add && allPass;
 
     // List members
     r = await request("GET", `/api/v1/teams/${teamId}/members`, { token: adminToken });
-    const listMembers = r.status === 200 && Array.isArray(r.body?.data) && r.body.data.some((m) => m.userId === demoId);
+    const listMembers = r.status === 200 && Array.isArray(r.body?.data) && r.body.data.some((m) => m.userId === memberId);
     console.log(`  ${listMembers ? "PASS" : "FAIL"} [${r.status}] list members includes real user`);
     allPass = listMembers && allPass;
 
     // Remove real member
-    r = await request("DELETE", `/api/v1/teams/${teamId}/members/${demoId}`, { token: adminToken });
+    r = await request("DELETE", `/api/v1/teams/${teamId}/members/${memberId}`, { token: adminToken });
     const remove = r.status === 200;
     console.log(`  ${remove ? "PASS" : "FAIL"} [${r.status}] remove real member`);
     allPass = remove && allPass;

@@ -1,33 +1,22 @@
 import axiosClient from '../../../api/axiosClient';
 
-// In-memory cache is the single source of truth during a session so that
-// create -> list -> detail -> edit -> delete -> members stay in sync even if
-// the backend is temporarily unreachable (offline / auth fallback).
-const teamCache = new Map();
+<<<<<<< Updated upstream
+// The backend is the single source of truth. This module exposes ONLY the
+// REST API through axiosClient. It does NOT silently fall back to local/mock
+// data, so a failed create/update/delete surfaces an error to the caller
+// instead of creating a "phantom" team that only exists in the browser.
 
-const seedTeam = {
-  id: 'team-platform',
-  name: 'Platform Engineering',
-  description: 'Core platform and tooling delivery',
-  leadId: 'mock-admin',
-  projectIds: ['project-1'],
-  isActive: true,
-  isDeleted: false,
-  members: [
-    { userId: 'mock-admin', role: 'LEAD' },
-    { userId: 'mock-maya', role: 'MEMBER' },
-  ],
-  createdAt: '2025-01-15T09:00:00.000Z',
-  updatedAt: '2025-01-15T09:00:00.000Z',
-};
+const unwrapData = (response) => response?.data?.data ?? response?.data ?? response;
+const unwrapPagination = (response) => response?.data?.pagination ?? {};
 
-// Populate the cache from the seed on first load.
-const seedCache = () => {
-  if (teamCache.size === 0) {
-    teamCache.set(seedTeam.id, { ...seedTeam });
-  }
-};
+const normalizeMember = (member = {}) => ({
+  userId: member.userId || '',
+  role: member.role || 'MEMBER',
+  joinedAt: member.joinedAt,
+});
 
+=======
+>>>>>>> Stashed changes
 const normalizeTeam = (team = {}) => ({
   id: team.id,
   name: team.name || '',
@@ -35,126 +24,127 @@ const normalizeTeam = (team = {}) => ({
   leadId: team.leadId || 'mock-admin',
   projectIds: Array.isArray(team.projectIds) ? team.projectIds : [],
   isActive: team.isActive !== false,
+  status: team.status || (team.isActive !== false ? 'ACTIVE' : 'INACTIVE'),
   isDeleted: Boolean(team.isDeleted),
-  members: Array.isArray(team.members) ? team.members : [],
+  members: Array.isArray(team.members) ? team.members.map(normalizeMember) : [],
   memberCount: team.memberCount ?? team.members?.length ?? 0,
   createdAt: team.createdAt,
   updatedAt: team.updatedAt,
 });
 
-const unwrapData = (response) => response?.data?.data ?? response?.data ?? response;
+<<<<<<< Updated upstream
+const teamService = {
+  async getTeams(search = '', page = 1, pageSize = 20) {
+    const response = await axiosClient.get('/teams', {
+      params: { search, page, pageSize },
+    });
+    const data = unwrapData(response);
+    const teams = Array.isArray(data) ? data : [];
+    return {
+      items: teams.map(normalizeTeam),
+      pagination: unwrapPagination(response),
+    };
+=======
+const normalizeListResponse = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeTeam);
+  }
 
-const listFromCache = (search = '') => {
-  const normalized = String(search || '').trim().toLowerCase();
-  return Array.from(teamCache.values())
-    .filter((team) => !team.isDeleted)
-    .filter((team) => !normalized || team.name.toLowerCase().includes(normalized))
-    .map(normalizeTeam);
+  if (value?.data?.data && Array.isArray(value.data.data)) {
+    return value.data.data.map(normalizeTeam);
+  }
+
+  if (value?.data?.items && Array.isArray(value.data.items)) {
+    return value.data.items.map(normalizeTeam);
+  }
+
+  if (value?.items && Array.isArray(value.items)) {
+    return value.items.map(normalizeTeam);
+  }
+
+  return [];
+};
+
+const normalizeSingleResponse = (value, fallback = null) => {
+  if (value?.data?.data) {
+    return normalizeTeam(value.data.data);
+  }
+
+  if (value?.data) {
+    return normalizeTeam(value.data);
+  }
+
+  if (value) {
+    return normalizeTeam(value);
+  }
+
+  return fallback;
 };
 
 const teamService = {
   async getTeams(search = '') {
-    seedCache();
-    try {
-      const response = await axiosClient.get('/teams', { params: { search } });
-      const data = unwrapData(response);
-      const teams = Array.isArray(data) ? data : [];
-      teamCache.clear();
-      teams.forEach((team) => teamCache.set(team.id, normalizeTeam(team)));
-      return { items: listFromCache(search), count: listFromCache(search).length };
-    } catch (error) {
-      // Fall back to the in-memory cache when the API is unavailable.
-      return { items: listFromCache(search), count: listFromCache(search).length };
-    }
+    const response = await axiosClient.get('/teams', { params: { search } });
+    const data = response?.data?.data;
+    const items = Array.isArray(data) ? data.map(normalizeTeam) : normalizeListResponse(response);
+    return { items, count: items.length };
+>>>>>>> Stashed changes
   },
 
-  async listTeams(search = '') {
-    return this.getTeams(search);
+  async listTeams(search = '', page = 1, pageSize = 20) {
+    return this.getTeams(search, page, pageSize);
   },
 
   async getTeam(teamId) {
-    seedCache();
-    try {
-      const response = await axiosClient.get(`/teams/${teamId}`);
-      const team = unwrapData(response);
-      if (team && team.id) {
-        teamCache.set(teamId, normalizeTeam(team));
-        return normalizeTeam(team);
-      }
-    } catch (error) {
-      // fall through to cache
-    }
-    return teamCache.get(teamId) ? normalizeTeam(teamCache.get(teamId)) : null;
+    const response = await axiosClient.get(`/teams/${teamId}`);
+<<<<<<< Updated upstream
+    const team = unwrapData(response);
+    return normalizeTeam(team);
+=======
+    return normalizeSingleResponse(response);
+>>>>>>> Stashed changes
   },
 
   async createTeam(payload) {
-    seedCache();
-    try {
-      const response = await axiosClient.post('/teams', payload);
-      const created = normalizeTeam(unwrapData(response));
-      if (created.id) {
-        teamCache.set(created.id, created);
-        return created;
-      }
-    } catch (error) {
-      // fall through to local creation below
-    }
-    const local = normalizeTeam({
-      ...payload,
-      id: payload.id || `team-${Date.now()}`,
-      isActive: true,
-      isDeleted: false,
-      members: [{ userId: payload.leadId || 'mock-admin', role: 'LEAD' }],
-    });
-    teamCache.set(local.id, local);
-    return local;
+    const response = await axiosClient.post('/teams', payload);
+<<<<<<< Updated upstream
+    return normalizeTeam(unwrapData(response));
+=======
+    return normalizeSingleResponse(response);
+>>>>>>> Stashed changes
   },
 
   async updateTeam(teamId, payload) {
-    seedCache();
-    try {
-      const response = await axiosClient.patch(`/teams/${teamId}`, payload);
-      const updated = normalizeTeam(unwrapData(response));
-      if (updated.id) {
-        teamCache.set(teamId, updated);
-        return updated;
-      }
-    } catch (error) {
-      // fall through to local update below
-    }
-    const current = teamCache.get(teamId) || {};
-    const local = normalizeTeam({ ...current, ...payload, id: teamId });
-    teamCache.set(teamId, local);
-    return local;
+    const response = await axiosClient.patch(`/teams/${teamId}`, payload);
+<<<<<<< Updated upstream
+    return normalizeTeam(unwrapData(response));
+=======
+    return normalizeSingleResponse(response);
+>>>>>>> Stashed changes
   },
 
   async deleteTeam(teamId) {
-    seedCache();
-    try {
-      const response = await axiosClient.delete(`/teams/${teamId}`);
-      const data = unwrapData(response) || { teamId, deleted: true };
-      teamCache.delete(teamId);
-      return data;
-    } catch (error) {
-      teamCache.delete(teamId);
-      return { teamId, deleted: true };
-    }
+    const response = await axiosClient.delete(`/teams/${teamId}`);
+<<<<<<< Updated upstream
+    return unwrapData(response) || { teamId, deleted: true };
+  },
+
+  async restoreTeam(teamId) {
+    const response = await axiosClient.patch(`/teams/${teamId}/restore`);
+    return normalizeTeam(unwrapData(response));
+=======
+    return response?.data?.data || response?.data || { teamId, deleted: true };
+>>>>>>> Stashed changes
   },
 
   async getMembers(teamId) {
-    seedCache();
-    try {
-      const response = await axiosClient.get(`/teams/${teamId}/members`);
-      const data = unwrapData(response);
-      const members = Array.isArray(data) ? data : [];
-      const current = teamCache.get(teamId);
-      if (current) {
-        teamCache.set(teamId, { ...current, members, memberCount: members.length });
-      }
-      return members;
-    } catch (error) {
-      return teamCache.get(teamId)?.members || [];
-    }
+    const response = await axiosClient.get(`/teams/${teamId}/members`);
+<<<<<<< Updated upstream
+    const data = unwrapData(response);
+    return Array.isArray(data) ? data.map(normalizeMember) : [];
+=======
+    const data = response?.data?.data;
+    return Array.isArray(data) ? data : [];
+>>>>>>> Stashed changes
   },
 
   async listMembers(teamId) {
@@ -162,45 +152,31 @@ const teamService = {
   },
 
   async addMember(teamId, payload) {
-    seedCache();
-    try {
-      const response = await axiosClient.post(`/teams/${teamId}/members`, payload);
-      const member = response?.data?.data || { userId: payload.userId, role: payload.role || 'MEMBER' };
-      const current = teamCache.get(teamId);
-      if (current) {
-        const members = [...(current.members || []), member];
-        teamCache.set(teamId, { ...current, members, memberCount: members.length });
-      }
-      return member;
-    } catch (error) {
-      const member = { userId: payload.userId, role: payload.role || 'MEMBER' };
-      const current = teamCache.get(teamId);
-      if (current) {
-        const members = [...(current.members || []), member];
-        teamCache.set(teamId, { ...current, members, memberCount: members.length });
-      }
-      return member;
-    }
+    const response = await axiosClient.post(`/teams/${teamId}/members`, payload);
+<<<<<<< Updated upstream
+    return normalizeMember(unwrapData(response) || { userId: payload.userId, role: payload.role || 'MEMBER' });
+  },
+
+  async updateMember(teamId, userId, payload) {
+    const response = await axiosClient.put(`/teams/${teamId}/members/${userId}`, payload);
+    return normalizeMember(unwrapData(response));
+=======
+    return response?.data?.data || { userId: payload.userId, role: 'MEMBER' };
+>>>>>>> Stashed changes
   },
 
   async removeMember(teamId, userId) {
-    seedCache();
-    try {
-      const response = await axiosClient.delete(`/teams/${teamId}/members/${userId}`);
-      const current = teamCache.get(teamId);
-      if (current) {
-        const members = (current.members || []).filter((member) => member.userId !== userId);
-        teamCache.set(teamId, { ...current, members, memberCount: members.length });
-      }
-      return response?.data?.data || { teamId, userId, removed: true };
-    } catch (error) {
-      const current = teamCache.get(teamId);
-      if (current) {
-        const members = (current.members || []).filter((member) => member.userId !== userId);
-        teamCache.set(teamId, { ...current, members, memberCount: members.length });
-      }
-      return { teamId, userId, removed: true };
-    }
+    const response = await axiosClient.delete(`/teams/${teamId}/members/${userId}`);
+<<<<<<< Updated upstream
+    return unwrapData(response) || { teamId, userId, removed: true };
+  },
+
+  async assignLead(teamId, userId) {
+    const response = await axiosClient.patch(`/teams/${teamId}/lead`, { userId });
+    return normalizeTeam(unwrapData(response));
+=======
+    return response?.data?.data || { teamId, userId, removed: true };
+>>>>>>> Stashed changes
   },
 };
 

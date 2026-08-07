@@ -1,0 +1,330 @@
+/* ── Team Management styles ─────────────────────────────────────────────────── */
+
+/* Back navigation — sits above the hero panel, left-aligned, clearly visible */
+.team-back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  text-decoration: none;
+  width: fit-content;
+}
+.team-back-nav:hover {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+  transform: translateX(-2px);
+}
+
+/* Field-level validation */
+.field-error {
+  color: var(--danger, #ef4444);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+.required-mark {
+  color: var(--danger, #ef4444);
+}
+
+/* Toast notifications */
+.toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  animation: toast-in 0.25s ease;
+  pointer-events: all;
+}
+.toast-success { background-color: #16a34a; }
+.toast-error   { background-color: #dc2626; }
+.toast-info    { background-color: #2563eb; }
+.toast-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  margin-left: auto;
+  padding: 0 2px;
+  opacity: 0.8;
+}
+.toast-dismiss:hover { opacity: 1; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* ── Team directory (list page) ─────────────────────────────────────────────── */
+.team-directory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.team-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.team-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.team-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.team-card-title strong {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.team-card-desc {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-card-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.team-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Action buttons — fixed width so they line up in a neat row */
+.team-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.team-card-actions .secondary-button,
+.team-card-actions .danger-button {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 10px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* ── Member manager ─────────────────────────────────────────────────────────── */
+.member-add-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 0 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.member-add-form .field-group {
+  flex: 1;
+  min-width: 140px;
+}
+.member-add-form .input-wrap {
+  height: 42px;
+}
+.member-add-form .input-wrap select {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  width: 100%;
+}
+.member-add-btn {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+/* Member rows */
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.04);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.member-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.member-row-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.member-role-select {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 0 10px;
+  font-size: 0.82rem;
+  min-width: 130px;
+}
+.member-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.06);
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+.member-remove-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.14);
+}
+.member-remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────────── */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.pagination-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.pagination-bar button:hover:not(:disabled) {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+}
+.pagination-bar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagination-bar span {
+  font-size: 0.86rem;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .team-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .team-card-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .team-card-actions .secondary-button,
+  .team-card-actions .danger-button {
+    flex: 1;
+    min-width: 80px;
+  }
+  .member-add-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .member-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .member-row {
+    flex-wrap: wrap;
+  }
+}

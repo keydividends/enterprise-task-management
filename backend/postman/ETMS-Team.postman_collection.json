@@ -1,6 +1,7 @@
 {
   "info": {
     "name": "ETMS Team Management",
+    "description": "Team Management module API collection. Covers team CRUD, member management, lifecycle, and summary/project endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -8,13 +9,16 @@
       "name": "List teams",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer mock-token" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/teams",
+          "raw": "{{baseUrl}}/api/v1/teams?search=&page=1&pageSize=20",
           "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "teams"]
+          "path": ["api", "v1", "teams"],
+          "query": [
+            { "key": "search", "value": "", "description": "Search by name or description" },
+            { "key": "page", "value": "1" },
+            { "key": "pageSize", "value": "20" }
+          ]
         }
       }
     },
@@ -41,9 +45,38 @@
       "name": "Get team details",
       "request": {
         "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform"]
+        }
+      }
+    },
+    {
+      "name": "Update team",
+      "request": {
+        "method": "PATCH",
         "header": [
-          { "key": "Authorization", "value": "Bearer mock-token" }
+          { "key": "Authorization", "value": "Bearer mock-token" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Platform Engineering Updated\",\n  \"description\": \"Updated description\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform"]
+        }
+      }
+    },
+    {
+      "name": "Delete team",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
         "url": {
           "raw": "{{baseUrl}}/api/v1/teams/team-platform",
           "host": ["{{baseUrl}}"],
@@ -55,9 +88,7 @@
       "name": "Get team summary",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer mock-token" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
         "url": {
           "raw": "{{baseUrl}}/api/v1/teams/team-platform/summary",
           "host": ["{{baseUrl}}"],
@@ -66,12 +97,22 @@
       }
     },
     {
+      "name": "Get team projects",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "projects"]
+        }
+      }
+    },
+    {
       "name": "List team members",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer mock-token" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
         "url": {
           "raw": "{{baseUrl}}/api/v1/teams/team-platform/members",
           "host": ["{{baseUrl}}"],
@@ -89,7 +130,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"userId\": \"mock-alex\"\n}"
+          "raw": "{\n  \"userId\": \"mock-alex\",\n  \"role\": \"DEVELOPER\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/v1/teams/team-platform/members",
@@ -99,21 +140,103 @@
       }
     },
     {
-      "name": "Get team projects",
+      "name": "Update team member role",
       "request": {
-        "method": "GET",
+        "method": "PUT",
         "header": [
-          { "key": "Authorization", "value": "Bearer mock-token" }
+          { "key": "Authorization", "value": "Bearer mock-token" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"QA_TESTER\"\n}"
+        },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/teams/team-platform/projects",
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/members/mock-alex",
           "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "teams", "team-platform", "projects"]
+          "path": ["api", "v1", "teams", "team-platform", "members", "mock-alex"]
+        }
+      }
+    },
+    {
+      "name": "Remove team member",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/members/mock-alex",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "members", "mock-alex"]
+        }
+      }
+    },
+    {
+      "name": "Assign team lead",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"mock-maya\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/lead",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "lead"]
+        }
+      }
+    },
+    {
+      "name": "Deactivate team",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/deactivate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "deactivate"]
+        }
+      }
+    },
+    {
+      "name": "Activate team",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer mock-token" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams/team-platform/activate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams", "team-platform", "activate"]
+        }
+      }
+    },
+    {
+      "name": "Permission denied (member token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer mock-member-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Should Fail\",\n  \"leadId\": \"mock-maya\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/teams",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "teams"]
         }
       }
     }
   ],
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5000" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    }
   ]
 }

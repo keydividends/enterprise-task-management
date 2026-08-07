@@ -1064,6 +1064,59 @@ html[data-theme='dark'] .divider span {
   gap: 6px;
 }
 
+/* ── Team Management ───────────────────────────────────────────────────────── */
+
+.team-form {
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
+}
+
+.team-form .input-wrap {
+  height: 50px;
+}
+
+.team-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  font-weight: 700;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+}
+
+.danger-button.compact {
+  width: auto;
+  padding: 0 14px;
+}
+
+.danger-button:hover {
+  background: rgba(239, 68, 68, 0.16);
+  transform: translateY(-1px);
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.team-row-actions {
+  justify-content: flex-end;
+}
+
 .timeline-item {
   align-items: flex-start;
 }

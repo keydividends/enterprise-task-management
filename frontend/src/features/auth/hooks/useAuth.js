@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  useEffect(() => {
+useEffect(() => {
     const bootstrapCurrentUser = async () => {
       if (!token) {
         setLoading(false);
@@ -35,6 +35,9 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const currentUser = await authService.getCurrentUser();
+        // Always refresh the stored user from the backend so the UI reflects
+        // the latest role and permissions (avoids stale-session bugs where
+        // action buttons such as Create team / Manage members are hidden).
         setUser(currentUser);
       } catch (error) {
         setToken(null);
@@ -45,6 +48,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     bootstrapCurrentUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
