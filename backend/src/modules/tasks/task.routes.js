@@ -7,6 +7,7 @@ const taskRouter = express.Router();
 const projectLabelRouter = express.Router({ mergeParams: true });
 const projectTaskRouter = express.Router({ mergeParams: true });
 const checklistItemRouter = express.Router({ mergeParams: true });
+const checklistRouter = express.Router();
 
 // ---- /api/v1/tasks ----------------------------------------------------------
 
@@ -51,6 +52,12 @@ projectTaskRouter.get("/", authorize("TASK_VIEW"), (req, res, next) => {
   return taskController.listTasks(req, res, next);
 });
 
+// ---- /api/v1/checklists/:checklistId (edit / delete checklist) --------------
+
+checklistRouter.use(authenticate);
+checklistRouter.patch("/:checklistId", authorize("TASK_UPDATE"), taskController.updateChecklist);
+checklistRouter.delete("/:checklistId", authorize("TASK_UPDATE"), taskController.deleteChecklist);
+
 // ---- /api/v1/checklists/:checklistId/items ----------------------------------
 
 checklistItemRouter.use(authenticate);
@@ -59,4 +66,4 @@ checklistItemRouter.put("/:itemId", authorize("TASK_UPDATE"), taskController.upd
 checklistItemRouter.patch("/:itemId/complete", authorize("TASK_UPDATE"), taskController.completeChecklistItem);
 checklistItemRouter.delete("/:itemId", authorize("TASK_UPDATE"), taskController.deleteChecklistItem);
 
-module.exports = { taskRouter, projectLabelRouter, projectTaskRouter, checklistItemRouter };
+module.exports = { taskRouter, projectLabelRouter, projectTaskRouter, checklistItemRouter, checklistRouter };

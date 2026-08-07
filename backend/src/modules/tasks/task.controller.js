@@ -178,6 +178,24 @@ const listChecklists = async (req, res, next) => {
   }
 };
 
+const updateChecklist = async (req, res, next) => {
+  try {
+    const checklist = await taskService.updateChecklist(req.params.checklistId, req.body, getUserContext(req));
+    return sendJson(res, 200, "Checklist updated", checklist);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteChecklist = async (req, res, next) => {
+  try {
+    const result = await taskService.deleteChecklist(req.params.checklistId, getUserContext(req));
+    return sendJson(res, 200, "Checklist deleted", result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const addChecklistItem = async (req, res, next) => {
   try {
     const item = await taskService.addChecklistItem(req.params.checklistId, req.body, getUserContext(req));
@@ -241,8 +259,10 @@ module.exports = {
   createLabel,
   addLabelToTask,
   removeLabelFromTask,
-  createChecklist,
+createChecklist,
   listChecklists,
+  updateChecklist,
+  deleteChecklist,
   addChecklistItem,
   updateChecklistItem,
   completeChecklistItem,

@@ -31,6 +31,8 @@ const TASK_SORT_FIELDS = [
 
 // Allowlisted list/filter fields.
 // NOTE: "assigneeId" is the frontend/API query param; it maps to "primaryAssigneeId" in MongoDB.
+// Both "assigneeId" (documented client param) and "primaryAssigneeId" (raw DB field) are
+// allowlisted so the service's buildFilter() case can normalize assigneeId -> primaryAssigneeId.
 const TASK_FILTER_FIELDS = [
   "search",
   "projectId",
@@ -39,6 +41,7 @@ const TASK_FILTER_FIELDS = [
   "status",
   "priority",
   "type",
+  "assigneeId",
   "primaryAssigneeId",
   "reporterId",
   "labelId",

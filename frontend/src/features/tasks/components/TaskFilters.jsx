@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { TASK_STATUSES, TASK_PRIORITIES, TASK_TYPES } from '../taskConstants';
-import { MOCK_PROJECTS, MOCK_SPRINTS, getProjectMembers } from '../hooks/useTasks';
+import { MOCK_PROJECTS, fetchProjects, fetchProjectMembers, fetchProjectSprints } from '../hooks/useTasks';
 
 const defaultFilters = {
   search: '',
@@ -13,11 +13,26 @@ const defaultFilters = {
   assigneeId: '',
 };
 
-const TaskFilters = ({ initialFilters = {}, onChange, projects = MOCK_PROJECTS }) => {
+const TaskFilters = ({ initialFilters = {}, onChange }) => {
   const [filters, setFilters] = useState({ ...defaultFilters, ...initialFilters });
+  const [projects, setProjects] = useState(MOCK_PROJECTS);
+  const [members, setMembers] = useState([]);
+  const [sprints, setSprints] = useState([]);
+
+  useEffect(() => {
+    fetchProjects().then(setProjects);
+  }, []);
+
+  useEffect(() => {
+    if (!filters.projectId) { setMembers([]); setSprints([]); return; }
+    fetchProjectMembers(filters.projectId).then(setMembers);
+    fetchProjectSprints(filters.projectId).then(setSprints);
+  }, [filters.projectId]);
 
   const update = (key, value) => {
     const next = { ...filters, [key]: value };
+    // Reset sprint/assignee when project changes
+    if (key === 'projectId') { next.sprintId = ''; next.assigneeId = ''; }
     setFilters(next);
     if (onChange) onChange(next);
   };
@@ -26,9 +41,6 @@ const TaskFilters = ({ initialFilters = {}, onChange, projects = MOCK_PROJECTS }
     setFilters(defaultFilters);
     if (onChange) onChange(defaultFilters);
   };
-
-  const projectMembers = filters.projectId ? getProjectMembers(filters.projectId) : [];
-  const projectSprints = filters.projectId ? MOCK_SPRINTS.filter((s) => s.projectId === filters.projectId) : [];
 
   return (
     <div className="task-filters glass-card">
@@ -73,14 +85,14 @@ const TaskFilters = ({ initialFilters = {}, onChange, projects = MOCK_PROJECTS }
 
         <select value={filters.sprintId} onChange={(e) => update('sprintId', e.target.value)} disabled={!filters.projectId}>
           <option value="">All sprints</option>
-          {projectSprints.map((s) => (
+          {sprints.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
 
         <select value={filters.assigneeId} onChange={(e) => update('assigneeId', e.target.value)} disabled={!filters.projectId}>
           <option value="">Any assignee</option>
-          {projectMembers.map((u) => (
+          {members.map((u) => (
             <option key={u.id} value={u.id}>{u.fullName}</option>
           ))}
         </select>

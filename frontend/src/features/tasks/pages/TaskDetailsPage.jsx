@@ -21,11 +21,22 @@ import taskService from '../services/taskService';
 import TaskStatusBadge from '../components/TaskStatusBadge';
 import ChecklistPanel from '../components/ChecklistPanel';
 import { PRIORITY_LABELS, TYPE_LABELS, STATUS_LABELS, TASK_STATUSES, TASK_PRIORITIES } from '../taskConstants';
-import { getUserName, getProjectMembers } from '../hooks/useTasks';
+import { MOCK_USERS, fetchProjectMembers } from '../hooks/useTasks';
+import axiosClient from '../../../api/axiosClient';
 
 const formatDate = (date) => {
   if (!date) return '—';
   return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// Resolve a userId to a display name using a pre-built userMap.
+// Falls back to MOCK_USERS, then to 'Unknown'.
+const resolveName = (userId, userMap) => {
+  if (!userId) return 'Unassigned';
+  const str = String(userId);
+  if (userMap[str]) return userMap[str];
+  const mock = MOCK_USERS.find((u) => u.id === str);
+  return mock ? mock.fullName : 'Unknown';
 };
 
 const TaskDetailsPage = () => {
@@ -35,6 +46,8 @@ const TaskDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [userMap, setUserMap] = useState({});
 
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -49,15 +62,44 @@ const TaskDetailsPage = () => {
       const data = await taskService.getTask(taskId);
       setTask(data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to load task.');
+      const status = err.response?.status;
+      const code = err.response?.data?.code;
+      if (status === 403 || code === 'PERMISSION_DENIED') {
+        setError('You do not have permission to view this task.');
+      } else if (status === 404 || code === 'TASK_NOT_FOUND') {
+        setError('Task not found.');
+      } else if (status >= 500 || !err.response) {
+        setError('Unable to load task. Please try again.');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to load task.');
+      }
     } finally {
       setLoading(false);
     }
   }, [taskId]);
 
+  // Build a userId -> fullName map from the real users API for reporter/assignee display.
+  useEffect(() => {
+    axiosClient.get('/users', { params: { pageSize: 200 } })
+      .then((res) => {
+        const users = res.data?.data?.items || res.data?.data || res.data?.items || [];
+        const map = {};
+        users.forEach((u) => {
+          const uid = u.id || u._id;
+          if (uid) map[String(uid)] = u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        });
+        setUserMap(map);
+      })
+      .catch(() => { /* silently fall back to mock */ });
+  }, []);
+
   useEffect(() => {
     loadTask();
   }, [loadTask]);
+
+  useEffect(() => {
+    if (task?.projectId) fetchProjectMembers(task.projectId).then(setMembers);
+  }, [task?.projectId]);
 
   const showToast = (message) => {
     setToast(message);
@@ -133,10 +175,12 @@ const TaskDetailsPage = () => {
   if (error) return <div className="form-banner danger">{error}</div>;
   if (!task) return <div className="empty-state glass-card">Task not found.</div>;
 
-  const members = getProjectMembers(task.projectId);
-  const labels = task.labels || [];
+const labels = task.labels || [];
   const checklists = task.checklists || [];
   const history = task.history || [];
+
+  // Resolve a userId to a display name, preferring the real users map.
+  const getUserName = (userId) => resolveName(userId, userMap);
 
   return (
     <div className="task-detail-page">

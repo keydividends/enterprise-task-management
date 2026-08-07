@@ -2,105 +2,123 @@
 // Integration contracts for the Task module.
 //
 // The Task module consumes Users / Projects / Sprints / Epics / ProjectMember
-// data. Since those modules are being built in parallel, this file exposes a
-// stable contract that:
-//   1. Uses the real Mongoose model when the owning module has registered it.
-//   2. Falls back to `task.mockData.js` until that module is merged.
+// data. This file exposes a stable contract that delegates to the REAL owning
+// modules' repositories (read-only lookups) so the task module never reaches
+// into another module's internal files or mutates their data.
+//
+//   - Projects / ProjectMember  -> projects module repository
+//   - Users                     -> users module repository
+//   - Sprints / Epics           -> mock fallback until those modules exist
 //
 // Services should only ever call these contract functions - never reach into
 // another module's internal files.
 // ---------------------------------------------------------------------------
 
-const mongoose = require("mongoose");
+const projectRepository = require("../projects/project.repository");
+const userRepository = require("../users/user.repository");
 const mock = require("./task.mockData");
-
-const modelExists = (name) => Boolean(mongoose.models[name]);
-
-const ensureObjectId = (value) => (mongoose.Types.ObjectId.isValid(value) ? new mongoose.Types.ObjectId(value) : value);
 
 // --- Workspace ---------------------------------------------------------------
 
 const getWorkspaceId = async (context = {}) => context.workspaceId || mock.WORKSPACE_ID;
 
-// Helper: prefer the real model, but fall back to the mock lookup when the real
-// model returns no result. This keeps the parallel-module contract working even
-// once an owning module registers its model while mock IDs are still in use.
-const findRealOrMock = async (modelName, queryFn, mockFn) => {
-  if (modelExists(modelName)) {
+// --- Projects ----------------------------------------------------------------
+
+// Look up a project through the real projects module repository. If the real
+// module is not connected (no DB / no seeded data) it falls back to the mock
+// project list so test/mock flows keep working during integration.
+const findProjectById = async (projectId) => {
+  if (!projectId) return null;
+  try {
+    const project = await projectRepository.findProjectById(projectId);
+    if (project) return project;
+  } catch {
+    /* fall through to mock */
+  }
+  return mock.PROJECTS.find((p) => String(p.id) === String(projectId)) || null;
+};
+
+// --- Users -------------------------------------------------------------------
+
+const findUserById = async (userId) => {
+  if (!userId) return null;
+  try {
+    const user = await userRepository.findById(String(userId));
+    if (user) return user;
+  } catch {
+    /* fall through to mock */
+  }
+  return mock.USERS.find((u) => String(u.id) === String(userId)) || null;
+};
+
+// List users for a project through the real projects + users modules. Falls
+// back to mock members for mock project IDs.
+const listProjectUsers = async (projectId) => {
+  if (projectId) {
     try {
-      const result = await queryFn();
-      // If the real model matched, use it. Otherwise fall through to mock so
-      // mock reference IDs still resolve until the owning module is merged.
-      if (result) return result;
+      const { items } = await projectRepository.listProjectMembers({ projectId, page: 1, pageSize: 200 });
+      if (items && items.length) {
+        const userIds = items.map((m) => m.userId);
+        const users = await Promise.all(
+          userIds.map(async (uid) => {
+            const u = await userRepository.findById(uid);
+            return u
+              ? { id: String(u.id || u._id), firstName: u.firstName, lastName: u.lastName, email: u.email, fullName: `${u.firstName} ${u.lastName || ""}`.trim() }
+              : null;
+          })
+        );
+        const resolved = users.filter(Boolean);
+        if (resolved.length) return resolved;
+      }
     } catch {
       /* fall through to mock */
     }
   }
-  return mockFn();
-};
-
-// --- Projects ----------------------------------------------------------------
-
-const findProjectById = async (projectId) =>
-  findRealOrMock(
-    "Project",
-    () => mongoose.model("Project").findOne({ _id: projectId, isDeleted: false }).lean(),
-    () => mock.PROJECTS.find((p) => String(p.id) === String(projectId)) || null
-  );
-
-// --- Users -------------------------------------------------------------------
-
-const findUserById = async (userId) =>
-  findRealOrMock(
-    "User",
-    () => mongoose.model("User").findOne({ _id: userId, isDeleted: false }).lean(),
-    () => mock.USERS.find((u) => String(u.id) === String(userId)) || null
-  );
-
-const listProjectUsers = async (projectId) => {
   const memberIds = mock.PROJECT_MEMBERS[String(projectId)] || [];
   return mock.USERS.filter((u) => memberIds.includes(String(u.id)));
 };
 
-// --- Project membership -------------------------------------------------------
+// --- Project membership ------------------------------------------------------
 
 const isProjectMember = async (projectId, userId) => {
-  if (modelExists("ProjectMember")) {
-    try {
-      const member = await mongoose
-        .model("ProjectMember")
-        .findOne({ projectId: ensureObjectId(projectId), userId: ensureObjectId(userId), status: "ACTIVE" })
-        .lean();
-      if (member) return true;
-    } catch {
-      /* fall through to mock */
-    }
+  if (!projectId || !userId) return false;
+  try {
+    const member = await projectRepository.findProjectMember(projectId, userId);
+    if (member) return true;
+  } catch {
+    /* fall through to mock */
   }
-  // Mock fallback: ProjectMember module not yet built.
-  // Any authenticated user is granted access to mock projects.
-  const mockProjectIds = Object.keys(mock.PROJECT_MEMBERS);
-  if (mockProjectIds.includes(String(projectId))) return Boolean(userId);
-  const members = mock.PROJECT_MEMBERS[String(projectId)] || [];
-  return members.some((id) => String(id) === String(userId));
+
+  // Project owner/manager check: users who created or manage the project are
+  // considered authorized members even if not in the member collection.
+  try {
+    const project = await projectRepository.findProjectById(projectId);
+    if (project) {
+      const isCreator = project.createdBy && String(project.createdBy) === String(userId);
+      const isManager = project.projectManagerId && String(project.projectManagerId) === String(userId);
+      if (isCreator || isManager) return true;
+    }
+  } catch {
+    /* fall through to mock */
+  }
+
+  // Mock fallback for mock project IDs.
+  const members = mock.PROJECT_MEMBERS[String(projectId)];
+  if (members) return members.some((id) => String(id) === String(userId));
+  return false;
 };
 
 // --- Sprints -----------------------------------------------------------------
+// No Sprint module exists yet; keep mock fallback until one is merged.
 
 const findSprintById = async (sprintId) =>
-  findRealOrMock(
-    "Sprint",
-    () => mongoose.model("Sprint").findOne({ _id: sprintId, isDeleted: false }).lean(),
-    () => mock.SPRINTS.find((s) => String(s.id) === String(sprintId)) || null
-  );
+  mock.SPRINTS.find((s) => String(s.id) === String(sprintId)) || null;
 
 // --- Epics -------------------------------------------------------------------
+// No Epic module exists yet; keep mock fallback until one is merged.
 
 const findEpicById = async (epicId) =>
-  findRealOrMock(
-    "Epic",
-    () => mongoose.model("Epic").findOne({ _id: epicId, isDeleted: false }).lean(),
-    () => mock.EPICS.find((e) => String(e.id) === String(epicId)) || null
-  );
+  mock.EPICS.find((e) => String(e.id) === String(epicId)) || null;
 
 module.exports = {
   getWorkspaceId,
@@ -111,4 +129,3 @@ module.exports = {
   findSprintById,
   findEpicById,
 };
-

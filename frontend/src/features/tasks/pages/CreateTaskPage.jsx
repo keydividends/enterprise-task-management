@@ -7,12 +7,26 @@ import taskService from '../services/taskService';
 const CreateTaskPage = () => {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (payload) => {
     setSaving(true);
+    setError(null);
     try {
       const task = await taskService.createTask(payload);
       navigate(`/tasks/${task.id}`);
+    } catch (err) {
+      const code = err.response?.data?.code;
+      const status = err.response?.status;
+      if (code === 'PROJECT_ACCESS_DENIED' || status === 403) {
+        setError('You do not have access to this project.');
+      } else if (code === 'PROJECT_NOT_FOUND' || status === 404) {
+        setError('Project not found.');
+      } else if (status >= 500 || !err.response) {
+        setError('Unable to verify project access. Please try again.');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to create task.');
+      }
     } finally {
       setSaving(false);
     }
@@ -29,6 +43,8 @@ const CreateTaskPage = () => {
           <ArrowLeft size={16} /> Back to tasks
         </button>
       </div>
+
+      {error && <div className="form-banner danger">{error}</div>}
 
       <div className="glass-card task-form-card">
         <div className="form-card-heading">

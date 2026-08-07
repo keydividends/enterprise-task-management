@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { Task, TaskAssignment, Label, TaskLabel, Checklist, ChecklistItem, TaskHistory } = require("./task.model");
 
 // ── Task ──────────────────────────────────────────────────────────────────────
@@ -9,39 +10,112 @@ const getNextTaskNumber = async (projectId) => {
 
 const createTask = (data) => Task.create(data);
 
-const findTaskById = (taskId, workspaceId) =>
-  Task.findOne({ _id: taskId, workspaceId, isDeleted: false });
+const findTaskById = (taskId, workspaceId) => {
+  // If workspaceId is null/undefined (e.g. context missing it), find by taskId
+  // only so the task is still accessible. Workspace isolation is enforced at
+  // the service layer via assertProjectAccess when mutating.
+  const filter = { _id: taskId, isDeleted: false };
+  if (workspaceId) filter.workspaceId = workspaceId;
+  return Task.findOne(filter);
+};
 
 const findTasks = (filter, { skip = 0, limit = 20, sort = { createdAt: -1 } } = {}) =>
   Task.find({ ...filter, isDeleted: false }).sort(sort).skip(skip).limit(limit).lean();
 
+// Priority rank map for aggregation-based sorting.
+const PRIORITY_RANK = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+
+// ObjectId fields on the Task schema that need casting when used in an
+// aggregation $match (unlike .find(), aggregate() does not auto-cast strings).
+const OBJECTID_FIELDS = [
+  'workspaceId', 'projectId', 'sprintId', 'epicId', 'reporterId',
+  'primaryAssigneeId', 'parentTaskId', 'createdBy', 'updatedBy', '_id',
+];
+
+const castFilterForAggregation = (filter) => {
+  const cast = {};
+  for (const [key, value] of Object.entries(filter)) {
+    if (OBJECTID_FIELDS.includes(key) && value !== null && value !== undefined) {
+      // Handle both plain string IDs and $in arrays.
+      if (value && typeof value === 'object' && value.$in) {
+        cast[key] = { $in: value.$in.map((v) => mongoose.Types.ObjectId.isValid(v) ? new mongoose.Types.ObjectId(v) : v) };
+      } else if (typeof value === 'string' && mongoose.Types.ObjectId.isValid(value)) {
+        cast[key] = new mongoose.Types.ObjectId(value);
+      } else {
+        cast[key] = value;
+      }
+    } else {
+      cast[key] = value;
+    }
+  }
+  return cast;
+};
+
+// Used when sortBy is 'priority' (needs numeric rank) or 'dueDate' (nulls last).
+const findTasksAggregated = (filter, { skip = 0, limit = 20, sortField, sortDir } = {}) => {
+  const matchFilter = castFilterForAggregation({ ...filter, isDeleted: false });
+  const pipeline = [
+    { $match: matchFilter },
+  ];
+
+  if (sortField === 'priority') {
+    pipeline.push({
+      $addFields: {
+        _sortRank: {
+          $switch: {
+            branches: Object.entries(PRIORITY_RANK).map(([k, v]) => ({ case: { $eq: ['$priority', k] }, then: v })),
+            default: 0,
+          },
+        },
+      },
+    });
+    pipeline.push({ $sort: { _sortRank: sortDir, createdAt: -1 } });
+  } else if (sortField === 'dueDate') {
+    // Nulls last: push tasks without a due date to the end regardless of direction.
+    pipeline.push({
+      $addFields: {
+        _dueDateNull: { $cond: [{ $eq: ['$dueDate', null] }, 1, 0] },
+      },
+    });
+    pipeline.push({ $sort: { _dueDateNull: 1, dueDate: sortDir } });
+  }
+
+  pipeline.push({ $skip: skip });
+  pipeline.push({ $limit: limit });
+
+  return Task.aggregate(pipeline);
+};
+
 const countTasks = (filter) => Task.countDocuments({ ...filter, isDeleted: false });
+
+const buildWorkspaceFilter = (workspaceId) => (workspaceId ? { workspaceId } : {});
 
 const updateTask = (taskId, workspaceId, update) =>
   Task.findOneAndUpdate(
-    { _id: taskId, workspaceId, isDeleted: false },
+    { _id: taskId, ...buildWorkspaceFilter(workspaceId), isDeleted: false },
     { ...update },
     { new: true, runValidators: true }
   );
 
 const softDeleteTask = (taskId, workspaceId, deletedBy) =>
   Task.findOneAndUpdate(
-    { _id: taskId, workspaceId, isDeleted: false },
+    { _id: taskId, ...buildWorkspaceFilter(workspaceId), isDeleted: false },
     { isDeleted: true, deletedAt: new Date(), deletedBy },
     { new: true }
   );
 
 const restoreTask = (taskId, workspaceId) =>
   Task.findOneAndUpdate(
-    { _id: taskId, workspaceId, isDeleted: true },
+    { _id: taskId, ...buildWorkspaceFilter(workspaceId), isDeleted: true },
     { isDeleted: false, deletedAt: null, deletedBy: null },
     { new: true }
   );
 
-const findBoardTasks = (projectId, workspaceId, extraFilter = {}) =>
-  Task.find({ projectId, workspaceId, isDeleted: false, ...extraFilter })
-    .sort({ position: 1, createdAt: -1 })
-    .lean();
+const findBoardTasks = (projectId, workspaceId, extraFilter = {}) => {
+  const filter = { projectId, isDeleted: false, ...extraFilter };
+  if (workspaceId) filter.workspaceId = workspaceId;
+  return Task.find(filter).sort({ position: 1, createdAt: -1 }).lean();
+};
 
 // ── Task Assignment ───────────────────────────────────────────────────────────
 
@@ -158,6 +232,7 @@ module.exports = {
   createTask,
   findTaskById,
   findTasks,
+  findTasksAggregated,
   countTasks,
   updateTask,
   softDeleteTask,

@@ -1,11 +1,37 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Pencil, Plus, Trash2 } from 'lucide-react';
 import taskService from '../services/taskService';
 
 const ChecklistPanel = ({ taskId, checklists = [], onChange }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newItems, setNewItems] = useState({});
   const [adding, setAdding] = useState(false);
+  const [editingChecklistId, setEditingChecklistId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+
+  const handleRenameChecklist = async () => {
+    const title = editTitle.trim();
+    if (!title || !editingChecklistId) return;
+    try {
+      const updated = await taskService.updateChecklist(editingChecklistId, title);
+      const next = checklists.map((cl) => (cl.id === editingChecklistId ? { ...cl, ...updated } : cl));
+      setEditingChecklistId(null);
+      setEditTitle('');
+      if (onChange) onChange(next);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDeleteChecklist = async (checklistId) => {
+    try {
+      await taskService.deleteChecklist(checklistId);
+      const next = checklists.filter((cl) => cl.id !== checklistId);
+      if (onChange) onChange(next);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleAddChecklist = async () => {
     const title = newTitle.trim();
@@ -98,8 +124,52 @@ const ChecklistPanel = ({ taskId, checklists = [], onChange }) => {
         return (
           <div key={checklist.id} className="checklist-block">
             <div className="checklist-head">
-              <strong>{checklist.title}</strong>
-              <span className="checklist-progress">{done}/{items.length}</span>
+              {editingChecklistId === checklist.id ? (
+                <div className="checklist-rename-row">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    autoFocus
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameChecklist();
+                      if (e.key === 'Escape') setEditingChecklistId(null);
+                    }}
+                  />
+                  <button type="button" className="primary-button compact" onClick={handleRenameChecklist}>
+                    Save
+                  </button>
+                  <button type="button" className="ghost-button compact" onClick={() => setEditingChecklistId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <strong>{checklist.title}</strong>
+                  <span className="checklist-tools">
+                    <span className="checklist-progress">{done}/{items.length}</span>
+                    <button
+                      type="button"
+                      className="checklist-edit"
+                      onClick={() => {
+                        setEditingChecklistId(checklist.id);
+                        setEditTitle(checklist.title);
+                      }}
+                      title="Rename checklist"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="checklist-delete"
+                      onClick={() => handleDeleteChecklist(checklist.id)}
+                      title="Delete checklist"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="checklist-items">

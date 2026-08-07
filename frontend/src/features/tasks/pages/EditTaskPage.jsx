@@ -45,9 +45,12 @@ const EditTaskPage = () => {
 
   const handleSubmit = async (payload) => {
     setSaving(true);
+    setError(null);
     try {
       await taskService.updateTask(taskId, payload);
       navigate(`/tasks/${taskId}`);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to update task.');
     } finally {
       setSaving(false);
     }
@@ -72,6 +75,7 @@ const EditTaskPage = () => {
         <div className="form-card-heading">
           <strong>Edit task</strong>
         </div>
+        {error && <div className="form-banner danger">{error}</div>}
         <TaskForm initialValues={initialValues} submitLabel="Save changes" loading={saving} onSubmit={handleSubmit} />
       </div>
     </div>

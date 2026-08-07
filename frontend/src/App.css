@@ -1300,6 +1300,18 @@ html[data-theme='dark'] .divider span {
   font-size: 0.78rem;
 }
 
+.sort-btn-active {
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.sort-direction-arrow {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
 .tasks-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

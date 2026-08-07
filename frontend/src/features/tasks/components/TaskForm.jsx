@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TASK_STATUSES, TASK_PRIORITIES, TASK_TYPES, STATUS_LABELS, PRIORITY_LABELS, TYPE_LABELS } from '../taskConstants';
-import { MOCK_PROJECTS, MOCK_SPRINTS, getProjectMembers } from '../hooks/useTasks';
+import { MOCK_PROJECTS, MOCK_SPRINTS, fetchProjects, fetchProjectMembers, fetchProjectSprints } from '../hooks/useTasks';
 import { getNetWorkError } from '../utils/formErrors';
 
 const defaultValues = {
@@ -20,7 +20,6 @@ const defaultValues = {
   dueDate: '',
 };
 
-// Stable reference so the default prop value never changes between renders.
 const EMPTY_INITIAL = {};
 
 const hasDifferences = (prev, next) =>
@@ -30,20 +29,30 @@ const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', on
   const navigate = useNavigate();
   const [values, setValues] = useState({ ...defaultValues, ...initialValues });
   const [errors, setErrors] = useState({});
+  const [projects, setProjects] = useState(MOCK_PROJECTS);
+  const [members, setMembers] = useState([]);
+  const [sprints, setSprints] = useState([]);
 
+  // Load real projects once on mount.
   useEffect(() => {
-    // Only update state when initialValues actually introduces a change, so the
-    // effect does not re-trigger on every render (prevents infinite update loop).
+    fetchProjects().then((list) => setProjects(list));
+  }, []);
+
+  // Reload members and sprints whenever the selected project changes.
+  useEffect(() => {
+    if (!values.projectId) { setMembers([]); setSprints([]); return; }
+    fetchProjectMembers(values.projectId).then(setMembers);
+    fetchProjectSprints(values.projectId).then(setSprints);
+  }, [values.projectId]);
+
+  // Sync initialValues into form state when they change (e.g. edit page load).
+  useEffect(() => {
+    if (Object.keys(initialValues).length === 0) return;
     setValues((prev) => {
-      if (Object.keys(initialValues).length === 0 || !hasDifferences(prev, initialValues)) {
-        return prev;
-      }
+      if (!hasDifferences(prev, initialValues)) return prev;
       return { ...defaultValues, ...prev, ...initialValues };
     });
   }, [initialValues]);
-
-  const projectMembers = values.projectId ? getProjectMembers(values.projectId) : [];
-  const projectSprints = values.projectId ? MOCK_SPRINTS.filter((s) => s.projectId === values.projectId) : [];
 
   const setField = (key, value) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -60,7 +69,6 @@ const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', on
       nextErrors.storyPoints = 'Story points must be a non-negative number.';
     }
     setErrors(nextErrors);
-
     if (Object.keys(nextErrors).length > 0) return;
 
     const payload = {
@@ -124,7 +132,7 @@ const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', on
             }}
           >
             <option value="">Select project...</option>
-            {MOCK_PROJECTS.map((p) => (
+            {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
@@ -171,7 +179,7 @@ const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', on
             disabled={!values.projectId}
           >
             <option value="">Unassigned</option>
-            {projectMembers.map((u) => (
+            {members.map((u) => (
               <option key={u.id} value={u.id}>{u.fullName}</option>
             ))}
           </select>
@@ -186,7 +194,7 @@ const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', on
             disabled={!values.projectId}
           >
             <option value="">No sprint</option>
-            {projectSprints.map((s) => (
+            {sprints.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>

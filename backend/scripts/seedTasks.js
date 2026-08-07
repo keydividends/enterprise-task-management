@@ -31,14 +31,21 @@ const LABELS = [
 ];
 
 const SEED_TASKS = [
-  { title: "Design Kanban board layout", type: "IMPROVEMENT", status: "TODO", priority: "MEDIUM", storyPoints: 3, sprintId: SPRINT.id },
-  { title: "Implement task list API filters", type: "STORY", status: "IN_PROGRESS", priority: "HIGH", storyPoints: 5, sprintId: SPRINT.id },
-  { title: "Fix board drag-and-drop glitch", type: "BUG", status: "QA", priority: "CRITICAL", storyPoints: 2, sprintId: SPRINT.id },
-  { title: "Add label color picker", type: "TASK", status: "BACKLOG", priority: "LOW", storyPoints: 1, sprintId: SPRINT.id },
-  { title: "Unit test status transitions", type: "STORY", status: "IN_REVIEW", priority: "MEDIUM", storyPoints: 3, sprintId: SPRINT.id },
-  { title: "Load balancing for report service", type: "IMPROVEMENT", status: "DONE", priority: "HIGH", storyPoints: 8, sprintId: SPRINT.id },
-  { title: "Checklist item completion sync", type: "BUG", status: "TODO", priority: "MEDIUM", storyPoints: 2, sprintId: SPRINT.id },
-  { title: "Migrate tasks to taskKey format", type: "TASK", status: "DONE", priority: "LOW", storyPoints: 2, sprintId: SPRINT.id },
+  { title: "Design Kanban board layout", type: "IMPROVEMENT", status: "TODO", priority: "MEDIUM", storyPoints: 3, sprintId: SPRINT.id, dueDate: "2026-03-15" },
+  { title: "Implement task list API filters", type: "STORY", status: "IN_PROGRESS", priority: "HIGH", storyPoints: 5, sprintId: SPRINT.id, dueDate: "2026-02-28" },
+  { title: "Fix board drag-and-drop glitch", type: "BUG", status: "QA", priority: "CRITICAL", storyPoints: 2, sprintId: SPRINT.id, dueDate: "2026-01-20" },
+  { title: "Add label color picker", type: "TASK", status: "BACKLOG", priority: "LOW", storyPoints: 1, sprintId: SPRINT.id, dueDate: null },
+  { title: "Unit test status transitions", type: "STORY", status: "IN_REVIEW", priority: "MEDIUM", storyPoints: 3, sprintId: SPRINT.id, dueDate: "2026-04-10" },
+  { title: "Load balancing for report service", type: "IMPROVEMENT", status: "DONE", priority: "HIGH", storyPoints: 8, sprintId: SPRINT.id, dueDate: "2026-01-05" },
+  { title: "Checklist item completion sync", type: "BUG", status: "TODO", priority: "MEDIUM", storyPoints: 2, sprintId: SPRINT.id, dueDate: "2026-05-01" },
+  { title: "Migrate tasks to taskKey format", type: "TASK", status: "DONE", priority: "LOW", storyPoints: 2, sprintId: SPRINT.id, dueDate: "2025-12-01" },
+  { title: "Implement JWT refresh token rotation", type: "STORY", status: "TODO", priority: "CRITICAL", storyPoints: 5, sprintId: SPRINT.id, dueDate: "2026-02-10" },
+  { title: "Add pagination to user list", type: "TASK", status: "IN_PROGRESS", priority: "LOW", storyPoints: 2, sprintId: SPRINT.id, dueDate: "2026-06-30" },
+  { title: "Dashboard widget for task stats", type: "IMPROVEMENT", status: "BACKLOG", priority: "MEDIUM", storyPoints: 4, sprintId: SPRINT.id, dueDate: null },
+  { title: "Fix attachment upload size limit", type: "BUG", status: "IN_REVIEW", priority: "HIGH", storyPoints: 1, sprintId: SPRINT.id, dueDate: "2026-03-01" },
+  { title: "Write API documentation for tasks", type: "TASK", status: "TODO", priority: "LOW", storyPoints: 3, sprintId: SPRINT.id, dueDate: "2026-07-15" },
+  { title: "Role-based access for project settings", type: "STORY", status: "BACKLOG", priority: "HIGH", storyPoints: 6, sprintId: SPRINT.id, dueDate: "2026-04-20" },
+  { title: "Notification service integration", type: "IMPROVEMENT", status: "CANCELLED", priority: "MEDIUM", storyPoints: 5, sprintId: SPRINT.id, dueDate: "2026-08-01" },
 ];
 
 const safeObjectId = (id) => new mongoose.Types.ObjectId(String(id));
@@ -93,6 +100,7 @@ const seed = async () => {
       reporterId: safeObjectId(MEMBERS[0]),
       primaryAssigneeId: safeObjectId(assignee),
       storyPoints: seedTask.storyPoints,
+      dueDate: seedTask.dueDate ? new Date(seedTask.dueDate) : null,
       position: i * 1000,
       createdBy: safeObjectId(MEMBERS[0]),
       updatedBy: safeObjectId(MEMBERS[0]),

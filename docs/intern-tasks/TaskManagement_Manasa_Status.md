@@ -12,7 +12,13 @@ This status file captures the current implementation state of the Task Managemen
 - `task.controller.js` provides CRUD, restore, status, priority, assign/unassign, labels, checklists, history, and board endpoints.
 - `task.service.js` contains validation, project/member assertions, task CRUD, board grouping, label and checklist operations, status/priority changes, assignment logic, soft delete/restore, and history recording.
 - `task.repository.js` supports MongoDB-backed task storage, task assignments, label mapping, checklist storage, history, board filters, and soft-delete behavior.
-- `backend/src/app.js` registers task routes and related route groups for labels, projects, and checklists.
+- `task.service.js` also provides checklist-level update and delete operations (`updateChecklist`, `deleteChecklist`) with task/workspace access validation.
+- `backend/src/app.js` registers task routes and related route groups for labels, projects, and checklists, including `checklistRouter` mounted at `/api/v1/checklists` for checklist-level PATCH/DELETE.
+- `task.contracts.js` now integrates with the real modules by delegating through the owning modules' repositories (read-only lookups, no data mutation):
+  - Projects / ProjectMember -> `projects/project.repository` (`findProjectById`, `findProjectMember`, `listProjectMembers`).
+  - Users -> `users/user.repository` (`findById`).
+  - Sprints / Epics -> mock fallback until those modules are merged.
+  - Mock fallback is retained so test/mock flows keep working during integration.
 
 ### Frontend
 - `frontend/src/features/tasks` contains the task feature implementation.
@@ -37,10 +43,10 @@ This status file captures the current implementation state of the Task Managemen
 
 ## Remaining Work
 
-- Add seed tasks for board/dashboard verification.
-- Expand backend API test coverage for task CRUD, filters, assignment, status transitions, labels, checklists, and edge cases.
-- Add UI/manual validation and complete Postman coverage for task flows and error cases.
-- Complete integration with real auth, projects, users, teams, and sprints modules when those modules become available.
+- Add seed tasks for board/dashboard verification by running `npm run seed:tasks` (or `node scripts/seedTasks.js`) against a live MongoDB, and confirm the board/dashboard populate.
+- Complete Postman coverage for task flows and error cases (the `ETMS-Tasks` collection exists but can be extended with error/edge-case requests).
+- Manual UI validation of list/board/detail/forms with real data.
+- When the Sprint and Epic modules are merged, wire `task.contracts.js` `findSprintById` / `findEpicById` to those modules' repositories (currently mock fallback).
 
 ## Notes
 

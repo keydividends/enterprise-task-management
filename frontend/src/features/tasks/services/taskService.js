@@ -96,6 +96,16 @@ const listChecklists = async (taskId) => {
   return data.data;
 };
 
+const updateChecklist = async (checklistId, title) => {
+  const { data } = await axiosClient.patch(`/checklists/${checklistId}`, { title });
+  return data.data;
+};
+
+const deleteChecklist = async (checklistId) => {
+  const { data } = await axiosClient.delete(`/checklists/${checklistId}`);
+  return data.data;
+};
+
 const addChecklistItem = async (checklistId, payload) => {
   const { data } = await axiosClient.post(`/checklists/${checklistId}/items`, payload);
   return data.data;
@@ -135,6 +145,8 @@ const taskService = {
   removeLabelFromTask,
   createChecklist,
   listChecklists,
+  updateChecklist,
+  deleteChecklist,
   addChecklistItem,
   updateChecklistItem,
   completeChecklistItem,

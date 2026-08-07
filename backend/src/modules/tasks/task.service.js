@@ -132,7 +132,17 @@ const listTasks = async (query, context = {}) => {
 
   const sortField = TASK_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
   const filter = buildFilter(query);
-  filter.workspaceId = workspaceId;
+
+  // Only apply workspaceId filter when the context actually provided one.
+  // If context.workspaceId is null the mock fallback ID is used, which would
+  // exclude tasks created by real users stored under a different workspaceId.
+  // When a real projectId filter is present, project-scoping is sufficient.
+  if (context.workspaceId) {
+    filter.workspaceId = workspaceId;
+  } else if (!query.projectId) {
+    // No project filter and no real workspaceId — use mock ID to scope.
+    filter.workspaceId = workspaceId;
+  }
 
   // Label filter requires a join through tasklabels.
   let labelFilteredIds = null;
@@ -142,8 +152,11 @@ const listTasks = async (query, context = {}) => {
   }
 
   const skip = (page - 1) * pageSize;
+  const needsAggregation = sortField === 'priority' || sortField === 'dueDate';
   const [tasks, totalItems] = await Promise.all([
-    repo.findTasks(filter, { skip, limit: pageSize, sort: { [sortField]: sortOrder } }),
+    needsAggregation
+      ? repo.findTasksAggregated(filter, { skip, limit: pageSize, sortField, sortDir: sortOrder })
+      : repo.findTasks(filter, { skip, limit: pageSize, sort: { [sortField]: sortOrder } }),
     repo.countTasks(filter),
   ]);
 
@@ -518,6 +531,33 @@ const listChecklists = async (taskId, context = {}) => {
   return result;
 };
 
+const updateChecklist = async (checklistId, payload, context = {}) => {
+  const { title } = validateChecklistInput(payload);
+  const workspaceId = await getWorkspaceId(context);
+  const userId = context.userId || context.user?.id;
+  const checklist = await repo.findChecklistById(checklistId);
+  if (!checklist) throw createError("CHECKLIST_NOT_FOUND", "Checklist not found.", 404);
+
+  const task = await repo.findTaskById(checklist.taskId, workspaceId);
+  if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+
+  const updated = await repo.updateChecklist(checklistId, { title, updatedBy: userId });
+  const items = await repo.findItemsByChecklist(checklistId);
+  return mapChecklist(updated, items);
+};
+
+const deleteChecklist = async (checklistId, context = {}) => {
+  const workspaceId = await getWorkspaceId(context);
+  const checklist = await repo.findChecklistById(checklistId);
+  if (!checklist) throw createError("CHECKLIST_NOT_FOUND", "Checklist not found.", 404);
+
+  const task = await repo.findTaskById(checklist.taskId, workspaceId);
+  if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+
+  await repo.softDeleteChecklist(checklistId);
+  return { id: checklistId };
+};
+
 const addChecklistItem = async (checklistId, payload, context = {}) => {
   const { text } = validateChecklistItemInput(payload);
   const workspaceId = await getWorkspaceId(context);
@@ -617,10 +657,12 @@ module.exports = {
   getBoard,
   listLabels,
   createLabel,
-  addLabelToTask,
+addLabelToTask,
   removeLabelFromTask,
   createChecklist,
   listChecklists,
+  updateChecklist,
+  deleteChecklist,
   addChecklistItem,
   updateChecklistItem,
   completeChecklistItem,

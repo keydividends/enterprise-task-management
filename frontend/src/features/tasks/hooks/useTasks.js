@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import taskService from "../services/taskService";
+import projectService from "../../projects/services/projectService";
+import axiosClient from "../../../api/axiosClient";
 
-// Local mirror of the mock reference data used by the backend until the real
-// Users / Projects / Sprints modules are merged. Kept in sync with
-// backend/src/modules/tasks/task.mockData.js.
+// Fallback mock data — used only when the real API is unavailable.
 export const MOCK_PROJECTS = [
   { id: "64a200000000000000000001", key: "ETMS", name: "Enterprise Task Management", status: "ACTIVE" },
   { id: "64a200000000000000000002", key: "PAY", name: "Payment Gateway", status: "ACTIVE" },
@@ -18,11 +18,6 @@ export const MOCK_USERS = [
   { id: "64a100000000000000000005", firstName: "Kavya", lastName: "Iyer", fullName: "Kavya Iyer" },
 ];
 
-export const getUserName = (userId) => {
-  const user = MOCK_USERS.find((u) => u.id === userId);
-  return user ? user.fullName : "Unassigned";
-};
-
 export const MOCK_SPRINTS = [
   { id: "64a300000000000000000001", projectId: "64a200000000000000000001", name: "Sprint 1", status: "COMPLETED" },
   { id: "64a300000000000000000002", projectId: "64a200000000000000000001", name: "Sprint 2", status: "ACTIVE" },
@@ -34,9 +29,75 @@ export const MOCK_PROJECT_MEMBERS = {
   "64a200000000000000000003": [MOCK_USERS[0], MOCK_USERS[1]],
 };
 
+// getUserName: resolves a userId to a display name.
+// Falls back to mock data when the real user list is not loaded.
+export const getUserName = (userId, userList = []) => {
+  if (!userId) return "Unassigned";
+  const fromList = userList.find((u) => (u.id || u._id) === userId);
+  if (fromList) return fromList.fullName || `${fromList.firstName} ${fromList.lastName}`;
+  const mock = MOCK_USERS.find((u) => u.id === userId);
+  return mock ? mock.fullName : userId;
+};
+
 export const getProjectMembers = (projectId) => MOCK_PROJECT_MEMBERS[projectId] || [];
 
-export const getProjectsForUser = (userId) => MOCK_PROJECTS;
+// fetchProjects — calls the real projects API, falls back to mock list.
+export const fetchProjects = async () => {
+  try {
+    const result = await projectService.getProjects({ pageSize: 100 });
+    const items = result?.items || result?.data?.items || [];
+    return items.length ? items.map((p) => ({ id: p.id || p._id, key: p.key, name: p.name, status: p.status })) : MOCK_PROJECTS;
+  } catch {
+    return MOCK_PROJECTS;
+  }
+};
+
+// fetchProjectMembers — calls the real project members API, resolves user names,
+// falls back to mock if the API is unavailable or returns no data.
+export const fetchProjectMembers = async (projectId) => {
+  if (!projectId) return [];
+  try {
+    const { data } = await axiosClient.get(`/projects/${projectId}/members`);
+    const items = data?.data?.items || data?.data || data?.items || [];
+    if (items.length) {
+      // The project members API returns userId as a plain ID string (not populated).
+      // Resolve display names by fetching the users list and building a lookup map.
+      const userIds = items.map((m) => m.userId?._id || m.userId || m.id).filter(Boolean);
+      let userMap = {};
+      try {
+        const usersRes = await axiosClient.get('/users', { params: { pageSize: 200 } });
+        const users = usersRes.data?.data?.items || usersRes.data?.data || usersRes.data?.items || [];
+        users.forEach((u) => {
+          const uid = u.id || u._id;
+          if (uid) userMap[String(uid)] = u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || null;
+        });
+      } catch { /* user lookup failed — names will fall back to mock */ }
+
+      return userIds.map((uid) => {
+        const strId = String(uid);
+        const mockUser = MOCK_USERS.find((u) => u.id === strId);
+        const fullName = userMap[strId] || mockUser?.fullName || null;
+        return { id: strId, fullName };
+      }).filter((u) => u.fullName); // drop entries with no resolvable name
+    }
+  } catch { /* fall through */ }
+  return MOCK_PROJECT_MEMBERS[projectId] || [];
+};
+
+// fetchProjectSprints — sprint module not yet available; returns mock sprints
+// for known mock project IDs and an empty list for real projects.
+// When a sprint module is merged and registers GET /projects/:id/sprints,
+// uncomment the API call below and it will auto-activate.
+export const fetchProjectSprints = async (projectId) => {
+  if (!projectId) return [];
+  // Uncomment when sprint module is available:
+  // try {
+  //   const { data } = await axiosClient.get(`/projects/${projectId}/sprints`);
+  //   const items = data?.data?.items || data?.data || data?.items || [];
+  //   if (items.length) return items.map((s) => ({ id: s.id || s._id, name: s.name, status: s.status, projectId }));
+  // } catch { /* fall through */ }
+  return MOCK_SPRINTS.filter((s) => s.projectId === projectId);
+};
 
 const useTasks = () => {
   const [tasks, setTasks] = useState([]);

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpDown, Kanban, Plus, Search } from 'lucide-react';
+import { ArrowUpDown, Kanban, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
 import useTasks from '../hooks/useTasks';
 import TaskFilters from '../components/TaskFilters';
 import TaskCard from '../components/TaskCard';
-import TaskStatusBadge from '../components/TaskStatusBadge';
-import { PRIORITY_ORDER } from '../taskConstants';
 
 const TaskListPage = () => {
   const [filters, setFilters] = useState({});
@@ -15,6 +13,8 @@ const TaskListPage = () => {
   const pageSize = 12;
 
   const { tasks = [], loading, error, pagination, fetchTasks } = useTasks();
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastParams, setLastParams] = useState({});
 
   useEffect(() => {
     const params = {
@@ -27,8 +27,19 @@ const TaskListPage = () => {
     Object.keys(params).forEach((key) => {
       if (params[key] === '' || params[key] === undefined || params[key] === null) delete params[key];
     });
+    setLastParams(params);
     fetchTasks(params);
   }, [filters, page, sortBy, sortOrder, fetchTasks]);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await fetchTasks(lastParams);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing, fetchTasks, lastParams]);
 
   const handleFiltersChange = useCallback((next) => {
     setFilters(next);
@@ -40,7 +51,8 @@ const TaskListPage = () => {
       setSortOrder((current) => (current === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
-      setSortOrder('asc');
+      // Priority: first click = highest first (desc). Dates: first click = oldest/earliest first (asc).
+      setSortOrder(field === 'priority' ? 'desc' : 'asc');
     }
   };
 
@@ -58,6 +70,14 @@ const TaskListPage = () => {
           <Link to="/tasks/board" className="secondary-button compact">
             <Kanban size={16} /> Board
           </Link>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+          >
+            {refreshing ? <><Loader2 size={15} className="spin" /> Refreshing...</> : <><RefreshCw size={15} /> Refresh</>}
+          </button>
           <Link to="/tasks/new" className="primary-button compact">
             <Plus size={16} /> New Task
           </Link>
@@ -67,23 +87,32 @@ const TaskListPage = () => {
       <TaskFilters initialFilters={filters} onChange={handleFiltersChange} />
 
       <div className="tasks-toolbar glass-card">
-        <button type="button" className="ghost-button" onClick={() => toggleSort('createdAt')}>
-          <ArrowUpDown size={15} /> Created
-        </button>
-        <button type="button" className="ghost-button" onClick={() => toggleSort('dueDate')}>
-          <ArrowUpDown size={15} /> Due date
-        </button>
-        <button type="button" className="ghost-button" onClick={() => toggleSort('priority')}>
-          <ArrowUpDown size={15} /> Priority
-        </button>
+        {[
+          { field: 'createdAt', label: 'Created' },
+          { field: 'dueDate', label: 'Due date' },
+          { field: 'priority', label: 'Priority' },
+        ].map(({ field, label }) => (
+          <button
+            key={field}
+            type="button"
+            className={`ghost-button sort-btn${sortBy === field ? ' sort-btn-active' : ''}`}
+            onClick={() => toggleSort(field)}
+          >
+            <ArrowUpDown size={15} />
+            {label}
+            {sortBy === field && (
+              <span className="sort-direction-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+            )}
+          </button>
+        ))}
         <span className="tasks-toolbar-spacer" />
         <span className="tasks-sort-hint">Sort order: {sortOrder === 'asc' ? 'Ascending' : 'Descending'}</span>
       </div>
 
-      {error && <div className="form-banner danger">{error}</div>}
-
       {loading ? (
         <div className="tasks-grid-loading">Loading tasks...</div>
+      ) : error ? (
+        <div className="form-banner danger">{error}</div>
       ) : tasks.length === 0 ? (
         <div className="empty-state glass-card">
           <Search size={28} />

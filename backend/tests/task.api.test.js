@@ -266,3 +266,217 @@ test("DELETE /api/v1/tasks/:taskId soft deletes the task and restore works", asy
   assert.equal(restoreResponse.body.success, true);
   assert.equal(restoreResponse.body.data.id, taskId);
 });
+
+// --- New coverage: permission, validation, isolation, filters, checklist chain ---
+
+const memberToken = "Bearer mock-member-token"; // MEMBER, TASK_VIEW only
+
+test("Permission: missing token is rejected with 401", async () => {
+  const response = await request(app).get("/api/v1/tasks");
+  assert.equal(response.status, 401);
+  assert.equal(response.body.code, "AUTH_REQUIRED");
+});
+
+test("Permission: member without TASK_CREATE is denied create with 403", async () => {
+  const response = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", memberToken)
+    .send(createTaskPayload());
+  assert.equal(response.status, 403);
+  assert.equal(response.body.code, "PERMISSION_DENIED");
+});
+
+test("Permission: member with TASK_VIEW can list tasks", async () => {
+  await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send(createTaskPayload());
+
+  const response = await request(app)
+    .get("/api/v1/tasks?page=1&pageSize=10")
+    .set("Authorization", memberToken);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.pagination.totalItems, 1);
+});
+
+test("Validation: invalid project is rejected with 404", async () => {
+  const response = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send({ title: "Bad project", projectId: "64a2ffffffffffffffffffff" });
+  assert.equal(response.status, 404);
+  assert.equal(response.body.code, "PROJECT_NOT_FOUND");
+});
+
+test("Validation: invalid assignee (non-project member) is rejected", async () => {
+  // PROJECTS[1] (PAY) members are USERS[0,1,3]; USERS[2] is not a PAY member.
+  const payProjectId = mockData.PROJECTS[1].id;
+  const nonMemberId = mockData.USERS[2].id;
+
+  // Rejected at creation time.
+  const createResponse = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send({ title: "PAY task", projectId: payProjectId, primaryAssigneeId: nonMemberId });
+
+  assert.equal(createResponse.status, 400);
+  assert.equal(createResponse.body.code, "INVALID_ASSIGNEE");
+
+  // Same via the assignee sub-route on an existing PAY task.
+  // Note: must NOT reuse the ETMS sprint (createTaskPayload sets one), or the
+  // sprint-scoping check fires before assignee validation.
+  const payTask = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send({ title: "PAY assignee target", projectId: payProjectId });
+  assert.equal(payTask.status, 201);
+  const taskId = payTask.body.data.id;
+
+  const assignResponse = await request(app)
+    .patch(`/api/v1/tasks/${taskId}/assignee`)
+    .set("Authorization", authHeader)
+    .send({ userId: nonMemberId });
+
+  assert.equal(assignResponse.status, 400);
+  assert.equal(assignResponse.body.code, "INVALID_ASSIGNEE");
+});
+
+test("Project isolation: listing one project never returns another project's tasks", async () => {
+  await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send(createTaskPayload()); // ETMS project
+
+  await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send({ ...createTaskPayload(), title: "PAY-only task", projectId: mockData.PROJECTS[1].id });
+
+  const response = await request(app)
+    .get(`/api/v1/tasks?projectId=${projectId}&pageSize=100`)
+    .set("Authorization", authHeader);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.pagination.totalItems, 1);
+  assert.equal(response.body.data[0].projectId, projectId);
+});
+
+test("Filters: status, priority, assignee, search, and due range are applied", async () => {
+  const high = createTaskPayload();
+  await request(app).post("/api/v1/tasks").set("Authorization", authHeader).send(high);
+
+  const inProgress = { ...createTaskPayload(), title: "Boards work", status: "IN_PROGRESS", priority: "LOW", dueDate: "2026-06-01" };
+  await request(app).post("/api/v1/tasks").set("Authorization", authHeader).send(inProgress);
+
+  // status filter
+  let res = await request(app).get("/api/v1/tasks?status=IN_PROGRESS").set("Authorization", authHeader);
+  assert.equal(res.body.pagination.totalItems, 1);
+  assert.equal(res.body.data[0].status, "IN_PROGRESS");
+
+  // priority filter
+  res = await request(app).get("/api/v1/tasks?priority=HIGH").set("Authorization", authHeader);
+  assert.equal(res.body.pagination.totalItems, 1);
+  assert.equal(res.body.data[0].priority, "HIGH");
+
+  // search filter
+  res = await request(app).get("/api/v1/tasks?search=Boards").set("Authorization", authHeader);
+  assert.equal(res.body.pagination.totalItems, 1);
+  assert.equal(res.body.data[0].title, "Boards work");
+
+  // assignee filter (documented client param -> primaryAssigneeId)
+  res = await request(app).get(`/api/v1/tasks?assigneeId=${assigneeId}`).set("Authorization", authHeader);
+  assert.equal(res.body.pagination.totalItems, 2);
+  res.body.data.forEach((t) => assert.equal(t.primaryAssigneeId, assigneeId));
+
+  // due range filter
+  res = await request(app).get("/api/v1/tasks?dueFrom=2026-05-01&dueTo=2026-12-31").set("Authorization", authHeader);
+  assert.equal(res.body.pagination.totalItems, 2);
+  res.body.data.forEach((t) => {
+    assert.ok(new Date(t.dueDate) >= new Date("2026-05-01"));
+    assert.ok(new Date(t.dueDate) <= new Date("2026-12-31"));
+  });
+});
+
+test("Label edge cases: duplicate name -> 409, wrong-project label -> 404", async () => {
+  await request(app)
+    .post(`/api/v1/projects/${projectId}/labels`)
+    .set("Authorization", authHeader)
+    .send({ name: "Edge", color: "#ff0000" });
+
+  const dup = await request(app)
+    .post(`/api/v1/projects/${projectId}/labels`)
+    .set("Authorization", authHeader)
+    .send({ name: "Edge", color: "#00ff00" });
+  assert.equal(dup.status, 409);
+  assert.equal(dup.body.code, "LABEL_EXISTS");
+
+  // Create a label in ETMS project, then try to add it to a PAY project task => scoped denial.
+  // Note: build the PAY task from scratch (no ETMS sprint) so sprint-scoping does not interfere.
+  const payProjectId = mockData.PROJECTS[1].id;
+  const payTask = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send({ title: "PAY label target", projectId: payProjectId });
+  assert.equal(payTask.status, 201);
+  const taskId = payTask.body.data.id;
+
+  // Find the ETMS label id from list and attempt to attach it across projects.
+  const labelsRes = await request(app)
+    .get(`/api/v1/projects/${projectId}/labels`)
+    .set("Authorization", authHeader);
+  const etmsLabelId = labelsRes.body.data[0].id;
+
+  const cross = await request(app)
+    .post(`/api/v1/tasks/${taskId}/labels`)
+    .set("Authorization", authHeader)
+    .send({ labelId: etmsLabelId });
+  assert.equal(cross.status, 404);
+  assert.equal(cross.body.code, "LABEL_NOT_FOUND");
+});
+
+test("Checklist item chain: add -> update -> complete -> delete", async () => {
+  const taskResponse = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send(createTaskPayload());
+  const taskId = taskResponse.body.data.id;
+
+  const clResponse = await request(app)
+    .post(`/api/v1/tasks/${taskId}/checklists`)
+    .set("Authorization", authHeader)
+    .send({ title: "Chain Checklist" });
+  const checklistId = clResponse.body.data.id;
+
+  const addResponse = await request(app)
+    .post(`/api/v1/checklists/${checklistId}/items`)
+    .set("Authorization", authHeader)
+    .send({ text: "Write test" });
+  assert.equal(addResponse.status, 201);
+  const itemId = addResponse.body.data.id;
+
+  const updateResponse = await request(app)
+    .put(`/api/v1/checklists/${checklistId}/items/${itemId}`)
+    .set("Authorization", authHeader)
+    .send({ text: "Write unit test" });
+  assert.equal(updateResponse.status, 200);
+  assert.equal(updateResponse.body.data.text, "Write unit test");
+
+  const completeResponse = await request(app)
+    .patch(`/api/v1/checklists/${checklistId}/items/${itemId}/complete`)
+    .set("Authorization", authHeader);
+  assert.equal(completeResponse.status, 200);
+  assert.equal(completeResponse.body.data.isCompleted, true);
+
+  const deleteResponse = await request(app)
+    .delete(`/api/v1/checklists/${checklistId}/items/${itemId}`)
+    .set("Authorization", authHeader);
+  assert.equal(deleteResponse.status, 200);
+
+  const listResponse = await request(app)
+    .get(`/api/v1/tasks/${taskId}/checklists`)
+    .set("Authorization", authHeader);
+  assert.equal(listResponse.status, 200);
+  assert.equal(listResponse.body.data[0].items.length, 0);
+});
