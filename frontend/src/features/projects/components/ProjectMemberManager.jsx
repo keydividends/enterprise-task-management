@@ -136,7 +136,7 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '14px' }}>{getMemberDisplay(member)}</div>
                   <div style={{ fontSize: '11px', opacity: 0.5, fontFamily: 'monospace' }}>
-                    {member.customId || `${member.userId?.slice(0, 8)}…`}
+                    {member.customId || member.userName || 'No employee ID'}
                   </div>
                 </div>
               </div>

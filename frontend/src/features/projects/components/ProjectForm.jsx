@@ -21,7 +21,7 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
         description: initialValues.description || '',
         status: initialValues.status || 'PLANNING',
         priority: initialValues.priority || 'MEDIUM',
-        projectManagerId: initialValues.projectManagerId || '',
+        projectManagerId: initialValues.projectManagerCustomId || initialValues.projectManagerId || '',
         startDate: initialValues.startDate ? initialValues.startDate.slice(0, 10) : '',
         targetEndDate: initialValues.targetEndDate ? initialValues.targetEndDate.slice(0, 10) : '',
       });
@@ -40,6 +40,7 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
     const nextErrors = {};
     if (!formData.name.trim()) nextErrors.name = 'Project name is required.';
     if (!formData.key.trim()) nextErrors.key = 'Project key is required.';
+    if (!formData.projectManagerId.trim()) nextErrors.projectManagerId = 'Project manager ID is required.';
     if (formData.targetEndDate && formData.startDate && new Date(formData.targetEndDate) < new Date(formData.startDate)) {
       nextErrors.targetEndDate = 'Target end date must be after the start date.';
     }
@@ -104,10 +105,12 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
       </div>
 
       <div className="field-group">
-        <span>Project manager ID</span>
+        <span>Project manager ID or employee ID</span>
         <div className="input-wrap">
-          <input name="projectManagerId" value={formData.projectManagerId} onChange={handleChange} placeholder="user_admin_1" />
+          <input name="projectManagerId" value={formData.projectManagerId} onChange={handleChange} placeholder="e.g. test-30" />
         </div>
+        <span className="helper-copy">Use the user’s database ID or employee/custom ID.</span>
+        {errors.projectManagerId && <span className="helper-copy" style={{ color: '#ef4444' }}>{errors.projectManagerId}</span>}
       </div>
 
       <div className="field-group">

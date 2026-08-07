@@ -7,6 +7,7 @@ const {
   validateProjectId,
   validateUpdateProject,
   validateProjectMemberInput,
+  isValidObjectId,
 } = require("./project.validation");
 
 const createError = (code, message, statusCode = 400, field = null) => {
@@ -18,6 +19,38 @@ const createError = (code, message, statusCode = 400, field = null) => {
 };
 
 const getWorkspaceId = (context = {}) => context.workspaceId || null;
+
+const resolveProjectManagerId = async (managerReference) => {
+  const reference = String(managerReference || "").trim();
+  if (!reference) return null;
+
+  // Project forms can use either a user's MongoDB ID or their employee/custom ID.
+  let manager = await userRepository.findByCustomId(reference);
+  if (!manager && isValidObjectId(reference)) {
+    manager = await userRepository.findById(reference);
+  }
+
+  if (!manager || manager.isDeleted || manager.status !== "ACTIVE") {
+    throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
+  }
+
+  return String(manager._id || manager.id);
+};
+
+const toProjectDTOWithManager = async (project) => {
+  const dto = toProjectDTO(project);
+  if (!dto?.projectManagerId) return dto;
+
+  try {
+    const manager = await userRepository.findById(dto.projectManagerId);
+    return {
+      ...dto,
+      projectManagerCustomId: manager?.customId || null,
+    };
+  } catch {
+    return { ...dto, projectManagerCustomId: null };
+  }
+};
 
 const listProjects = async (query = {}, context = {}) => {
   const validated = validateListQuery(query);
@@ -35,7 +68,7 @@ const listProjects = async (query = {}, context = {}) => {
   });
 
   return {
-    items: items.map(toProjectDTO),
+    items: await Promise.all(items.map(toProjectDTOWithManager)),
     pagination: { page, pageSize, totalItems, totalPages },
   };
 };
@@ -46,7 +79,7 @@ const getProjectById = async (projectId, context = {}) => {
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
-  return toProjectDTO(project);
+  return toProjectDTOWithManager(project);
 };
 
 const createProject = async (payload, context = {}) => {
@@ -58,24 +91,16 @@ const createProject = async (payload, context = {}) => {
     throw createError("PROJECT_KEY_EXISTS", "Project key already exists in this workspace.", 409, "key");
   }
 
-  if (validated.projectManagerId) {
-    try {
-      const manager = await userRepository.findById(validated.projectManagerId);
-      if (manager && (manager.isDeleted || manager.status === "DISABLED")) {
-        throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
-      }
-    } catch (err) {
-      if (err.code === "USER_NOT_FOUND") throw err;
-      // skip validation if user lookup fails
-    }
-  }
+  const projectManagerId = validated.projectManagerId
+    ? await resolveProjectManagerId(validated.projectManagerId)
+    : null;
 
   const projectData = {
     workspaceId,
     name: validated.name,
     key: validated.key,
     description: validated.description,
-    projectManagerId: validated.projectManagerId || null,
+    projectManagerId,
     status: validated.status,
     priority: validated.priority,
     startDate: validated.startDate,
@@ -85,7 +110,7 @@ const createProject = async (payload, context = {}) => {
   };
 
   const project = await projectRepository.createProject(projectData);
-  return toProjectDTO(project);
+  return toProjectDTOWithManager(project);
 };
 
 const updateProject = async (projectId, payload, context = {}) => {
@@ -103,23 +128,17 @@ const updateProject = async (projectId, payload, context = {}) => {
     }
   }
 
-  if (validated.projectManagerId) {
-    try {
-      const manager = await userRepository.findById(validated.projectManagerId);
-      if (manager && (manager.isDeleted || manager.status === "DISABLED")) {
-        throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
-      }
-    } catch (err) {
-      if (err.code === "USER_NOT_FOUND") throw err;
-      // skip validation if user lookup fails
-    }
+  if (validated.projectManagerId !== undefined) {
+    validated.projectManagerId = validated.projectManagerId
+      ? await resolveProjectManagerId(validated.projectManagerId)
+      : null;
   }
 
   const updated = await projectRepository.updateProject(projectId, {
     ...validated,
     updatedBy: context.user?.id || null,
   });
-  return toProjectDTO(updated);
+  return toProjectDTOWithManager(updated);
 };
 
 const deleteProject = async (projectId, context = {}) => {
@@ -165,6 +184,7 @@ const listProjectMembers = async (projectId, query = {}, context = {}) => {
           const user = await userRepository.findById(uid);
           if (user) {
             member.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
+            member.customId = user.customId || null;
           }
         }
       } catch { /* skip */ }
@@ -285,14 +305,14 @@ const removeProjectMember = async (projectId, userId, context = {}) => {
   return toProjectMemberDTO(removed);
 };
 
-const getProjectTaskSummary = async (projectId, context = {}) => {
+const getProjectTaskSummary = async (projectId, context = {}, query = {}) => {
   validateProjectId(projectId);
   const project = await projectRepository.findProjectById(projectId);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
 
-  const summary = await projectRepository.getTaskSummary(projectId);
+  const summary = await projectRepository.getTaskSummary(projectId, { sprintId: query.sprintId });
   return summary;
 };
 

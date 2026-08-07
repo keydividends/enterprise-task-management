@@ -3,15 +3,20 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import projectService from '../services/projectService';
 import ProjectMemberManager from '../components/ProjectMemberManager';
+import { useAuth } from '../../auth/hooks/useAuth';
+
+const TASK_STATUSES = ['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'QA', 'DONE', 'CANCELLED'];
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(null);
+  const canManageProjects = ['ADMIN', 'MANAGER'].includes(user?.role);
 
   useEffect(() => {
     const loadData = async () => {
@@ -59,12 +64,16 @@ const ProjectDetailsPage = () => {
           <button type="button" className="secondary-button compact" onClick={() => window.location.reload()}>
             <RefreshCw size={16} /> Refresh
           </button>
-          <Link to={`/projects/${projectId}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>
-            Edit
-          </Link>
-          <button type="button" className="ghost-button" onClick={handleDelete}>
-            Archive
-          </button>
+          {canManageProjects ? (
+            <>
+              <Link to={`/projects/${projectId}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>
+                Edit
+              </Link>
+              <button type="button" className="ghost-button" onClick={handleDelete}>
+                Archive
+              </button>
+            </>
+          ) : null}
         </div>
       </section>
 
@@ -79,7 +88,7 @@ const ProjectDetailsPage = () => {
             <p><strong>Key:</strong> {project.key}</p>
             <p><strong>Status:</strong> {project.status}</p>
             <p><strong>Priority:</strong> {project.priority}</p>
-            <p><strong>Manager:</strong> {project.projectManagerId || 'Unassigned'}</p>
+            <p><strong>Manager:</strong> {project.projectManagerCustomId || project.projectManagerId || 'Unassigned'}</p>
             <p><strong>Start date:</strong> {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</p>
             <p><strong>Target end date:</strong> {project.targetEndDate ? new Date(project.targetEndDate).toLocaleDateString() : 'Not set'}</p>
             <p><strong>Description:</strong> {project.description || 'No description provided'}</p>
@@ -87,14 +96,19 @@ const ProjectDetailsPage = () => {
           <div className="panel-block glass-card">
             <div className="panel-header"><h3>Task summary</h3></div>
             {summary ? (
-              <div style={{ display: 'grid', gap: '10px' }}>
-                {Object.entries(summary).map(([status, count]) => (
+              <>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  {TASK_STATUSES.map((status) => (
                   <div key={status} className="task-row">
                     <span>{status}</span>
-                    <strong>{count}</strong>
+                    <strong>{summary[status] ?? 0}</strong>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {Object.keys(summary).length === 0 ? (
+                  <p className="helper-copy">No tasks have been created for this project yet.</p>
+                ) : null}
+              </>
             ) : (
               <p className="helper-copy">No summary available.</p>
             )}

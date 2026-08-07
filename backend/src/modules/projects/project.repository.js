@@ -261,12 +261,17 @@ const removeProjectMember = async (projectId, userId, removedBy) => {
   return updated;
 };
 
-const getTaskSummary = async (projectId) => {
+const getTaskSummary = async (projectId, options = {}) => {
+  const sprintId = options.sprintId ? toObjectId(options.sprintId) : null;
+
   if (isDbConnected()) {
     try {
       const { Task } = require("../tasks/task.model");
+      const match = { projectId: toObjectId(projectId), isDeleted: false };
+      if (sprintId) match.sprintId = sprintId;
+
       const aggregation = await Task.aggregate([
-        { $match: { projectId: toObjectId(projectId), isDeleted: false } },
+        { $match: match },
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]);
       return aggregation.reduce((acc, item) => ({ ...acc, [item._id]: item.count }), {});
@@ -274,6 +279,7 @@ const getTaskSummary = async (projectId) => {
       return {};
     }
   }
+
   return {};
 };
 

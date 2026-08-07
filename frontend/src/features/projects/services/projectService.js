@@ -96,10 +96,10 @@ const projectService = {
     );
   },
 
-  async getProjectTaskSummary(projectId) {
+  async getProjectTaskSummary(projectId, params = {}) {
     return withFallback(
-      () => axiosClient.get(`/projects/${projectId}/tasks/summary`),
-      () => ({ TODO: 12, IN_PROGRESS: 8, REVIEW: 2, DONE: 22 })
+      () => axiosClient.get(`/projects/${projectId}/tasks/summary`, { params }),
+      () => ({ TODO: 12, IN_PROGRESS: 8, IN_REVIEW: 2, DONE: 22 })
     );
   },
 };

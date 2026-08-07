@@ -85,7 +85,11 @@ const removeProjectMember = async (req, res, next) => {
 
 const getProjectTaskSummary = async (req, res, next) => {
   try {
-    const summary = await projectService.getProjectTaskSummary(req.params.projectId, { user: req.user, workspaceId: req.user.workspaceId });
+    const summary = await projectService.getProjectTaskSummary(
+      req.params.projectId,
+      { user: req.user, workspaceId: req.user.workspaceId },
+      req.query || {}
+    );
     sendSuccess(res, 200, { success: true, data: summary });
   } catch (error) {
     next(error);

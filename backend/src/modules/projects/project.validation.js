@@ -126,7 +126,11 @@ const validateUpdateProject = (payload = {}) => {
     nextPayload.description = String(payload.description || "").trim();
   }
   if (payload.projectManagerId !== undefined) {
-    nextPayload.projectManagerId = String(payload.projectManagerId).trim();
+    const projectManagerId = String(payload.projectManagerId || "").trim();
+    if (!projectManagerId) {
+      throw createValidationError("Project manager ID is required.", "projectManagerId");
+    }
+    nextPayload.projectManagerId = projectManagerId;
   }
   if (payload.startDate !== undefined) {
     if (payload.startDate && Number.isNaN(Date.parse(payload.startDate))) {

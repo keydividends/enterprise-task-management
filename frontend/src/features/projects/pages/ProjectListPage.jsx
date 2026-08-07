@@ -81,7 +81,7 @@ const ProjectListPage = () => {
           {!loading && projects.length === 0 ? <div className="empty-state">No projects found.</div> : null}
 
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} onDelete={handleDelete} />
+              <ProjectCard key={project.id} project={project} onDelete={handleDelete} />
           ))}
         </div>
       </section>
