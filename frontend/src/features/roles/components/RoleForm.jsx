@@ -87,7 +87,7 @@ const RoleForm = ({ role, onSubmit, onCancel, loading }) => {
           value={formData.name}
           onChange={handleChange}
           placeholder="e.g., Developer, Manager"
-          disabled={role?.isSystem}
+          disabled={role?.isSystem && role?.name !== "USER"}
           className={errors.name ? "input-error" : ""}
         />
         {errors.name && <span className="error-message">{errors.name}</span>}
@@ -102,13 +102,13 @@ const RoleForm = ({ role, onSubmit, onCancel, loading }) => {
           onChange={handleChange}
           placeholder="Enter role description"
           rows="3"
-          disabled={role?.isSystem}
+          disabled={role?.isSystem && role?.name !== "USER"}
         />
       </div>
 
       <div className="form-group">
         <label>Permissions</label>
-        {role?.isSystem && (
+        {role?.isSystem && role?.name !== "USER" && (
           <p className="info-message">
             System roles have fixed permissions and cannot be modified.
           </p>
@@ -124,7 +124,7 @@ const RoleForm = ({ role, onSubmit, onCancel, loading }) => {
                     id={`permission-${permission._id}`}
                     checked={formData.permissionIds.includes(permission._id)}
                     onChange={() => handlePermissionChange(permission._id)}
-                    disabled={role?.isSystem}
+                    disabled={role?.isSystem && role?.name !== "USER"}
                   />
                   <label htmlFor={`permission-${permission._id}`}>
                     <span className="permission-key">{permission.key}</span>
@@ -142,7 +142,7 @@ const RoleForm = ({ role, onSubmit, onCancel, loading }) => {
       <div className="form-actions">
         <button
           type="submit"
-          disabled={loading || role?.isSystem}
+          disabled={loading || (role?.isSystem && role?.name !== "USER")}
           className="btn-primary"
         >
           {loading ? "Saving..." : role ? "Update Role" : "Create Role"}

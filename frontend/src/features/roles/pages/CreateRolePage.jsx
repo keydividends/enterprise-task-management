@@ -1,14 +1,20 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
 import RoleForm from "../components/RoleForm";
 import "../styles/RoleCreateEditPage.css";
 
 const CreateRolePage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { createRole } = useRoles();
+
+  if (user?.role !== "ADMIN") {
+    return <Navigate to="/roles" replace />;
+  }
 
   const handleSubmit = async (formData) => {
     try {

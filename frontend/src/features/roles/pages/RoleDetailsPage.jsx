@@ -73,12 +73,12 @@ const RoleDetailsPage = () => {
           </span>
         </div>
         <div className="actions">
-          <PermissionGate permission="ROLE_UPDATE">
+          <PermissionGate adminOnly permission="ROLE_UPDATE">
             <button
               className="btn-primary"
               onClick={handleEditRole}
-              disabled={role.isSystem}
-              title={role.isSystem ? "Cannot edit system role" : "Edit"}
+              disabled={role.isSystem && role.name !== "USER"}
+              title={role.isSystem && role.name !== "USER" ? "Cannot edit system role" : "Edit"}
             >
               Edit Role
             </button>
@@ -120,7 +120,7 @@ const RoleDetailsPage = () => {
         <div className="permissions-card">
           <div className="card-header">
             <h3>Permissions ({permissions.length})</h3>
-            <PermissionGate permission="ROLE_MANAGE">
+            <PermissionGate adminOnly permission="ROLE_MANAGE">
               <button
                 className="btn-small btn-info"
                 onClick={() => setShowPermissionMatrix(!showPermissionMatrix)}

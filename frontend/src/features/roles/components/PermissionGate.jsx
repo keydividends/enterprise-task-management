@@ -12,12 +12,25 @@ import { useAuth } from "../../auth/hooks/useAuth";
  *   <button>Create Task</button>
  * </PermissionGate>
  */
-const PermissionGate = ({ permission, children, fallback = null }) => {
+const PermissionGate = ({ permission, children, fallback = null, adminOnly = false }) => {
   const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const userPermissions = user?.permissions || [];
   const userRole = user?.role;
 
+  if (adminOnly) {
+    return isAdmin ? children : fallback;
+  }
+
   if (!permission) {
+    return children;
+  }
+
+  if (isAdmin) {
+    return children;
+  }
+
+  if (isAdmin) {
     return children;
   }
 

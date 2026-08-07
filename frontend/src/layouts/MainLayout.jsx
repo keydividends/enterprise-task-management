@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   Settings,
+  Shield,
   Sun,
   Users,
   UserCheck,
@@ -37,6 +38,10 @@ export const MainLayout = ({ toggleTheme }) => {
     return user.role === 'ADMIN' || user.role === 'MANAGER' || user.permissions?.includes('USER_VIEW');
   }, [user]);
 
+  const canViewRolesNav = useMemo(() => {
+    return user?.role === 'ADMIN';
+  }, [user]);
+
   const navItems = useMemo(() => {
     const items = [
       { label: 'Dashboard', to: '/dashboard', icon: LayoutGrid },
@@ -45,6 +50,11 @@ export const MainLayout = ({ toggleTheme }) => {
     // Only include System Users Administration tab if authorized
     if (canViewUserAdmin) {
       items.push({ label: 'Users', to: '/users', icon: UserCheck });
+    }
+
+    // Only include Roles tab for admin users
+    if (canViewRolesNav) {
+      items.push({ label: 'Roles', to: '/roles', icon: Shield });
     }
 
     items.push(
@@ -57,7 +67,7 @@ export const MainLayout = ({ toggleTheme }) => {
     );
 
     return items;
-  }, [canViewUserAdmin]);
+  }, [canViewUserAdmin, canViewRolesNav]);
 
   const handleThemeToggle = () => {
     const nextTheme = darkMode ? 'light' : 'dark';

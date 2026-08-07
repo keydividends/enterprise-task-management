@@ -54,7 +54,7 @@ const RoleListPage = () => {
     <div className="role-list-page">
       <div className="page-header">
         <h1>Roles Management</h1>
-        <PermissionGate permission="ROLE_CREATE">
+        <PermissionGate adminOnly permission="ROLE_CREATE">
           <button className="btn-primary" onClick={handleCreateRole}>
             + Create Role
           </button>
@@ -105,22 +105,22 @@ const RoleListPage = () => {
                       >
                         View
                       </button>
-                      <PermissionGate permission="ROLE_UPDATE">
+                      <PermissionGate adminOnly permission="ROLE_UPDATE">
                         <button
                           className="btn-small btn-warning"
                           onClick={() => handleEditRole(role._id)}
-                          disabled={role.isSystem}
-                          title={role.isSystem ? "Cannot edit system role" : "Edit"}
+                          disabled={role.isSystem && role.name !== "USER"}
+                          title={role.isSystem && role.name !== "USER" ? "Cannot edit system role" : "Edit"}
                         >
                           Edit
                         </button>
                       </PermissionGate>
-                      <PermissionGate permission="ROLE_DELETE">
+                      <PermissionGate adminOnly permission="ROLE_DELETE">
                         <button
                           className="btn-small btn-danger"
                           onClick={() => handleDeleteRole(role._id, role.name)}
-                          disabled={role.isSystem}
-                          title={role.isSystem ? "Cannot delete system role" : "Delete"}
+                          disabled={role.isSystem && role.name !== "USER"}
+                          title={role.isSystem && role.name !== "USER" ? "Cannot delete system role" : "Delete"}
                         >
                           Delete
                         </button>

@@ -13,6 +13,7 @@
   margin: 0;
   font-size: 28px;
   color: var(--text);
+  color: var(--text);
 }
 
 .btn-primary {

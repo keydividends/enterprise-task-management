@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../auth/hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
 import RoleForm from "../components/RoleForm";
 import "../styles/RoleCreateEditPage.css";
@@ -7,10 +8,15 @@ import "../styles/RoleCreateEditPage.css";
 const EditRolePage = () => {
   const navigate = useNavigate();
   const { roleId } = useParams();
+  const { user } = useAuth();
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { updateRole, getRoleById } = useRoles();
+
+  if (user?.role !== "ADMIN") {
+    return <Navigate to="/roles" replace />;
+  }
 
   useEffect(() => {
     const fetchRole = async () => {
