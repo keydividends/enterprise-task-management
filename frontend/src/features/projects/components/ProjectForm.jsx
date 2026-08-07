@@ -55,7 +55,7 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '18px' }}>
+    <form className="auth-form project-form" onSubmit={handleSubmit}>
       <div className="field-group">
         <span>Project name</span>
         <div className="input-wrap">

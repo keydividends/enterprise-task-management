@@ -78,13 +78,13 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
   };
 
   return (
-    <div className="panel-block glass-card">
-      <div className="panel-header">
-        <h3>Project members</h3>
+    <div className="panel-block glass-card project-members-card">
+      <div className="panel-header project-members-heading">
+        <div><p className="project-section-kicker">Collaboration</p><h3>Project members</h3></div>
       </div>
 
-      <form className="auth-form" onSubmit={handleAdd} style={{ gap: '12px', display: 'grid' }}>
-        <div className="field-group">
+      <form className="auth-form project-member-form" onSubmit={handleAdd}>
+        <div className="field-group project-member-user-field">
           <span>User ID</span>
           <div className="input-wrap">
             <input
@@ -106,7 +106,7 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
             </div>
           )}
         </div>
-        <div className="field-group">
+        <div className="field-group project-member-role-field">
           <span>Role</span>
           <div className="input-wrap">
             <select value={role} onChange={(e) => setRole(e.target.value)}>
@@ -118,24 +118,24 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
             </select>
           </div>
         </div>
-        <button type="submit" className="primary-button compact" disabled={submitting}>
+        <button type="submit" className="primary-button compact project-member-add-button" disabled={submitting}>
           <UserPlus size={16} /> {submitting ? 'Adding...' : 'Add member'}
         </button>
       </form>
 
-      <div className="task-list" style={{ marginTop: '16px' }}>
+      <div className="task-list project-member-list">
         {(members || []).length === 0 ? (
           <p className="helper-copy">No members added yet.</p>
         ) : (
           (members || []).map((member) => (
-            <div key={`${member.userId}-${member.projectRole}`} className="task-row">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
+            <div key={`${member.userId}-${member.projectRole}`} className="task-row project-member-row">
+              <div className="project-member-identity">
+                <div className="project-member-avatar">
                   {getMemberDisplay(member).charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '14px' }}>{getMemberDisplay(member)}</div>
-                  <div style={{ fontSize: '11px', opacity: 0.5, fontFamily: 'monospace' }}>
+                <div className="project-member-copy">
+                  <div className="project-member-name">{getMemberDisplay(member)}</div>
+                  <div className="project-member-id">
                     {member.customId || member.userName || 'No employee ID'}
                   </div>
                 </div>

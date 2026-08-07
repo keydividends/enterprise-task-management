@@ -3,20 +3,17 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import projectService from '../services/projectService';
 import ProjectMemberManager from '../components/ProjectMemberManager';
-import { useAuth } from '../../auth/hooks/useAuth';
 
 const TASK_STATUSES = ['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'QA', 'DONE', 'CANCELLED'];
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(null);
-  const canManageProjects = ['ADMIN', 'MANAGER'].includes(user?.role);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,8 +47,8 @@ const ProjectDetailsPage = () => {
   };
 
   return (
-    <div className="dashboard-page">
-      <section className="hero-panel glass-card">
+    <div className="dashboard-page project-page project-details-page">
+      <section className="hero-panel glass-card project-hero project-details-hero">
         <div>
           <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
             <ArrowLeft size={16} /> Back to projects
@@ -60,46 +57,44 @@ const ProjectDetailsPage = () => {
           <h1>{project?.name || 'Project detail'}</h1>
           <p className="helper-copy">Review project status, dates, and member assignments.</p>
         </div>
-        <div className="button-row">
+        <div className="button-row project-detail-actions">
           <button type="button" className="secondary-button compact" onClick={() => window.location.reload()}>
             <RefreshCw size={16} /> Refresh
           </button>
-          {canManageProjects ? (
-            <>
-              <Link to={`/projects/${projectId}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>
-                Edit
-              </Link>
-              <button type="button" className="ghost-button" onClick={handleDelete}>
-                Archive
-              </button>
-            </>
-          ) : null}
+          <Link to={`/projects/${projectId}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>
+            Edit
+          </Link>
+          <button type="button" className="ghost-button" onClick={handleDelete}>
+            Archive
+          </button>
         </div>
       </section>
 
-      {error ? <p className="helper-copy" style={{ color: '#ef4444' }}>{error}</p> : null}
+      {error ? <p className="helper-copy project-feedback project-feedback-error">{error}</p> : null}
 
       {loading ? (
-        <div className="panel-block glass-card">Loading project details...</div>
+        <div className="panel-block glass-card project-state-card">Loading project details...</div>
       ) : project ? (
-        <section className="content-grid">
-          <div className="panel-block glass-card">
-            <div className="panel-header"><h3>Overview</h3></div>
-            <p><strong>Key:</strong> {project.key}</p>
-            <p><strong>Status:</strong> {project.status}</p>
-            <p><strong>Priority:</strong> {project.priority}</p>
-            <p><strong>Manager:</strong> {project.projectManagerCustomId || project.projectManagerId || 'Unassigned'}</p>
-            <p><strong>Start date:</strong> {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</p>
-            <p><strong>Target end date:</strong> {project.targetEndDate ? new Date(project.targetEndDate).toLocaleDateString() : 'Not set'}</p>
-            <p><strong>Description:</strong> {project.description || 'No description provided'}</p>
+        <section className="content-grid project-details-grid">
+          <div className="panel-block glass-card project-overview-card">
+            <div className="panel-header"><div><p className="project-section-kicker">At a glance</p><h3>Overview</h3></div></div>
+            <div className="project-overview-metrics">
+              <div><span>Project key</span><strong>{project.key}</strong></div>
+              <div><span>Status</span><strong>{project.status}</strong></div>
+              <div><span>Priority</span><strong>{project.priority}</strong></div>
+              <div><span>Manager</span><strong>{project.projectManagerCustomId || project.projectManagerId || 'Unassigned'}</strong></div>
+              <div><span>Start date</span><strong>{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</strong></div>
+              <div><span>Target end date</span><strong>{project.targetEndDate ? new Date(project.targetEndDate).toLocaleDateString() : 'Not set'}</strong></div>
+            </div>
+            <div className="project-description-block"><span>Description</span><p>{project.description || 'No description provided'}</p></div>
           </div>
-          <div className="panel-block glass-card">
-            <div className="panel-header"><h3>Task summary</h3></div>
+          <div className="panel-block glass-card project-summary-card">
+            <div className="panel-header"><div><p className="project-section-kicker">Delivery pulse</p><h3>Task summary</h3></div></div>
             {summary ? (
               <>
-                <div style={{ display: 'grid', gap: '10px' }}>
+                <div className="project-summary-list">
                   {TASK_STATUSES.map((status) => (
-                  <div key={status} className="task-row">
+                  <div key={status} className="task-row project-summary-row">
                     <span>{status}</span>
                     <strong>{summary[status] ?? 0}</strong>
                   </div>
@@ -122,7 +117,7 @@ const ProjectDetailsPage = () => {
           />
         </section>
       ) : (
-        <div className="panel-block glass-card">Project not found.</div>
+        <div className="panel-block glass-card project-state-card">Project not found.</div>
       )}
     </div>
   );

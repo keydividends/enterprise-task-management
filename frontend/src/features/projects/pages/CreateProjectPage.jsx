@@ -24,8 +24,8 @@ const CreateProjectPage = () => {
   };
 
   return (
-    <div className="dashboard-page">
-      <section className="hero-panel glass-card">
+    <div className="dashboard-page project-page project-editor-page">
+      <section className="hero-panel glass-card project-hero project-editor-hero">
         <div>
           <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
             <ArrowLeft size={16} /> Back to projects
@@ -35,8 +35,9 @@ const CreateProjectPage = () => {
           <p className="helper-copy">Define project details, timelines, and ownership in one place.</p>
         </div>
       </section>
-      <section className="panel-block glass-card">
-        {error ? <p className="helper-copy" style={{ color: '#ef4444' }}>{error}</p> : null}
+      <section className="panel-block glass-card project-form-panel">
+        <div className="project-form-panel-heading"><span>Project information</span><small>Fields marked by validation are required.</small></div>
+        {error ? <p className="helper-copy project-feedback project-feedback-error">{error}</p> : null}
         <ProjectForm
           initialValues={{}}
           onSubmit={handleSubmit}
