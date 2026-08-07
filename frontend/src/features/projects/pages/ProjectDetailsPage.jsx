@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import projectService from '../services/projectService';
 import ProjectMemberManager from '../components/ProjectMemberManager';
 
@@ -48,6 +48,9 @@ const ProjectDetailsPage = () => {
     <div className="dashboard-page">
       <section className="hero-panel glass-card">
         <div>
+          <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
+            <ArrowLeft size={16} /> Back to projects
+          </button>
           <p className="eyebrow secondary">Project detail</p>
           <h1>{project?.name || 'Project detail'}</h1>
           <p className="helper-copy">Review project status, dates, and member assignments.</p>

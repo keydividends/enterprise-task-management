@@ -152,6 +152,16 @@ const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, ro
   return { items, totalItems, page, pageSize, totalPages };
 };
 
+const findByCustomId = async (customId) => {
+  if (!customId) return null;
+  if (isDbConnected()) {
+    return User.findOne({ customId: String(customId).trim(), isDeleted: false });
+  }
+  return Array.from(inMemoryUsers.values()).find(
+    (u) => u.customId === String(customId).trim() && !u.isDeleted
+  ) || null;
+};
+
 const findById = async (userId) => {
   if (isDbConnected()) {
     return User.findOne({ _id: userId, isDeleted: false });
@@ -209,6 +219,7 @@ const createUser = async (userData) => {
     department: userData.department || "",
     title: userData.title || "",
     bio: userData.bio || "",
+    customId: userData.customId || null,
     role: userData.role || "USER",
     permissions: userData.permissions || [
       "USER_VIEW",
@@ -352,5 +363,6 @@ module.exports = {
   getUserProjects,
   getUserTeams,
   getUserWorkload,
+  findByCustomId,
   inMemoryUsers,
 };

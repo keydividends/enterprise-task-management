@@ -119,6 +119,9 @@ export const UserDetailsPage = () => {
               <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '15px' }}>
                 {user.title || 'Team Member'} {user.department ? `• ${user.department}` : ''}
               </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.5, fontFamily: 'monospace', userSelect: 'all' }}>
+                User ID: {user.id}
+              </p>
               <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '13px', opacity: 0.8 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <Mail size={14} /> {user.email}

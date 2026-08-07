@@ -134,7 +134,10 @@ export const ProfilePage = () => {
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>
               {profile.firstName} {profile.lastName}
             </h3>
-            <p style={{ margin: '2px 0 8px 0', fontSize: '14px', opacity: 0.6 }}>{profile.email}</p>
+            <p style={{ margin: '2px 0 4px 0', fontSize: '14px', opacity: 0.6 }}>{profile.email}</p>
+            <p style={{ margin: '0 0 8px 0', fontSize: '12px', opacity: 0.5, fontFamily: 'monospace', userSelect: 'all' }}>
+              ID: {authUser?.id || 'N/A'}
+            </p>
             <button
               type="button"
               onClick={() => alert('Avatar upload modal activated.')}

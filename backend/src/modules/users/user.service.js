@@ -68,6 +68,7 @@ const createUser = async (data = {}, currentUser = null) => {
     department: data.department || "",
     title: data.title || "",
     bio: data.bio || "",
+    customId: data.customId ? String(data.customId).trim() : null,
     role: data.role || "USER",
     roleId: data.roleId || null,
     permissions: data.permissions || ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
@@ -165,6 +166,13 @@ const restoreUser = async (userId, currentUser = null) => {
   return toUserDTO(restoredUser);
 };
 
+const getUserByCustomId = async (customId) => {
+  if (!customId) throw createUserError("INVALID_IDENTIFIER", "Custom ID is required.");
+  const user = await userRepository.findByCustomId(customId);
+  if (!user) throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+  return toUserDTO(user);
+};
+
 const getUserProfile = async (userId, currentUser = null) => {
   const targetId = userId === "me" ? currentUser?.id : userId;
   return getUserById(targetId);
@@ -244,4 +252,5 @@ module.exports = {
   getUserProjects,
   getUserTeams,
   getUserWorkload,
+  getUserByCustomId,
 };

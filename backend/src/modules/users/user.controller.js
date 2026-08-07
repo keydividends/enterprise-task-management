@@ -229,6 +229,15 @@ const getUserWorkload = async (req, res, next) => {
   }
 };
 
+const getUserByCustomId = async (req, res, next) => {
+  try {
+    const user = await userService.getUserByCustomId(req.params.customId);
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -248,4 +257,5 @@ module.exports = {
   getUserProjects,
   getUserTeams,
   getUserWorkload,
+  getUserByCustomId,
 };

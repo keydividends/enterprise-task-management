@@ -12,9 +12,9 @@ export const CreateUserPage = () => {
     setSubmitting(true);
     setError(null);
     try {
-      await userService.createUser(formData);
-      // Navigate to user list with toast query param
-      navigate('/users?toast=created');
+      const res = await userService.createUser(formData);
+      const createdUser = res.data;
+      navigate(`/users?toast=created${createdUser?.customId ? `&userId=${createdUser.customId}` : ''}`);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to create user');
     } finally {

@@ -42,9 +42,11 @@ export const UserListPage = () => {
   // Check query params for toasts
   useEffect(() => {
     const toastType = searchParams.get('toast');
+    const userId = searchParams.get('userId');
     if (toastType === 'created') {
-      setToastMessage('User Created Successfully');
+      setToastMessage(`User Created Successfully${userId ? ` — ID: ${userId}` : ''}`);
       searchParams.delete('toast');
+      searchParams.delete('userId');
       setSearchParams(searchParams, { replace: true });
     } else if (toastType === 'updated') {
       setToastMessage('User Updated Successfully');
@@ -279,6 +281,7 @@ export const UserListPage = () => {
           <thead>
             <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>User</th>
+              <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>User ID</th>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Role</th>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Department</th>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Status</th>
@@ -288,7 +291,7 @@ export const UserListPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" style={{ padding: '48px', textAlign: 'center' }}>
+                <td colSpan="6" style={{ padding: '48px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', opacity: 0.7 }}>
                     <RefreshCw size={24} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
                     <span style={{ fontWeight: 600, fontSize: '15px' }}>Loading Users...</span>
@@ -297,7 +300,7 @@ export const UserListPage = () => {
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ padding: '48px 24px', textAlign: 'center' }}>
+                <td colSpan="6" style={{ padding: '48px 24px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                     <div
                       style={{
@@ -375,8 +378,18 @@ export const UserListPage = () => {
                           {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`}
                         </div>
                         <div style={{ fontSize: '13px', opacity: 0.6 }}>{user.email}</div>
+                        {user.customId && (
+                          <div style={{ fontSize: '11px', opacity: 0.5, fontFamily: 'monospace', marginTop: '2px' }}>
+                            ID: <strong>{user.customId}</strong>
+                          </div>
+                        )}
                       </div>
                     </div>
+                  </td>
+                  <td style={{ padding: '14px 20px' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 600, background: 'rgba(79,70,229,0.08)', color: '#4f46e5', padding: '3px 8px', borderRadius: '6px' }}>
+                      {user.customId || user.id}
+                    </span>
                   </td>
                   <td style={{ padding: '14px 20px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 500 }}>

@@ -58,6 +58,13 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    customId: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
     role: {
       type: String,
       default: "USER",

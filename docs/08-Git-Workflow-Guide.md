@@ -803,11 +803,7 @@ lead consistently.
 Example conflict:
 
 ``` text
-<<<<<<< HEAD
 const API_URL = "/api/v1/tasks";
-=======
-const API_URL = "/api/v1/task";
->>>>>>> develop
 ```
 
 Do not simply delete markers without understanding both changes.

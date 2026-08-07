@@ -48,6 +48,41 @@ const userAuthSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    customId: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
+    mobile: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    title: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    bio: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    roleId: {
+      type: String,
+      default: null,
+    },
+    avatarUrl: {
+      type: String,
+      default: "",
+    },
     isDeleted: {
       type: Boolean,
       default: false,

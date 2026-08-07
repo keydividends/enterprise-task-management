@@ -51,10 +51,7 @@ const getProjectById = async (projectId, context = {}) => {
 
 const createProject = async (payload, context = {}) => {
   const validated = validateCreateProject(payload);
-  const workspaceId = getWorkspaceId(context);
-  if (!workspaceId) {
-    throw createError("WORKSPACE_REQUIRED", "Workspace context is required.", 400);
-  }
+  const workspaceId = getWorkspaceId(context) || 'default';
 
   const existing = await projectRepository.findProjectByKey(workspaceId, validated.key);
   if (existing) {
@@ -159,8 +156,28 @@ const listProjectMembers = async (projectId, query = {}, context = {}) => {
   const search = query.search ? String(query.search).trim() : undefined;
 
   const result = await projectRepository.listProjectMembers({ projectId, page, pageSize, role, status, search });
+
+  const enriched = await Promise.all(
+    result.items.map(async (member) => {
+      try {
+        const uid = String(member.userId);
+        if (/^[a-f0-9]{24}$/i.test(uid)) {
+          const user = await userRepository.findById(uid);
+          if (user) {
+            member.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
+          }
+        }
+      } catch { /* skip */ }
+      return member;
+    })
+  );
+
+
+
+   
+
   return {
-    items: result.items.map(toProjectMemberDTO),
+    items: enriched.map(toProjectMemberDTO),
     pagination: {
       page: result.page,
       pageSize: result.pageSize,
@@ -178,29 +195,74 @@ const addProjectMember = async (projectId, payload, context = {}) => {
   }
 
   const memberInput = validateProjectMemberInput(payload);
-  try {
-    const user = await userRepository.findById(memberInput.userId);
-    if (user && (user.isDeleted || user.status === "DISABLED")) {
+
+  // resolve customId → real MongoDB _id, reject if not found
+  let resolvedUserId = null;
+  let resolvedUserName = null;
+  let resolvedCustomId = null;
+
+  const userByCustomId = await userRepository.findByCustomId(memberInput.userId);
+  if (userByCustomId) {
+    if (userByCustomId.isDeleted || userByCustomId.status === "DISABLED") {
       throw createError("USER_NOT_FOUND", "Member user must be valid and active.", 404, "userId");
     }
-  } catch (err) {
-    if (err.code === "USER_NOT_FOUND") throw err;
+    resolvedUserId = String(userByCustomId._id || userByCustomId.id);
+    resolvedUserName = [userByCustomId.firstName, userByCustomId.lastName].filter(Boolean).join(' ') || userByCustomId.email || null;
+    resolvedCustomId = userByCustomId.customId || null;
+  } else {
+    // fallback: try as MongoDB ObjectId
+    if (/^[a-f0-9]{24}$/i.test(memberInput.userId)) {
+      const user = await userRepository.findById(memberInput.userId);
+      if (!user || user.isDeleted || user.status === "DISABLED") {
+        throw createError("USER_NOT_FOUND", "No user found with that ID.", 404, "userId");
+      }
+      resolvedUserId = String(user._id || user.id);
+      resolvedUserName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
+      resolvedCustomId = user.customId || null;
+    } else {
+      throw createError("USER_NOT_FOUND", "No user found with that ID.", 404, "userId");
+    }
   }
 
-  const existing = await projectRepository.findProjectMember(projectId, memberInput.userId);
+  const existing = await projectRepository.findProjectMember(projectId, resolvedUserId);
   if (existing) {
     throw createError("PROJECT_MEMBER_EXISTS", "User is already a project member.", 409, "userId");
   }
 
   const created = await projectRepository.createProjectMember({
     projectId,
-    userId: memberInput.userId,
+    userId: resolvedUserId,
     projectRole: memberInput.projectRole,
     allocationPercentage: memberInput.allocationPercentage,
     addedBy: context.user?.id || null,
   });
 
-  return toProjectMemberDTO(created);
+  try {
+    const uid = String(resolvedUserId);
+    if (/^[a-f0-9]{24}$/i.test(uid)) {
+      const user = await userRepository.findById(uid);
+      if (user) {
+        created.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
+      }
+    }
+  } catch { /* skip */ }
+
+  
+  try {
+    const uid = String(resolvedUserId);
+    if (/^[a-f0-9]{24}$/i.test(uid)) {
+      const user = await userRepository.findById(uid);
+      if (user) {
+        created.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
+      }
+    }
+  } catch { /* skip */ }
+
+  const plain = typeof created.toObject === 'function' ? created.toObject() : { ...created };
+  plain.userName = resolvedUserName;
+  plain.customId = resolvedCustomId;
+
+  return toProjectMemberDTO(plain);
 };
 
 const removeProjectMember = async (projectId, userId, context = {}) => {

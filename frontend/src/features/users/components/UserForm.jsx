@@ -13,6 +13,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     bio: '',
     role: 'USER',
     status: 'ACTIVE',
+    customId: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -30,9 +31,10 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         bio: initialValues.bio || '',
         role: initialValues.role || 'USER',
         status: initialValues.status || 'ACTIVE',
+        customId: initialValues.customId || '',
       });
     }
-  }, [initialValues]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -317,6 +319,30 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
             }}
           />
         </div>
+
+        {!isEditing && (
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+              User ID <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used by managers to add this user to projects)</span>
+            </label>
+            <input
+              type="text"
+              name="customId"
+              value={formData.customId}
+              onChange={handleChange}
+              placeholder="e.g. trisha.dev or EMP-042"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: errors.customId ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+                fontFamily: 'monospace',
+              }}
+            />
+            {errors.customId && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.customId}</span>}
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>

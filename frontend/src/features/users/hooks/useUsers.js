@@ -13,6 +13,7 @@ const INITIAL_MOCK_USERS = [
     department: 'Management',
     title: 'System Administrator',
     status: 'ACTIVE',
+    customId: 'ADMIN-001',
     createdAt: '2026-01-15T08:00:00.000Z',
   },
   {
@@ -25,6 +26,7 @@ const INITIAL_MOCK_USERS = [
     department: 'Engineering',
     title: 'Software Engineer',
     status: 'ACTIVE',
+    customId: 'EMP-001',
     createdAt: '2026-02-01T10:30:00.000Z',
   },
   {
@@ -37,6 +39,7 @@ const INITIAL_MOCK_USERS = [
     department: 'QA',
     title: 'Tester',
     status: 'DISABLED',
+    customId: 'EMP-002',
     createdAt: '2026-02-10T14:15:00.000Z',
   },
 ];

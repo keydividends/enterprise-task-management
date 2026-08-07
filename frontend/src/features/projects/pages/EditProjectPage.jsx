@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import projectService from '../services/projectService';
 import ProjectForm from '../components/ProjectForm';
 
@@ -53,6 +54,9 @@ const EditProjectPage = () => {
     <div className="dashboard-page">
       <section className="hero-panel glass-card">
         <div>
+          <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
+            <ArrowLeft size={16} /> Back to projects
+          </button>
           <p className="eyebrow secondary">Edit project</p>
           <h1>{project.name}</h1>
           <p className="helper-copy">Update project details and timelines.</p>

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const projectSchema = new mongoose.Schema(
   {
-    workspaceId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+    workspaceId: { type: mongoose.Schema.Types.ObjectId, required: false, index: true, default: null },
     name: { type: String, required: true, trim: true },
     key: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
@@ -29,7 +29,7 @@ const projectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-projectSchema.index({ workspaceId: 1, key: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
+projectSchema.index({ workspaceId: 1, key: 1 }, { unique: true, sparse: true, partialFilterExpression: { isDeleted: false } });
 projectSchema.index({ workspaceId: 1, status: 1 });
 projectSchema.index({ projectManagerId: 1, status: 1 });
 projectSchema.index({ targetEndDate: 1 });

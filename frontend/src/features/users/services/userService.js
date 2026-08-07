@@ -68,6 +68,11 @@ export const userService = {
     return response.data;
   },
 
+  async getUserByCustomId(customId) {
+    const response = await axiosClient.get(`/users/lookup/${customId}`);
+    return response.data;
+  },
+
   async getUserProjects(userId) {
     const response = await axiosClient.get(`/users/${userId}/projects`);
     return response.data;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import useProjects from '../hooks/useProjects';
 import ProjectForm from '../components/ProjectForm';
 
@@ -26,6 +27,9 @@ const CreateProjectPage = () => {
     <div className="dashboard-page">
       <section className="hero-panel glass-card">
         <div>
+          <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
+            <ArrowLeft size={16} /> Back to projects
+          </button>
           <p className="eyebrow secondary">Create project</p>
           <h1>Start a new project</h1>
           <p className="helper-copy">Define project details, timelines, and ownership in one place.</p>

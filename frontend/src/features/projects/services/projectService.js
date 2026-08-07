@@ -56,7 +56,7 @@ const projectService = {
   async createProject(payload) {
     return withFallback(
       () => axiosClient.post('/projects', payload),
-      () => ({ ...payload, id: `proj-${Date.now()}`, status: payload.status || 'PLANNING' })
+      (err) => { throw err; }
     );
   },
 
@@ -85,10 +85,8 @@ const projectService = {
   },
 
   async addProjectMember(projectId, payload) {
-    return withFallback(
-      () => axiosClient.post(`/projects/${projectId}/members`, payload),
-      () => ({ id: `member-${Date.now()}`, projectId, ...payload, status: 'ACTIVE' })
-    );
+    const response = await axiosClient.post(`/projects/${projectId}/members`, payload);
+    return response?.data?.data ?? response?.data ?? response;
   },
 
   async removeProjectMember(projectId, userId) {

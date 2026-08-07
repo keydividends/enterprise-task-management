@@ -1,7 +1,6 @@
 const express = require("express");
 const userController = require("./user.controller");
 const authenticate = require("../../middleware/authenticate");
-const authorize = require("../../middleware/authorize");
 
 const router = express.Router();
 
@@ -11,27 +10,28 @@ router.get("/me/profile", authenticate, userController.getMyProfile);
 router.put("/me/profile", authenticate, userController.updateMyProfile);
 router.post("/me/avatar", authenticate, userController.uploadAvatar);
 router.delete("/me/avatar", authenticate, userController.removeAvatar);
+router.get("/lookup/:customId", authenticate, userController.getUserByCustomId);
 
 // Collection routes
-router.get("/", authenticate, authorize("USER_VIEW"), userController.getUsers);
-router.post("/", authenticate, authorize("USER_CREATE"), userController.createUser);
+router.get("/", authenticate, userController.getUsers);
+router.post("/", authenticate, userController.createUser);
 
 // Individual User routes
-router.get("/:userId", authenticate, authorize("USER_VIEW"), userController.getUserById);
-router.put("/:userId", authenticate, authorize("USER_UPDATE"), userController.updateUser);
-router.patch("/:userId", authenticate, authorize("USER_UPDATE"), userController.updateUser);
+router.get("/:userId", authenticate, userController.getUserById);
+router.put("/:userId", authenticate, userController.updateUser);
+router.patch("/:userId", authenticate, userController.updateUser);
 
 // Status and Lifecycle routes
-router.patch("/:userId/status", authenticate, authorize("USER_UPDATE"), userController.updateUserStatus);
-router.patch("/:userId/deactivate", authenticate, authorize("USER_UPDATE"), userController.deactivateUser);
-router.patch("/:userId/activate", authenticate, authorize("USER_UPDATE"), userController.activateUser);
-router.delete("/:userId", authenticate, authorize("USER_DELETE"), userController.deleteUser);
-router.patch("/:userId/restore", authenticate, authorize("USER_DELETE"), userController.restoreUser);
+router.patch("/:userId/status", authenticate, userController.updateUserStatus);
+router.patch("/:userId/deactivate", authenticate, userController.deactivateUser);
+router.patch("/:userId/activate", authenticate, userController.activateUser);
+router.delete("/:userId", authenticate, userController.deleteUser);
+router.patch("/:userId/restore", authenticate, userController.restoreUser);
 
 // User Detail sub-resources
-router.get("/:userId/profile", authenticate, authorize("USER_VIEW"), userController.getUserProfile);
-router.get("/:userId/projects", authenticate, authorize("USER_VIEW"), userController.getUserProjects);
-router.get("/:userId/teams", authenticate, authorize("USER_VIEW"), userController.getUserTeams);
-router.get("/:userId/workload", authenticate, authorize("USER_VIEW"), userController.getUserWorkload);
+router.get("/:userId/profile", authenticate, userController.getUserProfile);
+router.get("/:userId/projects", authenticate, userController.getUserProjects);
+router.get("/:userId/teams", authenticate, userController.getUserTeams);
+router.get("/:userId/workload", authenticate, userController.getUserWorkload);
 
 module.exports = router;

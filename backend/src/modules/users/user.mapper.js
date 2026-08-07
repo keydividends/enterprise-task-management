@@ -9,6 +9,7 @@ const toUserDTO = (user) => {
   return {
     id,
     ...rest,
+    customId: rest.customId || null,
     fullName: `${rest.firstName || ""} ${rest.lastName || ""}`.trim(),
   };
 };
