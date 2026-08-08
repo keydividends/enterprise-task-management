@@ -21,7 +21,7 @@ import taskService from '../services/taskService';
 import TaskStatusBadge from '../components/TaskStatusBadge';
 import ChecklistPanel from '../components/ChecklistPanel';
 import { PRIORITY_LABELS, TYPE_LABELS, STATUS_LABELS, TASK_STATUSES, TASK_PRIORITIES } from '../taskConstants';
-import { MOCK_USERS, fetchProjectMembers } from '../hooks/useTasks';
+import { MOCK_USERS, fetchProjectMembers, fetchProjectSprints } from '../hooks/useTasks';
 import axiosClient from '../../../api/axiosClient';
 
 const formatDate = (date) => {
@@ -47,6 +47,7 @@ const TaskDetailsPage = () => {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [members, setMembers] = useState([]);
+  const [sprints, setSprints] = useState([]);
   const [userMap, setUserMap] = useState({});
 
   // Delete confirmation modal state
@@ -99,6 +100,10 @@ const TaskDetailsPage = () => {
 
   useEffect(() => {
     if (task?.projectId) fetchProjectMembers(task.projectId).then(setMembers);
+  }, [task?.projectId]);
+
+  useEffect(() => {
+    if (task?.projectId) fetchProjectSprints(task.projectId).then(setSprints);
   }, [task?.projectId]);
 
   const showToast = (message) => {
@@ -181,6 +186,19 @@ const labels = task.labels || [];
 
   // Resolve a userId to a display name, preferring the real users map.
   const getUserName = (userId) => resolveName(userId, userMap);
+  const formatHistoryValue = (field, value) => {
+    if (value === null || value === undefined || value === '') return '—';
+
+    const normalizedField = String(field).toLowerCase();
+    if (normalizedField === 'sprintid') {
+      const sprint = sprints.find((item) => String(item.id || item._id) === String(value));
+      return sprint?.name || String(value);
+    }
+    if (normalizedField === 'primaryassigneeid' || normalizedField === 'assigneeid') {
+      return getUserName(value);
+    }
+    return String(value);
+  };
 
   return (
     <div className="task-detail-page">
@@ -287,7 +305,7 @@ const labels = task.labels || [];
                 {history.map((entry) => (
                   <div key={entry.id} className="history-item">
                     <strong>{entry.field}</strong>
-                    <span>{String(entry.oldValue ?? '—')} → {String(entry.newValue ?? '—')}</span>
+                    <span>{formatHistoryValue(entry.field, entry.oldValue)} → {formatHistoryValue(entry.field, entry.newValue)}</span>
                     <small>{formatDate(entry.changedAt)}</small>
                   </div>
                 ))}
