@@ -32,15 +32,35 @@ const createError = (code, message, statusCode = 400, field = null) => {
 
 const toObjectId = (id) => (isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id);
 
+const hasTaskPermission = (context, permission) => {
+  const role = String(context.user?.role || "").toUpperCase();
+  return ["ADMIN", "SUPER_ADMIN"].includes(role)
+    || (Array.isArray(context.user?.permissions) && context.user.permissions.includes(permission));
+};
+
+const assertTaskPermission = (context, permission) => {
+  if (!hasTaskPermission(context, permission)) {
+    throw createError("PERMISSION_DENIED", "Permission denied.", 403);
+  }
+};
+
+const hasProjectWideTaskAccess = (context = {}) =>
+  ["ADMIN", "SUPER_ADMIN", "ORG_ADMIN", "ORGANIZATION_ADMIN"].includes(
+    String(context.user?.role || "").toUpperCase()
+  );
+
 // ---------------------------------------------------------------------------
 // Access helpers
 // ---------------------------------------------------------------------------
 
 const buildTaskKey = (projectKey, taskNumber) => `${projectKey || "ETMS"}-${taskNumber}`;
 
-const assertProjectAccess = async (projectId, userId) => {
+const assertProjectAccess = async (projectId, userId, context = {}) => {
   const project = await contracts.findProjectById(projectId);
   if (!project) throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
+  // The RBAC matrix grants Admins organization-wide access. They must not be
+  // rejected merely because they are not listed as an individual project member.
+  if (hasProjectWideTaskAccess(context)) return project;
   const member = await contracts.isProjectMember(projectId, userId);
   if (!member) throw createError("PROJECT_ACCESS_DENIED", "You do not have access to this project.", 403);
   return project;
@@ -220,7 +240,7 @@ const createTask = async (payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = context.userId || context.user?.id;
 
-  const project = await assertProjectAccess(payload.projectId, userId);
+  const project = await assertProjectAccess(payload.projectId, userId, context);
   await assertAssigneeEligible(payload.projectId, payload.primaryAssigneeId);
   await assertSprintScoped(payload.projectId, payload.sprintId);
   await assertEpicScoped(payload.projectId, payload.epicId);
@@ -274,6 +294,9 @@ const updateTask = async (taskId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = context.userId || context.user?.id;
   const task = await assertTaskExists(taskId, workspaceId);
+
+  // TASK_CLOSE is explicitly separate from TASK_UPDATE in the RBAC matrix.
+  if (payload.status === "DONE") assertTaskPermission(context, "TASK_CLOSE");
 
   const allowed = {};
   const fields = ["title", "description", "type", "priority", "storyPoints", "startDate", "dueDate", "parentTaskId", "sprintId", "epicId"];
@@ -353,11 +376,21 @@ const assignTask = async (taskId, payload, context = {}) => {
   const userId = context.userId || context.user?.id;
   const task = await assertTaskExists(taskId, workspaceId);
 
+  const isReassignment = task.primaryAssigneeId && String(task.primaryAssigneeId) !== String(payload.userId);
+  assertTaskPermission(context, isReassignment ? "TASK_REASSIGN" : "TASK_ASSIGN");
+
   await assertAssigneeEligible(task.projectId, payload.userId);
 
   const existing = await repo.findActiveAssignment(taskId, payload.userId);
   if (existing) {
     throw createError("TASK_ASSIGNMENT_EXISTS", "User is already assigned to this task.", 409);
+  }
+
+  // A task has one primary assignee. Archive any prior active assignment so
+  // its assignment history remains accurate and no stale active rows remain.
+  if (isReassignment) {
+    const assignments = await repo.findAssignmentsByTask(taskId);
+    for (const assignment of assignments) await repo.removeAssignment(assignment._id);
   }
 
   await repo.createAssignment({
@@ -377,6 +410,8 @@ const unassignTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = context.userId || context.user?.id;
   const task = await assertTaskExists(taskId, workspaceId);
+
+  assertTaskPermission(context, "TASK_REASSIGN");
 
   const assignments = await repo.findAssignmentsByTask(taskId);
   for (const assignment of assignments) {
