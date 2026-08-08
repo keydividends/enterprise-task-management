@@ -1,0 +1,638 @@
+TAP version 13
+# Subtest: createTokenPair returns access and refresh tokens
+ok 1 - createTokenPair returns access and refresh tokens
+  ---
+  duration_ms: 15.4454
+  type: 'test'
+  ...
+# Subtest: verifyAccessToken decodes valid token
+ok 2 - verifyAccessToken decodes valid token
+  ---
+  duration_ms: 8.394
+  type: 'test'
+  ...
+# Subtest: registerUser creates a new user and returns a token pair
+ok 3 - registerUser creates a new user and returns a token pair
+  ---
+  duration_ms: 218.3423
+  type: 'test'
+  ...
+# Subtest: registerUser rejects duplicate email addresses
+ok 4 - registerUser rejects duplicate email addresses
+  ---
+  duration_ms: 2.1715
+  type: 'test'
+  ...
+# Subtest: loginUser authenticates the seeded admin account with the documented demo credentials
+ok 5 - loginUser authenticates the seeded admin account with the documented demo credentials
+  ---
+  duration_ms: 153.5711
+  type: 'test'
+  ...
+# Subtest: loginUser exposes the team permissions required by the team module
+ok 6 - loginUser exposes the team permissions required by the team module
+  ---
+  duration_ms: 263.0987
+  type: 'test'
+  ...
+# Subtest: loginUser rejects disabled accounts
+ok 7 - loginUser rejects disabled accounts
+  ---
+  duration_ms: 0.9806
+  type: 'test'
+  ...
+# Subtest: forgotPassword does not expose whether the account exists
+ok 8 - forgotPassword does not expose whether the account exists
+  ---
+  duration_ms: 0.7664
+  type: 'test'
+  ...
+# Subtest: forgotPassword does not send email or store token for disabled accounts
+ok 9 - forgotPassword does not send email or store token for disabled accounts
+  ---
+  duration_ms: 1.1451
+  type: 'test'
+  ...
+# Subtest: forgotPassword stores a hashed reset token and supports a real reset flow
+ok 10 - forgotPassword stores a hashed reset token and supports a real reset flow
+  ---
+  duration_ms: 220.2039
+  type: 'test'
+  ...
+# Subtest: resetPassword validates token lifecycle and rejects invalid token format
+ok 11 - resetPassword validates token lifecycle and rejects invalid token format
+  ---
+  duration_ms: 1.0558
+  type: 'test'
+  ...
+# Subtest: resetPassword rejects already used token
+ok 12 - resetPassword rejects already used token
+  ---
+  duration_ms: 291.9186
+  type: 'test'
+  ...
+# Subtest: resetPassword rejects expired token
+ok 13 - resetPassword rejects expired token
+  ---
+  duration_ms: 1.3382
+  type: 'test'
+  ...
+# Subtest: resetPassword rejects disabled/inactive user
+ok 14 - resetPassword rejects disabled/inactive user
+  ---
+  duration_ms: 0.7833
+  type: 'test'
+  ...
+# Subtest: resetPassword invalidates all previous tokens for the user
+ok 15 - resetPassword invalidates all previous tokens for the user
+  ---
+  duration_ms: 139.3037
+  type: 'test'
+  ...
+# Subtest: refreshAccessToken returns a new pair for a valid refresh token
+ok 16 - refreshAccessToken returns a new pair for a valid refresh token
+  ---
+  duration_ms: 8.9556
+  type: 'test'
+  ...
+# Subtest: verifyAccessToken rejects malformed or wrong-type tokens
+ok 17 - verifyAccessToken rejects malformed or wrong-type tokens
+  ---
+  duration_ms: 0.4722
+  type: 'test'
+  ...
+# Subtest: logoutAllSessions clears active sessions for the user
+ok 18 - logoutAllSessions clears active sessions for the user
+  ---
+  duration_ms: 5.3495
+  type: 'test'
+  ...
+# Subtest: getUserPermissions returns the current permission set
+ok 19 - getUserPermissions returns the current permission set
+  ---
+  duration_ms: 1.612
+  type: 'test'
+  ...
+# Subtest: authorize permits users with the required permission
+ok 20 - authorize permits users with the required permission
+  ---
+  duration_ms: 0.3104
+  type: 'test'
+  ...
+# Subtest: authorize rejects requests missing a required permission
+ok 21 - authorize rejects requests missing a required permission
+  ---
+  duration_ms: 0.2488
+  type: 'test'
+  ...
+# Subtest: createProject creates a project successfully
+ok 22 - createProject creates a project successfully
+  ---
+  duration_ms: 45.2286
+  type: 'test'
+  ...
+# Subtest: createProject resolves a project manager custom ID
+ok 23 - createProject resolves a project manager custom ID
+  ---
+  duration_ms: 0.9795
+  type: 'test'
+  ...
+# Subtest: listProjects returns paginated results
+ok 24 - listProjects returns paginated results
+  ---
+  duration_ms: 2.2624
+  type: 'test'
+  ...
+# Subtest: updateProject validates fields and updates
+ok 25 - updateProject validates fields and updates
+  ---
+  duration_ms: 3.6314
+  type: 'test'
+  ...
+# Subtest: addProjectMember succeeds and duplicate members are rejected
+not ok 26 - addProjectMember succeeds and duplicate members are rejected
+  ---
+  duration_ms: 3.5999
+  type: 'test'
+  location: 'c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\projects.test.js:67:1'
+  failureType: 'testCodeFailure'
+  error: 'No user found with that ID.'
+  code: 'USER_NOT_FOUND'
+  stack: |-
+    createError (c:\Users\SAMA\enterprise-task-management\backend\src\modules\projects\project.service.js:14:17)
+    Object.addProjectMember (c:\Users\SAMA\enterprise-task-management\backend\src\modules\projects\project.service.js:243:13)
+    async TestContext.<anonymous> (c:\Users\SAMA\enterprise-task-management\backend\tests\projects.test.js:73:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: removeProjectMember removes an existing member
+not ok 27 - removeProjectMember removes an existing member
+  ---
+  duration_ms: 1.0274
+  type: 'test'
+  location: 'c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\projects.test.js:85:1'
+  failureType: 'testCodeFailure'
+  error: 'No user found with that ID.'
+  code: 'USER_NOT_FOUND'
+  stack: |-
+    createError (c:\Users\SAMA\enterprise-task-management\backend\src\modules\projects\project.service.js:14:17)
+    Object.addProjectMember (c:\Users\SAMA\enterprise-task-management\backend\src\modules\projects\project.service.js:243:13)
+    async TestContext.<anonymous> (c:\Users\SAMA\enterprise-task-management\backend\tests\projects.test.js:91:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: deleteProject archives project
+ok 28 - deleteProject archives project
+  ---
+  duration_ms: 2.5151
+  type: 'test'
+  ...
+# Subtest: getProjectTaskSummary returns task status counts and forwards the sprint filter
+ok 29 - getProjectTaskSummary returns task status counts and forwards the sprint filter
+  ---
+  duration_ms: 2.6884
+  type: 'test'
+  ...
+# Subtest: getProjectTaskSummary rejects a missing project
+ok 30 - getProjectTaskSummary rejects a missing project
+  ---
+  duration_ms: 1.8438
+  type: 'test'
+  ...
+# Subtest: getRoleById returns role by normalized name when invalid ObjectId is passed
+ok 31 - getRoleById returns role by normalized name when invalid ObjectId is passed
+  ---
+  duration_ms: 5.8178
+  type: 'test'
+  ...
+# Subtest: createRole creates a role and assigns permissions
+ok 32 - createRole creates a role and assigns permissions
+  ---
+  duration_ms: 5.9425
+  type: 'test'
+  ...
+# Subtest: createRole rejects duplicate role names
+ok 33 - createRole rejects duplicate role names
+  ---
+  duration_ms: 2.1491
+  type: 'test'
+  ...
+# Subtest: updateRole blocks system role modifications
+ok 34 - updateRole blocks system role modifications
+  ---
+  duration_ms: 1.3264
+  type: 'test'
+  ...
+# Subtest: deleteRole removes a custom role and its permission links
+ok 35 - deleteRole removes a custom role and its permission links
+  ---
+  duration_ms: 2.74
+  type: 'test'
+  ...
+# c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\roles.test.js:7
+# describe("Role and Permission APIs", () => {
+# ^
+# ReferenceError: describe is not defined
+#     at Object.<anonymous> (c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\roles.test.js:7:1)
+#     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+#     at Object..js (node:internal/modules/cjs/loader:1895:10)
+#     at Module.load (node:internal/modules/cjs/loader:1465:32)
+#     at Function._load (node:internal/modules/cjs/loader:1282:12)
+#     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+#     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+#     at node:internal/main/run_main_module:36:49
+# Node.js v22.16.0
+# Subtest: tests\\roles.test.js
+not ok 5 - tests\\roles.test.js
+  ---
+  duration_ms: 13648.9423
+  type: 'test'
+  location: 'c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\roles.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# node:internal/modules/cjs/loader:1404
+#   throw err;
+#   ^
+# Error: Cannot find module 'mongodb-memory-server'
+# Require stack:
+# - c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\testDatabase.js
+# - c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\task.api.test.js
+#     at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)
+#     at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+#     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+#     at Function._load (node:internal/modules/cjs/loader:1211:37)
+#     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+#     at Module.require (node:internal/modules/cjs/loader:1487:12)
+#     at require (node:internal/modules/helpers:135:16)
+#     at Object.<anonymous> (c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\testDatabase.js:2:31)
+#     at Module._compile (node:internal/modules/cjs/loader:1730:14) {
+#   code: 'MODULE_NOT_FOUND',
+#   requireStack: [
+#     'c:\\\\Users\\\\SAMA\\\\enterprise-task-management\\\\backend\\\\tests\\\\testDatabase.js',
+#     'c:\\\\Users\\\\SAMA\\\\enterprise-task-management\\\\backend\\\\tests\\\\task.api.test.js'
+#   ]
+# }
+# Node.js v22.16.0
+# Subtest: tests\\task.api.test.js
+not ok 6 - tests\\task.api.test.js
+  ---
+  duration_ms: 10884.8961
+  type: 'test'
+  location: 'c:\\Users\\SAMA\\enterprise-task-management\\backend\\tests\\task.api.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: canTransition allows documented forward moves
+ok 38 - canTransition allows documented forward moves
+  ---
+  duration_ms: 4.7572
+  type: 'test'
+  ...
+# Subtest: canTransition allows self transition and rejects illegal moves
+ok 39 - canTransition allows self transition and rejects illegal moves
+  ---
+  duration_ms: 0.523
+  type: 'test'
+  ...
+# Subtest: status transition map covers every status
+ok 40 - status transition map covers every status
+  ---
+  duration_ms: 0.6833
+  type: 'test'
+  ...
+# Subtest: canTransition rejects unknown status
+ok 41 - canTransition rejects unknown status
+  ---
+  duration_ms: 0.4709
+  type: 'test'
+  ...
+# Subtest: validateCreateTask rejects missing title
+ok 42 - validateCreateTask rejects missing title
+  ---
+  duration_ms: 2.3129
+  type: 'test'
+  ...
+# Subtest: validateCreateTask rejects invalid project id
+ok 43 - validateCreateTask rejects invalid project id
+  ---
+  duration_ms: 0.9214
+  type: 'test'
+  ...
+# Subtest: validateCreateTask rejects invalid enum
+ok 44 - validateCreateTask rejects invalid enum
+  ---
+  duration_ms: 0.8724
+  type: 'test'
+  ...
+# Subtest: validateCreateTask rejects invalid sprint id
+ok 45 - validateCreateTask rejects invalid sprint id
+  ---
+  duration_ms: 0.6443
+  type: 'test'
+  ...
+# Subtest: validateCreateTask rejects invalid assignee id
+ok 46 - validateCreateTask rejects invalid assignee id
+  ---
+  duration_ms: 2.1178
+  type: 'test'
+  ...
+# Subtest: validateCreateTask rejects invalid parent task id
+ok 47 - validateCreateTask rejects invalid parent task id
+  ---
+  duration_ms: 1.6374
+  type: 'test'
+  ...
+# Subtest: validateCreateTask accepts valid payload
+ok 48 - validateCreateTask accepts valid payload
+  ---
+  duration_ms: 0.8617
+  type: 'test'
+  ...
+# Subtest: validateTaskQuery normalizes pagination and sort
+ok 49 - validateTaskQuery normalizes pagination and sort
+  ---
+  duration_ms: 0.8004
+  type: 'test'
+  ...
+# Subtest: validateTaskQuery rejects invalid status filter
+ok 50 - validateTaskQuery rejects invalid status filter
+  ---
+  duration_ms: 0.4674
+  type: 'test'
+  ...
+# Subtest: validateTaskQuery rejects invalid project id filter
+ok 51 - validateTaskQuery rejects invalid project id filter
+  ---
+  duration_ms: 0.3964
+  type: 'test'
+  ...
+# Subtest: validateTaskQuery rejects invalid assignee id filter
+ok 52 - validateTaskQuery rejects invalid assignee id filter
+  ---
+  duration_ms: 0.6453
+  type: 'test'
+  ...
+# Subtest: validateTaskQuery rejects invalid sprint id filter
+ok 53 - validateTaskQuery rejects invalid sprint id filter
+  ---
+  duration_ms: 0.4422
+  type: 'test'
+  ...
+# Subtest: validateTaskQuery rejects invalid epic id filter
+ok 54 - validateTaskQuery rejects invalid epic id filter
+  ---
+  duration_ms: 0.3995
+  type: 'test'
+  ...
+# Subtest: validatePagination caps page size at 100
+ok 55 - validatePagination caps page size at 100
+  ---
+  duration_ms: 0.2665
+  type: 'test'
+  ...
+# Subtest: validateAssignee rejects missing user id
+ok 56 - validateAssignee rejects missing user id
+  ---
+  duration_ms: 0.4622
+  type: 'test'
+  ...
+# Subtest: validateLabelInput normalizes hex color
+ok 57 - validateLabelInput normalizes hex color
+  ---
+  duration_ms: 0.6698
+  type: 'test'
+  ...
+# Subtest: validateChecklistInput and item validation
+ok 58 - validateChecklistInput and item validation
+  ---
+  duration_ms: 0.8847
+  type: 'test'
+  ...
+# Subtest: mapTask maps _id to id and keeps safe fields
+ok 59 - mapTask maps _id to id and keeps safe fields
+  ---
+  duration_ms: 0.7413
+  type: 'test'
+  ...
+# Subtest: mapTask never exposes internal fields
+ok 60 - mapTask never exposes internal fields
+  ---
+  duration_ms: 0.4232
+  type: 'test'
+  ...
+# Subtest: mapLabel / mapChecklist / mapHistory map summary fields
+ok 61 - mapLabel / mapChecklist / mapHistory map summary fields
+  ---
+  duration_ms: 0.8652
+  type: 'test'
+  ...
+# Subtest: multi-team TEST1: user with no team membership is added without error
+ok 62 - multi-team TEST1: user with no team membership is added without error
+  ---
+  duration_ms: 3.4767
+  type: 'test'
+  ...
+# Subtest: multi-team TEST2: duplicate membership in same team is rejected
+ok 63 - multi-team TEST2: duplicate membership in same team is rejected
+  ---
+  duration_ms: 1.3819
+  type: 'test'
+  ...
+# Subtest: multi-team TEST3: user in Team A can be added to Team B
+ok 64 - multi-team TEST3: user in Team A can be added to Team B
+  ---
+  duration_ms: 1.0851
+  type: 'test'
+  ...
+# Subtest: multi-team TEST4: getUserTeams returns all teams a user belongs to
+ok 65 - multi-team TEST4: getUserTeams returns all teams a user belongs to
+  ---
+  duration_ms: 1.4206
+  type: 'test'
+  ...
+# Subtest: multi-team TEST5: user in two teams can be added to a third team
+ok 66 - multi-team TEST5: user in two teams can be added to a third team
+  ---
+  duration_ms: 1.3919
+  type: 'test'
+  ...
+# Subtest: listTeams returns seeded teams for the mock workspace
+ok 67 - listTeams returns seeded teams for the mock workspace
+  ---
+  duration_ms: 2.3086
+  type: 'test'
+  ...
+# Subtest: createTeam creates a team with a valid lead and members
+ok 68 - createTeam creates a team with a valid lead and members
+  ---
+  duration_ms: 1.7527
+  type: 'test'
+  ...
+# Subtest: updateTeam updates team details successfully
+ok 69 - updateTeam updates team details successfully
+  ---
+  duration_ms: 1.0063
+  type: 'test'
+  ...
+# Subtest: deleteTeam archives the team
+ok 70 - deleteTeam archives the team
+  ---
+  duration_ms: 0.5225
+  type: 'test'
+  ...
+# Subtest: createTeam rejects duplicate members
+ok 71 - createTeam rejects duplicate members
+  ---
+  duration_ms: 1.1477
+  type: 'test'
+  ...
+# Subtest: createTeam rejects missing team name
+ok 72 - createTeam rejects missing team name
+  ---
+  duration_ms: 0.3873
+  type: 'test'
+  ...
+# Subtest: addTeamMember rejects invalid users
+ok 73 - addTeamMember rejects invalid users
+  ---
+  duration_ms: 0.8756
+  type: 'test'
+  ...
+# Subtest: addTeamMember rejects duplicate member
+ok 74 - addTeamMember rejects duplicate member
+  ---
+  duration_ms: 0.5389
+  type: 'test'
+  ...
+# Subtest: updateTeamMember changes member role
+ok 75 - updateTeamMember changes member role
+  ---
+  duration_ms: 1.4599
+  type: 'test'
+  ...
+# Subtest: promoting a member to lead updates the team lead
+ok 76 - promoting a member to lead updates the team lead
+  ---
+  duration_ms: 1.3606
+  type: 'test'
+  ...
+# Subtest: removeTeamMember removes an existing member
+ok 77 - removeTeamMember removes an existing member
+  ---
+  duration_ms: 0.896
+  type: 'test'
+  ...
+# Subtest: removeTeamMember rejects removing the lead
+ok 78 - removeTeamMember rejects removing the lead
+  ---
+  duration_ms: 0.6276
+  type: 'test'
+  ...
+# Subtest: restoreTeam restores an archived team
+ok 79 - restoreTeam restores an archived team
+  ---
+  duration_ms: 0.5971
+  type: 'test'
+  ...
+# Subtest: setTeamStatus deactivates a team
+ok 80 - setTeamStatus deactivates a team
+  ---
+  duration_ms: 0.4931
+  type: 'test'
+  ...
+# Subtest: listTeams supports pagination and status filter
+ok 81 - listTeams supports pagination and status filter
+  ---
+  duration_ms: 0.7133
+  type: 'test'
+  ...
+# Subtest: getTeamSummary exposes member count and projects
+ok 82 - getTeamSummary exposes member count and projects
+  ---
+  duration_ms: 0.5427
+  type: 'test'
+  ...
+# Subtest: getUsers returns paginated user list
+ok 83 - getUsers returns paginated user list
+  ---
+  duration_ms: 2.3207
+  type: 'test'
+  ...
+# Subtest: getUserById returns user DTO without sensitive fields
+ok 84 - getUserById returns user DTO without sensitive fields
+  ---
+  duration_ms: 0.353
+  type: 'test'
+  ...
+# Subtest: getUserById throws 404 for unknown user
+ok 85 - getUserById throws 404 for unknown user
+  ---
+  duration_ms: 0.7572
+  type: 'test'
+  ...
+# Subtest: createUser creates user with hashed password and safe DTO
+ok 86 - createUser creates user with hashed password and safe DTO
+  ---
+  duration_ms: 111.166
+  type: 'test'
+  ...
+# Subtest: createUser rejects duplicate email
+ok 87 - createUser rejects duplicate email
+  ---
+  duration_ms: 0.4175
+  type: 'test'
+  ...
+# Subtest: updateUser updates user details successfully
+ok 88 - updateUser updates user details successfully
+  ---
+  duration_ms: 0.4159
+  type: 'test'
+  ...
+# Subtest: deactivateUser updates status to DISABLED
+ok 89 - deactivateUser updates status to DISABLED
+  ---
+  duration_ms: 0.5029
+  type: 'test'
+  ...
+# Subtest: deactivateUser prevents self-deactivation of admin
+ok 90 - deactivateUser prevents self-deactivation of admin
+  ---
+  duration_ms: 0.2785
+  type: 'test'
+  ...
+# Subtest: searchUsers returns matching users
+ok 91 - searchUsers returns matching users
+  ---
+  duration_ms: 0.6691
+  type: 'test'
+  ...
+# Subtest: getUserWorkload returns assigned and completed task counts
+ok 92 - getUserWorkload returns assigned and completed task counts
+  ---
+  duration_ms: 0.6193
+  type: 'test'
+  ...
+# Subtest: validateCreateUser validates required fields
+ok 93 - validateCreateUser validates required fields
+  ---
+  duration_ms: 0.5246
+  type: 'test'
+  ...
+1..93
+# tests 93
+# suites 0
+# pass 89
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23708.2924

@@ -3,78 +3,124 @@
  *
  * Usage:
  *   node scripts/seedTeams.js
+ *   node scripts/seedTeams.js --reset   (drops all teams first)
  *
- * Seeds the team module's in-memory store with sample teams and members.
- * Safe to run multiple times — each run is additive. Use --reset to
- * replace the entire in-memory store.
+ * Requires MongoDB to be running and seedUsers.js to have been run first.
+ * Looks up real user _ids by email so team members reference actual MongoDB users.
  */
 
-const teamService = require("../src/modules/teams/team.service");
+require("dotenv").config();
+const mongoose = require("mongoose");
+const { Team } = require("../src/modules/teams/team.model");
+const { User } = require("../src/modules/users/user.model");
 
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/enterprise-task-management";
+
+// Seed definitions use email as the stable lookup key — never hardcoded ObjectIds.
 const SEED_TEAMS = [
   {
     name: "Platform Engineering",
     description: "Core platform and tooling delivery",
-    leadId: "mock-admin",
-    projectIds: ["project-1"],
-    members: ["mock-maya", "mock-alex"],
+    leadEmail: "admin@etms.com",
+    memberEmails: ["demo@etms.com"],
+    projectIds: [],
   },
   {
     name: "Frontend Core",
     description: "Frontend architecture and component library",
-    leadId: "mock-maya",
-    projectIds: ["project-1"],
-    members: ["mock-alex"],
+    leadEmail: "demo@etms.com",
+    memberEmails: [],
+    projectIds: [],
   },
   {
     name: "QA & Testing",
     description: "Quality assurance and test automation",
-    leadId: "mock-admin",
-    members: [],
+    leadEmail: "admin@etms.com",
+    memberEmails: [],
+    projectIds: [],
   },
   {
     name: "DevOps",
     description: "CI/CD, infrastructure, and deployment",
-    leadId: "mock-admin",
-    members: ["mock-maya"],
+    leadEmail: "admin@etms.com",
+    memberEmails: ["demo@etms.com"],
+    projectIds: [],
   },
 ];
 
 const run = async () => {
   const args = process.argv.slice(2);
   const reset = args.includes("--reset");
-  let count = 0;
 
-  console.log(`Seeding teams (reset=${reset})...\n`);
+  await mongoose.connect(MONGODB_URI);
+  console.log(`Connected to ${MONGODB_URI}\n`);
 
-  for (const data of SEED_TEAMS) {
-    let existing = false;
-    try {
-      const list = await teamService.listTeams({ search: data.name });
-      existing = list.items.length > 0;
-    } catch {
-      // ignore
-    }
+  if (reset) {
+    await Team.deleteMany({});
+    console.log("Existing teams cleared (--reset).\n");
+  }
 
+  // Build email → MongoDB _id map from real seeded users.
+  const allEmails = [
+    ...new Set(SEED_TEAMS.flatMap((t) => [t.leadEmail, ...t.memberEmails])),
+  ];
+
+  const userDocs = await User.find({ email: { $in: allEmails }, isDeleted: false }).lean();
+  const emailToId = {};
+  for (const u of userDocs) {
+    emailToId[u.email] = String(u._id);
+  }
+
+  // Verify all required users exist before seeding.
+  const missing = allEmails.filter((e) => !emailToId[e]);
+  if (missing.length > 0) {
+    console.error(`ERROR: The following users were not found in MongoDB:\n  ${missing.join("\n  ")}`);
+    console.error("\nRun `node scripts/seedUsers.js` first, then retry.");
+    await mongoose.disconnect();
+    process.exit(1);
+  }
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const def of SEED_TEAMS) {
+    const existing = await Team.findOne({ name: def.name, isDeleted: false });
     if (existing) {
-      console.log(`  SKIP  "${data.name}" — already exists`);
+      console.log(`  SKIP  "${def.name}" — already exists (id=${existing._id})`);
+      skipped++;
       continue;
     }
 
-    try {
-      const team = await teamService.createTeam(data);
-      console.log(`  OK    "${data.name}" — id=${team.id} (${team.members.length} members)`);
-      count++;
-    } catch (error) {
-      console.error(`  FAIL  "${data.name}" — ${error.message}`);
-    }
+    const leadId = emailToId[def.leadEmail];
+    const memberIds = def.memberEmails.map((e) => emailToId[e]);
+
+    const members = [
+      { userId: leadId, role: "LEAD", joinedAt: new Date() },
+      ...memberIds.map((id) => ({ userId: id, role: "MEMBER", joinedAt: new Date() })),
+    ];
+
+    const doc = await Team.create({
+      name: def.name,
+      description: def.description,
+      leadId,
+      projectIds: def.projectIds,
+      isActive: true,
+      isDeleted: false,
+      members,
+    });
+
+    console.log(
+      `  OK    "${def.name}" — id=${doc._id}  lead=${leadId}  members=${members.length}`
+    );
+    created++;
   }
 
-  console.log(`\nCreated ${count} team(s).`);
-  process.exit(0);
+  console.log(`\nSeed complete. Created: ${created}, Skipped: ${skipped}`);
+  await mongoose.disconnect();
 };
 
-run().catch((error) => {
-  console.error("Seed failed:", error);
+run().catch((err) => {
+  console.error("Seed failed:", err);
   process.exit(1);
 });

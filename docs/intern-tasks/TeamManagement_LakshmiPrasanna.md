@@ -78,18 +78,19 @@ frontend/src/features/sprints/
 
 ## Step-By-Step Task Checklist
 
-- [ ] Read team and sprint sections in docs.
-- [ ] Define team API contract and permissions.
-- [ ] Confirm sprint ownership with Manasa and Trisha.
-- [ ] Create team and team member models.
-- [ ] Implement validations for teams and members.
-- [ ] Implement repositories and services with membership rules.
-- [ ] Implement controllers/routes and register route.
-- [ ] Add seed teams/team members.
-- [ ] Build team frontend services/hooks.
-- [ ] Build team list/detail/form/member UI.
-- [ ] Add sprint basic implementation only if needed for task planning.
-- [ ] Add API, manual UI, and Postman tests.
+- [x] Read team and sprint sections in docs.
+- [x] Define team API contract and permissions.
+- [x] Confirm sprint ownership with Manasa and Trisha.
+- [x] Create team and team member models.
+- [x] Implement validations for teams and members.
+- [x] Implement repositories and services with membership rules.
+- [x] Implement controllers/routes and register route.
+- [x] Add seed teams/team members.
+- [x] Build team frontend services/hooks.
+- [x] Build team list/detail/form/member UI.
+- [x] Add sprint basic implementation only if needed for task planning. *(OUT OF SCOPE — confirmed handed off to Task Management / Manasa. Sprint basics are OUT OF SCOPE for the Team Management module.)*
+- [x] Add API, manual UI, and Postman tests.
+- [x] **BUG-008 FIXED** — Migrated from in-memory to MongoDB persistence. Teams and team members survive backend restart. Real MongoDB user ObjectIds used throughout.
 
 ## Validation Rules
 
@@ -118,6 +119,17 @@ frontend/src/features/sprints/
 - Depends on users for team membership.
 - May depend on projects for team-project links.
 - Provides team context to task assignment and dashboard workload.
+
+## MongoDB Persistence (BUG-008 Resolution)
+
+- Teams are persisted in MongoDB (`teams` collection) using the `Team` Mongoose model.
+- Team members are embedded subdocuments inside the Team document — persisted in MongoDB.
+- Real MongoDB user ObjectIds are stored as `leadId` and `members[].userId` — no mock string IDs in the database.
+- Team data survives backend restart — verified by restart persistence test.
+- `authenticate.js` resolves `mock-token` / `mock-member-token` to real MongoDB user `_id` values at request time.
+- `seedTeams.js` looks up users by email to obtain real `_id` values before creating teams.
+- In-memory fallback is preserved for automated tests that run without MongoDB.
+- Team APIs remain fully permission-aware (TEAM_VIEW, TEAM_CREATE, TEAM_UPDATE, TEAM_DELETE, TEAM_MANAGE_MEMBERS).
 
 ## Definition Of Done
 

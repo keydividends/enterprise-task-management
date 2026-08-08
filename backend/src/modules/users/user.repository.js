@@ -332,11 +332,30 @@ const getUserProjects = async (userId) => {
 };
 
 const getUserTeams = async (userId) => {
-  // Returns mock or aggregated team memberships for user
-  return [
-    { id: "team_201", name: "Frontend Core Team", lead: "Raheema", memberCount: 5 },
-    { id: "team_202", name: "Backend Architecture", lead: "Yamini", memberCount: 4 },
-  ];
+  if (isDbConnected()) {
+    const { Team } = require("../teams/team.model");
+    const uid = String(userId);
+    const teams = await Team.find(
+      { isDeleted: false, "members.userId": uid },
+      { name: 1, leadId: 1, members: 1 }
+    ).lean();
+    return teams.map((t) => ({
+      id: String(t._id),
+      name: t.name,
+      leadId: t.leadId,
+      memberCount: t.members ? t.members.length : 0,
+    }));
+  }
+  // In-memory fallback: scan the team repository's in-memory store
+  try {
+    const { getInMemoryTeams } = require("../teams/team.repository");
+    const uid = String(userId);
+    return getInMemoryTeams()
+      .filter((t) => !t.isDeleted && Array.isArray(t.members) && t.members.some((m) => String(m.userId) === uid))
+      .map((t) => ({ id: t.id, name: t.name, leadId: t.leadId, memberCount: t.members.length }));
+  } catch {
+    return [];
+  }
 };
 
 const getUserWorkload = async (userId) => {
