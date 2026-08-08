@@ -20,6 +20,35 @@ const createError = (code, message, statusCode = 400, field = null) => {
 
 const getWorkspaceId = (context = {}) => context.workspaceId || null;
 
+const isPrivilegedProjectUser = (context = {}) => ["ADMIN", "MANAGER"].includes(context.user?.role);
+const hasProjectPermission = (context = {}, permission) => (
+  Array.isArray(context.user?.permissions) && context.user.permissions.includes(permission)
+);
+
+const getProjectInWorkspace = async (projectId, context = {}) => (
+  projectRepository.findProjectById(projectId, getWorkspaceId(context))
+);
+
+const assertProjectViewAccess = async (project, context = {}) => {
+  if (isPrivilegedProjectUser(context)) return;
+  if (hasProjectPermission(context, "PROJECT_VIEW")) return;
+  const userId = context.user?.id;
+  if (!userId) throw createError("AUTH_REQUIRED", "Authentication required.", 401);
+  if (String(project.projectManagerId) === String(userId)) return;
+
+  const membership = await projectRepository.findProjectMember(project._id || project.id, userId);
+  if (!membership) {
+    throw createError("PROJECT_ACCESS_DENIED", "You do not have access to this project.", 403);
+  }
+};
+
+const assertProjectManagementAccess = async (project, context = {}, permission) => {
+  if (isPrivilegedProjectUser(context)) return;
+  if (hasProjectPermission(context, permission)) return;
+  if (String(project.projectManagerId) === String(context.user?.id)) return;
+  throw createError("PROJECT_ACCESS_DENIED", "Only the project manager can modify this project.", 403);
+};
+
 const resolveProjectManagerId = async (managerReference) => {
   const reference = String(managerReference || "").trim();
   if (!reference) return null;
@@ -75,10 +104,11 @@ const listProjects = async (query = {}, context = {}) => {
 
 const getProjectById = async (projectId, context = {}) => {
   validateProjectId(projectId);
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectViewAccess(project, context);
   return toProjectDTOWithManager(project);
 };
 
@@ -116,10 +146,11 @@ const createProject = async (payload, context = {}) => {
 const updateProject = async (projectId, payload, context = {}) => {
   validateProjectId(projectId);
   const validated = validateUpdateProject(payload);
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectManagementAccess(project, context, "PROJECT_UPDATE");
 
   if (validated.key && validated.key !== project.key) {
     const existing = await projectRepository.findProjectByKey(project.workspaceId, validated.key);
@@ -143,10 +174,11 @@ const updateProject = async (projectId, payload, context = {}) => {
 
 const deleteProject = async (projectId, context = {}) => {
   validateProjectId(projectId);
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectManagementAccess(project, context, "PROJECT_DELETE");
 
   const deleted = await projectRepository.deleteProject(projectId, context.user?.id);
   return toProjectDTO(deleted);
@@ -154,6 +186,11 @@ const deleteProject = async (projectId, context = {}) => {
 
 const restoreProject = async (projectId, context = {}) => {
   validateProjectId(projectId);
+  const existing = await projectRepository.findProjectById(projectId, getWorkspaceId(context), true);
+  if (!existing) {
+    throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
+  }
+  await assertProjectManagementAccess(existing, context, "PROJECT_DELETE");
   const restored = await projectRepository.restoreProject(projectId);
   if (!restored) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
@@ -163,10 +200,11 @@ const restoreProject = async (projectId, context = {}) => {
 
 const listProjectMembers = async (projectId, query = {}, context = {}) => {
   validateProjectId(projectId);
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectViewAccess(project, context);
 
   const page = Number(query.page) || 1;
   const pageSize = Number(query.pageSize) || 20;
@@ -209,10 +247,11 @@ const listProjectMembers = async (projectId, query = {}, context = {}) => {
 
 const addProjectMember = async (projectId, payload, context = {}) => {
   validateProjectId(projectId);
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectManagementAccess(project, context, "PROJECT_MANAGE_MEMBERS");
 
   const memberInput = validateProjectMemberInput(payload);
 
@@ -257,27 +296,6 @@ const addProjectMember = async (projectId, payload, context = {}) => {
     addedBy: context.user?.id || null,
   });
 
-  try {
-    const uid = String(resolvedUserId);
-    if (/^[a-f0-9]{24}$/i.test(uid)) {
-      const user = await userRepository.findById(uid);
-      if (user) {
-        created.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
-      }
-    }
-  } catch { /* skip */ }
-
-  
-  try {
-    const uid = String(resolvedUserId);
-    if (/^[a-f0-9]{24}$/i.test(uid)) {
-      const user = await userRepository.findById(uid);
-      if (user) {
-        created.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
-      }
-    }
-  } catch { /* skip */ }
-
   const plain = typeof created.toObject === 'function' ? created.toObject() : { ...created };
   plain.userName = resolvedUserName;
   plain.customId = resolvedCustomId;
@@ -291,10 +309,11 @@ const removeProjectMember = async (projectId, userId, context = {}) => {
     throw createError("VALIDATION_ERROR", "User ID is required.", 400, "userId");
   }
 
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectManagementAccess(project, context, "PROJECT_MANAGE_MEMBERS");
 
   const member = await projectRepository.findProjectMember(projectId, userId);
   if (!member) {
@@ -307,10 +326,11 @@ const removeProjectMember = async (projectId, userId, context = {}) => {
 
 const getProjectTaskSummary = async (projectId, context = {}, query = {}) => {
   validateProjectId(projectId);
-  const project = await projectRepository.findProjectById(projectId);
+  const project = await getProjectInWorkspace(projectId, context);
   if (!project) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectViewAccess(project, context);
 
   const summary = await projectRepository.getTaskSummary(projectId, { sprintId: query.sprintId });
   return summary;

@@ -3,10 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import projectService from '../services/projectService';
 import ProjectForm from '../components/ProjectForm';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { hasProjectPermission } from '../utils/projectPermissions';
 
 const EditProjectPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +47,10 @@ const EditProjectPage = () => {
 
   if (loading) {
     return <div className="panel-block glass-card project-state-card">Loading project...</div>;
+  }
+
+  if (!hasProjectPermission(user, 'PROJECT_UPDATE')) {
+    return <div className="panel-block glass-card project-state-card">You do not have permission to edit projects.</div>;
   }
 
   if (!project) {

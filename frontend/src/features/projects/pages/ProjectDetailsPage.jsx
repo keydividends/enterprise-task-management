@@ -3,17 +3,23 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import projectService from '../services/projectService';
 import ProjectMemberManager from '../components/ProjectMemberManager';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { hasProjectPermission } from '../utils/projectPermissions';
 
 const TASK_STATUSES = ['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'QA', 'DONE', 'CANCELLED'];
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(null);
+  const canUpdate = hasProjectPermission(user, 'PROJECT_UPDATE');
+  const canDelete = hasProjectPermission(user, 'PROJECT_DELETE');
+  const canManageMembers = hasProjectPermission(user, 'PROJECT_MANAGE_MEMBERS');
 
   useEffect(() => {
     const loadData = async () => {
@@ -61,12 +67,8 @@ const ProjectDetailsPage = () => {
           <button type="button" className="secondary-button compact" onClick={() => window.location.reload()}>
             <RefreshCw size={16} /> Refresh
           </button>
-          <Link to={`/projects/${projectId}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>
-            Edit
-          </Link>
-          <button type="button" className="ghost-button" onClick={handleDelete}>
-            Archive
-          </button>
+          {canUpdate ? <Link to={`/projects/${projectId}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>Edit</Link> : null}
+          {canDelete ? <button type="button" className="ghost-button" onClick={handleDelete}>Archive</button> : null}
         </div>
       </section>
 
@@ -114,6 +116,7 @@ const ProjectDetailsPage = () => {
             onMembersChange={setMembers}
             onMessage={() => {} }
             onError={setError}
+            canManageMembers={canManageMembers}
           />
         </section>
       ) : (

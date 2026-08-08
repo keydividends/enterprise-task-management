@@ -4,12 +4,18 @@ import { Plus, RefreshCw, Search } from 'lucide-react';
 import useProjects from '../hooks/useProjects';
 import projectService from '../services/projectService';
 import ProjectCard from '../components/ProjectCard';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { hasProjectPermission } from '../utils/projectPermissions';
 
 const ProjectListPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { projects, loading, error, refresh } = useProjects();
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const canCreate = hasProjectPermission(user, 'PROJECT_CREATE');
+  const canUpdate = hasProjectPermission(user, 'PROJECT_UPDATE');
+  const canDelete = hasProjectPermission(user, 'PROJECT_DELETE');
 
   const summary = useMemo(() => ({
     count: projects.length,
@@ -65,9 +71,11 @@ const ProjectListPage = () => {
               <button type="button" className="secondary-button compact" onClick={() => refresh(search)}>
                 <RefreshCw size={14} /> Refresh
               </button>
-              <Link to="/projects/create" className="primary-button compact" style={{ textDecoration: 'none' }}>
-                <Plus size={16} /> Create project
-              </Link>
+              {canCreate ? (
+                <Link to="/projects/create" className="primary-button compact" style={{ textDecoration: 'none' }}>
+                  <Plus size={16} /> Create project
+                </Link>
+              ) : null}
             </div>
           </div>
 
@@ -85,7 +93,7 @@ const ProjectListPage = () => {
 
           <div className="project-card-list">
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} onDelete={handleDelete} />
+              <ProjectCard key={project.id} project={project} onDelete={handleDelete} canUpdate={canUpdate} canDelete={canDelete} />
             ))}
           </div>
         </div>

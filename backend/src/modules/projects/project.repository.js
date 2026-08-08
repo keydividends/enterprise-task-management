@@ -70,14 +70,17 @@ const listProjects = async ({ workspaceId, search, status, priority, managerId, 
   return { items: pagedItems, totalItems, page, pageSize, totalPages };
 };
 
-const findProjectById = async (projectId) => {
+const findProjectById = async (projectId, workspaceId = null, includeDeleted = false) => {
   if (!projectId) return null;
   if (isDbConnected()) {
-    return Project.findOne({ _id: toObjectId(projectId), isDeleted: false }).lean();
+    const filter = { _id: toObjectId(projectId) };
+    if (!includeDeleted) filter.isDeleted = false;
+    if (workspaceId) filter.workspaceId = toObjectId(workspaceId);
+    return Project.findOne(filter).lean();
   }
 
   const project = inMemoryProjects.get(String(projectId));
-  return project && !project.isDeleted ? project : null;
+  return project && (includeDeleted || !project.isDeleted) && (!workspaceId || String(project.workspaceId) === String(workspaceId)) ? project : null;
 };
 
 const findProjectByKey = async (workspaceId, key) => {

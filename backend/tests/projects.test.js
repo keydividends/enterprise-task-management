@@ -4,8 +4,23 @@ const assert = require('node:assert/strict');
 const projectService = require('../src/modules/projects/project.service');
 const projectRepository = require('../src/modules/projects/project.repository');
 const userRepository = require('../src/modules/users/user.repository');
+const request = require('supertest');
+const app = require('../src/app');
 
-const mockContext = { user: { id: 'mock-admin' }, workspaceId: '64a000000000000000000001' };
+const mockContext = { user: { id: 'mock-admin', role: 'ADMIN' }, workspaceId: '64a000000000000000000001' };
+const mockProjectUser = { id: 'user_admin_1', customId: 'user_admin_1', firstName: 'Project', lastName: 'User', status: 'ACTIVE', isDeleted: false };
+
+const withMockProjectUser = async (callback) => {
+  const originalFindByCustomId = userRepository.findByCustomId;
+  userRepository.findByCustomId = async (customId) => (
+    customId === mockProjectUser.customId ? mockProjectUser : originalFindByCustomId(customId)
+  );
+  try {
+    return await callback();
+  } finally {
+    userRepository.findByCustomId = originalFindByCustomId;
+  }
+};
 
 test('createProject creates a project successfully', async () => {
   const result = await projectService.createProject({
@@ -70,16 +85,18 @@ test('addProjectMember succeeds and duplicate members are rejected', async () =>
     key: 'MBPJ',
   }, mockContext);
 
-  const member = await projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
-  assert.equal(member.userId, 'user_admin_1');
+  await withMockProjectUser(async () => {
+    const member = await projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
+    assert.equal(member.userId, 'user_admin_1');
 
-  await assert.rejects(
-    () => projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext),
-    (error) => {
-      assert.equal(error.code, 'PROJECT_MEMBER_EXISTS');
-      return true;
-    }
-  );
+    await assert.rejects(
+      () => projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext),
+      (error) => {
+        assert.equal(error.code, 'PROJECT_MEMBER_EXISTS');
+        return true;
+      }
+    );
+  });
 });
 
 test('removeProjectMember removes an existing member', async () => {
@@ -88,9 +105,32 @@ test('removeProjectMember removes an existing member', async () => {
     key: 'RMPJ',
   }, mockContext);
 
-  await projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
-  const removed = await projectService.removeProjectMember(created.id, 'user_admin_1', mockContext);
-  assert.equal(removed.status, 'REMOVED');
+  await withMockProjectUser(async () => {
+    await projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
+    const removed = await projectService.removeProjectMember(created.id, 'user_admin_1', mockContext);
+    assert.equal(removed.status, 'REMOVED');
+  });
+});
+
+test('project data is isolated by workspace', async () => {
+  const created = await projectService.createProject({ name: 'Isolated Project', key: 'ISOL' }, mockContext);
+  await assert.rejects(
+    () => projectService.getProjectById(created.id, { user: { id: 'other-admin', role: 'ADMIN' }, workspaceId: '64a000000000000000000099' }),
+    (error) => error.code === 'PROJECT_NOT_FOUND'
+  );
+});
+
+test('project API rejects unauthenticated and unauthorized requests', async () => {
+  const unauthenticated = await request(app).get('/api/v1/projects');
+  assert.equal(unauthenticated.status, 401);
+  assert.equal(unauthenticated.body.code, 'AUTH_REQUIRED');
+
+  const unauthorized = await request(app)
+    .post('/api/v1/projects')
+    .set('Authorization', 'Bearer mock-member-token')
+    .send({ name: 'Forbidden Project', key: 'FORB' });
+  assert.equal(unauthorized.status, 403);
+  assert.equal(unauthorized.body.code, 'PERMISSION_DENIED');
 });
 
 test('deleteProject archives project', async () => {

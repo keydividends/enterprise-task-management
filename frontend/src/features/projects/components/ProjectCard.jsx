@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Layers, Clock, ShieldCheck } from 'lucide-react';
 
-const ProjectCard = ({ project, onDelete }) => {
+const ProjectCard = ({ project, onDelete, canUpdate = false, canDelete = false }) => {
   if (!project) return null;
 
   return (
@@ -21,10 +21,8 @@ const ProjectCard = ({ project, onDelete }) => {
       </div>
       <div className="button-row project-card-actions">
         <Link to={`/projects/${project.id}`} className="secondary-button compact" style={{ textDecoration: 'none' }}>Details</Link>
-        <Link to={`/projects/${project.id}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>Edit</Link>
-        <button type="button" className="ghost-button" onClick={() => onDelete(project.id)}>
-          Delete
-        </button>
+        {canUpdate ? <Link to={`/projects/${project.id}/edit`} className="secondary-button compact" style={{ textDecoration: 'none' }}>Edit</Link> : null}
+        {canDelete ? <button type="button" className="ghost-button" onClick={() => onDelete(project.id)}>Delete</button> : null}
       </div>
     </article>
   );

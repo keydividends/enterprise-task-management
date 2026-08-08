@@ -55,7 +55,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Test Project\",\n  \"key\": \"TPRJ\",\n  \"description\": \"A test project created via Postman\",\n  \"status\": \"PLANNING\",\n  \"priority\": \"MEDIUM\",\n  \"startDate\": \"2026-09-01\",\n  \"targetEndDate\": \"2026-12-31\"\n}"
+          "raw": "{\n  \"name\": \"Test Project\",\n  \"key\": \"TPRJ\",\n  \"description\": \"A test project created via Postman\",\n  \"projectManagerId\": \"{{userId}}\",\n  \"status\": \"PLANNING\",\n  \"priority\": \"MEDIUM\",\n  \"startDate\": \"2026-09-01\",\n  \"targetEndDate\": \"2026-12-31\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/projects",

@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import useProjects from '../hooks/useProjects';
 import ProjectForm from '../components/ProjectForm';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { hasProjectPermission } from '../utils/projectPermissions';
 
 const CreateProjectPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { createProject } = useProjects();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  if (!hasProjectPermission(user, 'PROJECT_CREATE')) {
+    return <div className="panel-block glass-card project-state-card">You do not have permission to create projects.</div>;
+  }
 
   const handleSubmit = async (payload) => {
     setSubmitting(true);

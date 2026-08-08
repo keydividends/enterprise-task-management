@@ -3,7 +3,7 @@ import { Trash2, UserPlus, User } from 'lucide-react';
 import projectService from '../services/projectService';
 import userService from '../../users/services/userService';
 
-const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMessage, onError }) => {
+const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMessage, onError, canManageMembers = false }) => {
   const [userId, setUserId] = useState('');
   const [role, setRole] = useState('DEVELOPER');
   const [submitting, setSubmitting] = useState(false);
@@ -83,7 +83,7 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
         <div><p className="project-section-kicker">Collaboration</p><h3>Project members</h3></div>
       </div>
 
-      <form className="auth-form project-member-form" onSubmit={handleAdd}>
+      {canManageMembers ? <form className="auth-form project-member-form" onSubmit={handleAdd}>
         <div className="field-group project-member-user-field">
           <span>User ID</span>
           <div className="input-wrap">
@@ -121,7 +121,7 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
         <button type="submit" className="primary-button compact project-member-add-button" disabled={submitting}>
           <UserPlus size={16} /> {submitting ? 'Adding...' : 'Add member'}
         </button>
-      </form>
+      </form> : null}
 
       <div className="task-list project-member-list">
         {(members || []).length === 0 ? (
@@ -143,9 +143,7 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
               <div className="task-pill-wrap">
                 <span className="status-tag review">{member.projectRole}</span>
               </div>
-              <button type="button" className="ghost-button" onClick={() => handleRemove(member.userId)}>
-                <Trash2 size={14} /> Remove
-              </button>
+              {canManageMembers ? <button type="button" className="ghost-button" onClick={() => handleRemove(member.userId)}><Trash2 size={14} /> Remove</button> : null}
             </div>
           ))
         )}
