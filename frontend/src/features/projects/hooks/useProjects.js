@@ -24,6 +24,8 @@ const useProjects = () => {
   }, []);
 
   useEffect(() => {
+    // Fetch the initial project collection when this hook mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchProjects('');
   }, [fetchProjects]);
 

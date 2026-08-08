@@ -13,6 +13,8 @@ const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMess
 
   useEffect(() => {
     const trimmed = userId.trim();
+    // Clear stale lookup data before starting the next debounced lookup.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedUser(null);
     if (!trimmed) return;
 

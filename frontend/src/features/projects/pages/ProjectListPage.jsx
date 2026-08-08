@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import useProjects from '../hooks/useProjects';
 import projectService from '../services/projectService';
@@ -8,11 +8,9 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { hasProjectPermission } from '../utils/projectPermissions';
 
 const ProjectListPage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { projects, loading, error, refresh } = useProjects();
   const [search, setSearch] = useState('');
-  const [busyId, setBusyId] = useState(null);
   const canCreate = hasProjectPermission(user, 'PROJECT_CREATE');
   const canUpdate = hasProjectPermission(user, 'PROJECT_UPDATE');
   const canDelete = hasProjectPermission(user, 'PROJECT_DELETE');
@@ -30,14 +28,11 @@ const ProjectListPage = () => {
 
   const handleDelete = async (projectId) => {
     if (!window.confirm('Archive this project?')) return;
-    setBusyId(projectId);
     try {
       await projectService.deleteProject(projectId);
       await refresh(search);
     } catch (err) {
       console.error(err);
-    } finally {
-      setBusyId(null);
     }
   };
 

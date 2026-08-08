@@ -4,16 +4,11 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const { Project, ProjectMember } = require("../src/modules/projects/project.model");
+const { User } = require("../src/modules/users/user.model");
 
 const WORKSPACE_ID = new mongoose.Types.ObjectId("64a000000000000000000001");
 
-const USERS = [
-  { id: new mongoose.Types.ObjectId("64a100000000000000000001"), role: "PROJECT_MANAGER" },
-  { id: new mongoose.Types.ObjectId("64a100000000000000000002"), role: "TEAM_LEAD" },
-  { id: new mongoose.Types.ObjectId("64a100000000000000000003"), role: "DEVELOPER" },
-  { id: new mongoose.Types.ObjectId("64a100000000000000000004"), role: "QA_TESTER" },
-  { id: new mongoose.Types.ObjectId("64a100000000000000000005"), role: "VIEWER" },
-];
+const SEED_USER_EMAILS = ["admin@etms.com", "demo@etms.com"];
 
 const SEED_PROJECTS = [
   {
@@ -24,11 +19,11 @@ const SEED_PROJECTS = [
     description: "Internal delivery and reporting platform",
     status: "ACTIVE",
     priority: "HIGH",
-    projectManagerId: USERS[0].id,
+    projectManagerEmail: "admin@etms.com",
     startDate: new Date("2026-08-01"),
     targetEndDate: new Date("2026-12-31"),
-    createdBy: USERS[0].id,
-    updatedBy: USERS[0].id,
+    createdByEmail: "admin@etms.com",
+    updatedByEmail: "admin@etms.com",
   },
   {
     _id: new mongoose.Types.ObjectId("64a200000000000000000002"),
@@ -38,11 +33,11 @@ const SEED_PROJECTS = [
     description: "Payments and wallet integration",
     status: "PLANNING",
     priority: "MEDIUM",
-    projectManagerId: USERS[1].id,
+    projectManagerEmail: "admin@etms.com",
     startDate: new Date("2026-09-01"),
     targetEndDate: new Date("2027-02-28"),
-    createdBy: USERS[0].id,
-    updatedBy: USERS[0].id,
+    createdByEmail: "admin@etms.com",
+    updatedByEmail: "admin@etms.com",
   },
   {
     _id: new mongoose.Types.ObjectId("64a200000000000000000003"),
@@ -52,31 +47,28 @@ const SEED_PROJECTS = [
     description: "Cross-platform mobile application",
     status: "ON_HOLD",
     priority: "LOW",
-    projectManagerId: USERS[2].id,
+    projectManagerEmail: "demo@etms.com",
     startDate: new Date("2026-10-01"),
     targetEndDate: new Date("2027-06-30"),
-    createdBy: USERS[0].id,
-    updatedBy: USERS[0].id,
+    createdByEmail: "admin@etms.com",
+    updatedByEmail: "admin@etms.com",
   },
 ];
 
 const SEED_MEMBERS = [
   // ETMS project members
-  { projectId: SEED_PROJECTS[0]._id, userId: USERS[0].id, projectRole: "PROJECT_MANAGER" },
-  { projectId: SEED_PROJECTS[0]._id, userId: USERS[1].id, projectRole: "TEAM_LEAD" },
-  { projectId: SEED_PROJECTS[0]._id, userId: USERS[2].id, projectRole: "DEVELOPER" },
-  { projectId: SEED_PROJECTS[0]._id, userId: USERS[3].id, projectRole: "QA_TESTER" },
-  { projectId: SEED_PROJECTS[0]._id, userId: USERS[4].id, projectRole: "VIEWER" },
+  { projectId: SEED_PROJECTS[0]._id, userEmail: "admin@etms.com", projectRole: "PROJECT_MANAGER" },
+  { projectId: SEED_PROJECTS[0]._id, userEmail: "demo@etms.com", projectRole: "DEVELOPER" },
   // PAY project members
-  { projectId: SEED_PROJECTS[1]._id, userId: USERS[1].id, projectRole: "PROJECT_MANAGER" },
-  { projectId: SEED_PROJECTS[1]._id, userId: USERS[2].id, projectRole: "DEVELOPER" },
+  { projectId: SEED_PROJECTS[1]._id, userEmail: "admin@etms.com", projectRole: "PROJECT_MANAGER" },
+  { projectId: SEED_PROJECTS[1]._id, userEmail: "demo@etms.com", projectRole: "DEVELOPER" },
   // MOB project members
-  { projectId: SEED_PROJECTS[2]._id, userId: USERS[2].id, projectRole: "PROJECT_MANAGER" },
-  { projectId: SEED_PROJECTS[2]._id, userId: USERS[4].id, projectRole: "DEVELOPER" },
+  { projectId: SEED_PROJECTS[2]._id, userEmail: "demo@etms.com", projectRole: "PROJECT_MANAGER" },
+  { projectId: SEED_PROJECTS[2]._id, userEmail: "admin@etms.com", projectRole: "DEVELOPER" },
 ];
 
 const connect = async () => {
-  const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/etms";
+  const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/enterprise-task-management";
   await mongoose.connect(uri);
   console.log(`Connected to ${uri}`);
 };
@@ -84,25 +76,47 @@ const connect = async () => {
 const seed = async () => {
   await connect();
 
+  const users = await User.find({
+    email: { $in: SEED_USER_EMAILS },
+    isDeleted: false,
+    status: "ACTIVE",
+  }).lean();
+  const userIdsByEmail = Object.fromEntries(users.map((user) => [user.email, user._id]));
+  const missingEmails = SEED_USER_EMAILS.filter((email) => !userIdsByEmail[email]);
+  if (missingEmails.length > 0) {
+    throw new Error(`Seed users not found: ${missingEmails.join(", ")}. Run npm run seed:users first.`);
+  }
+
   let projectCount = 0;
   for (const projectData of SEED_PROJECTS) {
+    const { _id, projectManagerEmail, createdByEmail, updatedByEmail, ...project } = projectData;
+    const resolvedProject = {
+      ...project,
+      projectManagerId: userIdsByEmail[projectManagerEmail],
+      createdBy: userIdsByEmail[createdByEmail],
+      updatedBy: userIdsByEmail[updatedByEmail],
+    };
     const existing = await Project.findOne({ _id: projectData._id });
     if (!existing) {
-      await Project.create(projectData);
+      await Project.create({ _id, ...resolvedProject });
       projectCount++;
+    } else {
+      await Project.updateOne({ _id: existing._id }, { $set: resolvedProject });
     }
   }
   console.log(`Projects seeded: ${projectCount}`);
 
   let memberCount = 0;
   for (const memberData of SEED_MEMBERS) {
+    const userId = userIdsByEmail[memberData.userEmail];
     const existing = await ProjectMember.findOne({
       projectId: memberData.projectId,
-      userId: memberData.userId,
+      userId,
       isDeleted: false,
     });
     if (!existing) {
-      await ProjectMember.create({ ...memberData, addedBy: USERS[0].id });
+      const { userEmail, ...member } = memberData;
+      await ProjectMember.create({ ...member, userId, addedBy: userIdsByEmail["admin@etms.com"] });
       memberCount++;
     }
   }

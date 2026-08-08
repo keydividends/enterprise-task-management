@@ -15,6 +15,8 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
 
   useEffect(() => {
     if (initialValues) {
+      // This synchronizes form state when an asynchronously loaded project changes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: initialValues.name || '',
         key: initialValues.key || '',
@@ -109,7 +111,6 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
         <div className="input-wrap">
           <input name="projectManagerId" value={formData.projectManagerId} onChange={handleChange} placeholder="e.g. test-30" />
         </div>
-        <span className="helper-copy">Use the user’s database ID or employee/custom ID.</span>
         {errors.projectManagerId && <span className="helper-copy" style={{ color: '#ef4444' }}>{errors.projectManagerId}</span>}
       </div>
 

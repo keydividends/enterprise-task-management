@@ -1,4 +1,5 @@
 const { Project, ProjectMember } = require("./project.model");
+const { User } = require("../users/user.model");
 const mongoose = require("mongoose");
 
 const isDbConnected = () => mongoose.connection && mongoose.connection.readyState === 1;
@@ -13,6 +14,7 @@ const inMemoryProjectMembers = new Map();
 
 const makeProjectId = () => `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const makeMemberKey = (projectId, userId) => `${projectId}:${userId}`;
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const listProjects = async ({ workspaceId, search, status, priority, managerId, page = 1, pageSize = 20, sortBy = "createdAt", sortOrder = -1 }) => {
   if (isDbConnected()) {
@@ -186,7 +188,19 @@ const listProjectMembers = async ({ projectId, page = 1, pageSize = 20, role, st
     const filter = { projectId: toObjectId(projectId), isDeleted: false };
     if (role) filter.projectRole = role;
     if (status) filter.status = status;
-    // search is not applied on ObjectId fields in DB mode
+    if (search) {
+      const pattern = new RegExp(escapeRegex(search), "i");
+      const users = await User.find({
+        isDeleted: false,
+        $or: [
+          { customId: pattern },
+          { email: pattern },
+          { firstName: pattern },
+          { lastName: pattern },
+        ],
+      }).select("_id").lean();
+      filter.userId = { $in: users.map((user) => user._id) };
+    }
 
     const totalItems = await ProjectMember.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize) || 1;

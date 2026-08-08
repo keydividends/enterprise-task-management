@@ -1,106 +1,42 @@
 import axiosClient from '../../../api/axiosClient';
 
-const fallbackProjects = [
-  {
-    id: '64a200000000000000000001',
-    key: 'ETMS',
-    name: 'Enterprise Task Management',
-    description: 'Internal delivery and reporting platform',
-    status: 'ACTIVE',
-    priority: 'HIGH',
-    projectManagerId: 'user_admin_1',
-    startDate: '2026-08-01',
-    targetEndDate: '2026-12-31',
-    createdAt: '2026-07-01T08:00:00.000Z',
-    updatedAt: '2026-07-15T08:00:00.000Z',
-  },
-  {
-    id: '64a200000000000000000002',
-    key: 'PAY',
-    name: 'Payment Gateway',
-    description: 'Payments and wallet integration',
-    status: 'PLANNING',
-    priority: 'MEDIUM',
-    projectManagerId: 'user_demo_1',
-    startDate: '2026-09-01',
-    targetEndDate: '2027-02-28',
-    createdAt: '2026-07-10T08:00:00.000Z',
-    updatedAt: '2026-07-10T08:00:00.000Z',
-  },
-];
-
-const withFallback = async (request, fallback) => {
-  try {
-    const response = await request();
-    return response?.data?.data ?? response?.data ?? response;
-  } catch (error) {
-    return fallback(error);
-  }
-};
+const unwrapResponse = (response) => response?.data?.data ?? response?.data ?? response;
 
 const projectService = {
   async getProjects(params = {}) {
-    return withFallback(
-      () => axiosClient.get('/projects', { params }),
-      () => ({ items: fallbackProjects, pagination: { page: 1, pageSize: fallbackProjects.length, totalItems: fallbackProjects.length, totalPages: 1 } })
-    );
+    return unwrapResponse(await axiosClient.get('/projects', { params }));
   },
 
   async getProject(projectId) {
-    return withFallback(
-      () => axiosClient.get(`/projects/${projectId}`),
-      () => fallbackProjects.find((project) => project.id === projectId) || null
-    );
+    return unwrapResponse(await axiosClient.get(`/projects/${projectId}`));
   },
 
   async createProject(payload) {
-    return withFallback(
-      () => axiosClient.post('/projects', payload),
-      (err) => { throw err; }
-    );
+    return unwrapResponse(await axiosClient.post('/projects', payload));
   },
 
   async updateProject(projectId, payload) {
-    return withFallback(
-      () => axiosClient.patch(`/projects/${projectId}`, payload),
-      () => ({ ...fallbackProjects.find((project) => project.id === projectId), ...payload })
-    );
+    return unwrapResponse(await axiosClient.patch(`/projects/${projectId}`, payload));
   },
 
   async deleteProject(projectId) {
-    return withFallback(
-      () => axiosClient.delete(`/projects/${projectId}`),
-      () => ({ id: projectId, deleted: true })
-    );
+    return unwrapResponse(await axiosClient.delete(`/projects/${projectId}`));
   },
 
   async listProjectMembers(projectId) {
-    return withFallback(
-      () => axiosClient.get(`/projects/${projectId}/members`),
-      () => [
-        { id: 'member-1', projectId, userId: 'user_admin_1', projectRole: 'PROJECT_MANAGER', status: 'ACTIVE' },
-        { id: 'member-2', projectId, userId: 'user_demo_1', projectRole: 'DEVELOPER', status: 'ACTIVE' },
-      ]
-    );
+    return unwrapResponse(await axiosClient.get(`/projects/${projectId}/members`));
   },
 
   async addProjectMember(projectId, payload) {
-    const response = await axiosClient.post(`/projects/${projectId}/members`, payload);
-    return response?.data?.data ?? response?.data ?? response;
+    return unwrapResponse(await axiosClient.post(`/projects/${projectId}/members`, payload));
   },
 
   async removeProjectMember(projectId, userId) {
-    return withFallback(
-      () => axiosClient.delete(`/projects/${projectId}/members/${userId}`),
-      () => ({ projectId, userId, removed: true })
-    );
+    return unwrapResponse(await axiosClient.delete(`/projects/${projectId}/members/${userId}`));
   },
 
   async getProjectTaskSummary(projectId, params = {}) {
-    return withFallback(
-      () => axiosClient.get(`/projects/${projectId}/tasks/summary`, { params }),
-      () => ({ TODO: 12, IN_PROGRESS: 8, IN_REVIEW: 2, DONE: 22 })
-    );
+    return unwrapResponse(await axiosClient.get(`/projects/${projectId}/tasks/summary`, { params }));
   },
 };
 
