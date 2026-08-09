@@ -12,11 +12,10 @@ export const CreateUserPage = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await userService.createUser(formData);
-      const createdUser = res.data;
-      navigate(`/users?toast=created${createdUser?.customId ? `&userId=${createdUser.customId}` : ''}`);
+      await userService.createUser(formData);
+      navigate('/users?toast=created');
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to create user');
+      setError(err.response?.data?.message || err.message || 'Failed to create employee');
     } finally {
       setSubmitting(false);
     }
@@ -25,9 +24,9 @@ export const CreateUserPage = () => {
   return (
     <div className="create-user-page" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Create New User</h1>
+        <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Create New Employee</h1>
         <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '14px' }}>
-          Add a new team member or user account to Enterprise Task Management.
+          Add a new team member or employee account to Enterprise Task Management.
         </p>
       </div>
 

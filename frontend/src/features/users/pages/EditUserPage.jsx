@@ -20,7 +20,7 @@ export const EditUserPage = () => {
           setUserData(res.data);
         }
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to load user');
+        setError(err.response?.data?.message || err.message || 'Failed to load employee details');
       } finally {
         setLoading(false);
       }
@@ -36,7 +36,7 @@ export const EditUserPage = () => {
       await userService.updateUser(userId, formData);
       navigate('/users?toast=updated');
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to update user');
+      setError(err.response?.data?.message || err.message || 'Failed to update employee');
     } finally {
       setSubmitting(false);
     }
@@ -45,7 +45,7 @@ export const EditUserPage = () => {
   if (loading) {
     return (
       <div style={{ padding: '48px', textAlign: 'center', opacity: 0.7 }}>
-        Loading user information...
+        Loading employee information...
       </div>
     );
   }
@@ -53,9 +53,9 @@ export const EditUserPage = () => {
   return (
     <div className="edit-user-page" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Edit User Profile</h1>
+        <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Edit Employee Profile</h1>
         <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '14px' }}>
-          Update account details, role assignments, or department for user {userData?.fullName || userData?.email}.
+          Update account details, role assignments, or department for employee {userData?.fullName || userData?.email}.
         </p>
       </div>
 

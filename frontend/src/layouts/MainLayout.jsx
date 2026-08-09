@@ -32,7 +32,7 @@ export const MainLayout = ({ toggleTheme }) => {
     role: user?.role || 'Administrator',
   }), [user]);
 
-  // Permission check for viewing system user administration
+  // Permission check for viewing system employee administration
   const canViewUserAdmin = useMemo(() => {
     if (!user) return true; // Default accessible in demo/mock mode
     return user.role === 'ADMIN' || user.role === 'MANAGER' || user.permissions?.includes('USER_VIEW');
@@ -47,9 +47,9 @@ export const MainLayout = ({ toggleTheme }) => {
       { label: 'Dashboard', to: '/dashboard', icon: LayoutGrid },
     ];
 
-    // Only include System Users Administration tab if authorized
+    // Only include System Employees Administration tab if authorized
     if (canViewUserAdmin) {
-      items.push({ label: 'Users', to: '/users', icon: UserCheck });
+      items.push({ label: 'Employees', to: '/users', icon: UserCheck });
     }
 
     // Only include Roles tab for admin users
@@ -121,7 +121,7 @@ export const MainLayout = ({ toggleTheme }) => {
                 type="button"
                 className="quick-add-btn"
                 onClick={() => navigate('/users/create')}
-                aria-label="Quick create user"
+                aria-label="Quick create employee"
               >
                 <Plus size={16} /> Quick Create
               </button>

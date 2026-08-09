@@ -28,7 +28,7 @@ export const UserListPage = () => {
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // 8. 300ms Search Debouncing Logic
+  // 300ms Search Debouncing Logic
   useEffect(() => {
     const handler = setTimeout(() => {
       setSearchQuery(searchInput);
@@ -42,14 +42,12 @@ export const UserListPage = () => {
   // Check query params for toasts
   useEffect(() => {
     const toastType = searchParams.get('toast');
-    const userId = searchParams.get('userId');
     if (toastType === 'created') {
-      setToastMessage(`User Created Successfully${userId ? ` — ID: ${userId}` : ''}`);
+      setToastMessage('Employee Created Successfully');
       searchParams.delete('toast');
-      searchParams.delete('userId');
       setSearchParams(searchParams, { replace: true });
     } else if (toastType === 'updated') {
-      setToastMessage('User Updated Successfully');
+      setToastMessage('Employee Updated Successfully');
       searchParams.delete('toast');
       setSearchParams(searchParams, { replace: true });
     }
@@ -67,30 +65,30 @@ export const UserListPage = () => {
   const canEdit = currentUser?.permissions?.includes('USER_UPDATE') || currentUser?.role === 'ADMIN';
   const canDelete = currentUser?.permissions?.includes('USER_DELETE') || currentUser?.role === 'ADMIN';
 
-  // 6. Confirmation Dialogs before Activate / Deactivate
+  // Confirmation Dialogs before Activate / Deactivate
   const handleToggleStatus = async (userId, currentStatus) => {
     const actionText = currentStatus === 'ACTIVE' ? 'deactivate' : 'activate';
-    const confirmed = window.confirm(`Are you sure you want to ${actionText} this user?`);
+    const confirmed = window.confirm(`Are you sure you want to ${actionText} this employee?`);
     if (!confirmed) return;
 
     try {
       await toggleUserStatus(userId, currentStatus);
       setToastMessage('Status Updated');
     } catch (err) {
-      alert(err.message || 'Failed to update user status.');
+      alert(err.message || 'Failed to update employee status.');
     }
   };
 
-  // 6. Confirmation Dialog before Delete
+  // Confirmation Dialog before Delete
   const handleDelete = async (userId) => {
-    const confirmed = window.confirm('Are you sure you want to delete this user?');
+    const confirmed = window.confirm('Are you sure you want to delete this employee?');
     if (!confirmed) return;
 
     try {
       await removeUser(userId);
-      setToastMessage('User Deleted Successfully');
+      setToastMessage('Employee Deleted Successfully');
     } catch (err) {
-      alert(err.message || 'Failed to delete user.');
+      alert(err.message || 'Failed to delete employee.');
     }
   };
 
@@ -139,16 +137,16 @@ export const UserListPage = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>User Management</h1>
+          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>Employee Management</h1>
           <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '14px' }}>
-            Manage user accounts, system roles, permissions, and profile statuses.
+            Manage employee accounts, system roles, permissions, and profile statuses.
           </p>
         </div>
 
         {canCreate && (
           <button
             type="button"
-            aria-label="Add new user"
+            aria-label="Add new employee"
             onClick={() => navigate('/users/create')}
             style={{
               display: 'inline-flex',
@@ -164,12 +162,12 @@ export const UserListPage = () => {
               boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
             }}
           >
-            <Plus size={18} /> Add New User
+            <Plus size={18} /> Add New Employee
           </button>
         )}
       </div>
 
-      {/* Filter and Search Bar with 300ms Debounce and Accessibility */}
+      {/* Filter and Search Bar */}
       <div
         className="glass-card"
         style={{
@@ -184,16 +182,16 @@ export const UserListPage = () => {
       >
         <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
           <label htmlFor="user-search-input" className="sr-only" style={{ display: 'none' }}>
-            Search Users
+            Search Employees
           </label>
           <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
           <input
             id="user-search-input"
             type="text"
-            placeholder="Search by name, email, department..."
+            placeholder="Search by name, email, Employee ID, department..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            aria-label="Search users by name, email, or department"
+            aria-label="Search employees by name, email, Employee ID, or department"
             style={{
               width: '100%',
               padding: '10px 12px 10px 38px',
@@ -213,7 +211,7 @@ export const UserListPage = () => {
             id="status-filter-select"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            aria-label="Filter users by account status"
+            aria-label="Filter employees by account status"
             style={{
               padding: '10px 14px',
               borderRadius: '8px',
@@ -249,14 +247,14 @@ export const UserListPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <AlertTriangle size={20} />
             <div>
-              <strong style={{ fontSize: '15px' }}>Unable to fetch users.</strong>
+              <strong style={{ fontSize: '15px' }}>Unable to fetch employees.</strong>
               <div style={{ fontSize: '13px', opacity: 0.8 }}>{error}</div>
             </div>
           </div>
           <button
             type="button"
             onClick={fetchUsers}
-            aria-label="Retry loading users"
+            aria-label="Retry loading employees"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -275,13 +273,13 @@ export const UserListPage = () => {
         </div>
       )}
 
-      {/* User Table */}
+      {/* Employee Table */}
       <div className="glass-card" style={{ borderRadius: '12px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-              <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>User</th>
-              <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>User ID</th>
+              <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Employee</th>
+              <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Employee ID</th>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Role</th>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Department</th>
               <th scope="col" style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, opacity: 0.8 }}>Status</th>
@@ -294,7 +292,7 @@ export const UserListPage = () => {
                 <td colSpan="6" style={{ padding: '48px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', opacity: 0.7 }}>
                     <RefreshCw size={24} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontWeight: 600, fontSize: '15px' }}>Loading Users...</span>
+                    <span style={{ fontWeight: 600, fontSize: '15px' }}>Loading Employees...</span>
                   </div>
                 </td>
               </tr>
@@ -316,15 +314,15 @@ export const UserListPage = () => {
                     >
                       <Search size={28} />
                     </div>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>No users found</h3>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>No employees found</h3>
                     <p style={{ margin: 0, opacity: 0.6, fontSize: '14px' }}>
-                      {searchInput || statusFilter ? 'Try clearing your search or status filters.' : 'Create your first user.'}
+                      {searchInput || statusFilter ? 'Try clearing your search or status filters.' : 'Create your first employee.'}
                     </p>
                     {canCreate && (
                       <button
                         type="button"
                         onClick={() => navigate('/users/create')}
-                        aria-label="Create your first user"
+                        aria-label="Create your first employee"
                         style={{
                           marginTop: '8px',
                           display: 'inline-flex',
@@ -339,147 +337,145 @@ export const UserListPage = () => {
                           cursor: 'pointer',
                         }}
                       >
-                        <Plus size={16} /> Create User
+                        <Plus size={16} /> Create Employee
                       </button>
                     )}
                   </div>
                 </td>
               </tr>
             ) : (
-              users.map((user) => (
-                <tr
-                  key={user.id}
-                  style={{
-                    borderBottom: '1px solid var(--border-color, #f1f5f9)',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  <td style={{ padding: '14px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div
-                        aria-hidden="true"
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                          color: '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '16px',
-                        }}
-                      >
-                        {user.firstName?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '15px' }}>
-                          {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`}
+              users.map((user) => {
+                const targetId = user.id || user.customId;
+                const displayEmployeeId = user.customId || user.user_id || user.employeeId || 'EMP-000';
+
+                return (
+                  <tr
+                    key={targetId}
+                    style={{
+                      borderBottom: '1px solid var(--border-color, #f1f5f9)',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    <td style={{ padding: '14px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '16px',
+                          }}
+                        >
+                          {user.firstName?.charAt(0).toUpperCase() || 'E'}
                         </div>
-                        <div style={{ fontSize: '13px', opacity: 0.6 }}>{user.email}</div>
-                        {user.customId && (
-                          <div style={{ fontSize: '11px', opacity: 0.5, fontFamily: 'monospace', marginTop: '2px' }}>
-                            ID: <strong>{user.customId}</strong>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '15px' }}>
+                            {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`}
                           </div>
+                          <div style={{ fontSize: '13px', opacity: 0.6 }}>{user.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 20px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600, color: '#4f46e5' }}>
+                      {displayEmployeeId}
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 500 }}>
+                        <Shield size={14} style={{ opacity: 0.7 }} />
+                        {user.role}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 20px', fontSize: '14px' }}>
+                      {user.department || 'Unassigned'}
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      <UserStatusBadge status={user.status} />
+                    </td>
+                    <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          title="View Details"
+                          aria-label={`View details for employee ${user.fullName || user.email}`}
+                          onClick={() => navigate(`/users/${targetId}`)}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color, #e2e8f0)',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Eye size={16} />
+                        </button>
+
+                        {canEdit && (
+                          <button
+                            type="button"
+                            title="Edit Employee"
+                            aria-label={`Edit employee ${user.fullName || user.email}`}
+                            onClick={() => navigate(`/users/${targetId}/edit`)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color, #e2e8f0)',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                        )}
+
+                        {canEdit && (
+                          <button
+                            type="button"
+                            title={user.status === 'ACTIVE' ? 'Deactivate Employee' : 'Activate Employee'}
+                            aria-label={`${user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} employee ${user.fullName || user.email}`}
+                            onClick={() => handleToggleStatus(targetId, user.status)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color, #e2e8f0)',
+                              background: 'transparent',
+                              color: user.status === 'ACTIVE' ? '#f59e0b' : '#10b981',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Power size={16} />
+                          </button>
+                        )}
+
+                        {canDelete && user.role !== 'ADMIN' && (
+                          <button
+                            type="button"
+                            title="Delete Employee"
+                            aria-label={`Delete employee ${user.fullName || user.email}`}
+                            onClick={() => handleDelete(targetId)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color, #e2e8f0)',
+                              background: 'transparent',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         )}
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 600, background: 'rgba(79,70,229,0.08)', color: '#4f46e5', padding: '3px 8px', borderRadius: '6px' }}>
-                      {user.customId || user.id}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 500 }}>
-                      <Shield size={14} style={{ opacity: 0.7 }} />
-                      {user.role}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 20px', fontSize: '14px' }}>
-                    {user.department || 'Unassigned'}
-                  </td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <UserStatusBadge status={user.status} />
-                  </td>
-                  <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '6px' }}>
-                      <button
-                        type="button"
-                        title="View Details"
-                        aria-label={`View details for ${user.fullName || user.email}`}
-                        onClick={() => navigate(`/users/${user.id}`)}
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-color, #e2e8f0)',
-                          background: 'transparent',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Eye size={16} />
-                      </button>
-
-                      {canEdit && (
-                        <button
-                          type="button"
-                          title="Edit User"
-                          aria-label={`Edit ${user.fullName || user.email}`}
-                          onClick={() => navigate(`/users/${user.id}/edit`)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-color, #e2e8f0)',
-                            background: 'transparent',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                      )}
-
-                      {canEdit && (
-                        <button
-                          type="button"
-                          title={user.status === 'ACTIVE' ? 'Deactivate User' : 'Activate User'}
-                          aria-label={`${user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} ${user.fullName || user.email}`}
-                          onClick={() => handleToggleStatus(user.id, user.status)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-color, #e2e8f0)',
-                            background: 'transparent',
-                            color: user.status === 'ACTIVE' ? '#f59e0b' : '#10b981',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <Power size={16} />
-                        </button>
-                      )}
-
-                      {canDelete && user.role !== 'ADMIN' && (
-                        <button
-                          type="button"
-                          title="Delete User"
-                          aria-label={`Delete ${user.fullName || user.email}`}
-                          onClick={() => handleDelete(user.id)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-color, #e2e8f0)',
-                            background: 'transparent',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -498,7 +494,7 @@ export const UserListPage = () => {
             }}
           >
             <div style={{ fontSize: '14px', opacity: 0.7 }}>
-              Showing Page {pagination.page} of {pagination.totalPages || 1} ({pagination.totalItems} total users)
+              Showing Page {pagination.page} of {pagination.totalPages || 1} ({pagination.totalItems} total employees)
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

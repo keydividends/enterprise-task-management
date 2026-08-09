@@ -31,10 +31,10 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         bio: initialValues.bio || '',
         role: initialValues.role || 'USER',
         status: initialValues.status || 'ACTIVE',
-        customId: initialValues.customId || '',
+        customId: initialValues.customId || initialValues.user_id || '',
       });
     }
-  }, []);
+  }, [initialValues]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -91,12 +91,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     <form onSubmit={handleSubmit} className="user-form glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="firstName" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             First Name *
           </label>
           <div style={{ position: 'relative' }}>
             <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="firstName"
               type="text"
               name="firstName"
               value={formData.firstName}
@@ -115,12 +116,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="lastName" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Last Name
           </label>
           <div style={{ position: 'relative' }}>
             <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="lastName"
               type="text"
               name="lastName"
               value={formData.lastName}
@@ -138,18 +140,19 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="email" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Email Address *
           </label>
           <div style={{ position: 'relative' }}>
             <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               disabled={isEditing}
-              placeholder="user@enterprise.com"
+              placeholder="employee@enterprise.com"
               style={{
                 width: '100%',
                 padding: '10px 12px 10px 36px',
@@ -163,12 +166,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-            {isEditing ? 'New Password (Optional)' : 'Password (Default: User@123)'}
+          <label htmlFor="password" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            {isEditing ? 'New Password (Optional)' : 'Password (Default: Employee@123)'}
           </label>
           <div style={{ position: 'relative' }}>
             <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="password"
               type="password"
               name="password"
               value={formData.password}
@@ -187,12 +191,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="department" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Department
           </label>
           <div style={{ position: 'relative' }}>
             <Building size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="department"
               type="text"
               name="department"
               value={formData.department}
@@ -210,12 +215,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="title" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Job Title
           </label>
           <div style={{ position: 'relative' }}>
             <Briefcase size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="title"
               type="text"
               name="title"
               value={formData.title}
@@ -233,12 +239,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="mobile" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Mobile Phone
           </label>
           <div style={{ position: 'relative' }}>
             <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
+              id="mobile"
               type="text"
               name="mobile"
               value={formData.mobile}
@@ -257,10 +264,11 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="role" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Role
           </label>
           <select
+            id="role"
             name="role"
             value={formData.role}
             onChange={handleChange}
@@ -272,17 +280,18 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
               background: 'var(--bg-input, #ffffff)',
             }}
           >
-            <option value="USER">User</option>
+            <option value="USER">Employee</option>
             <option value="ADMIN">Administrator</option>
             <option value="MANAGER">Manager</option>
           </select>
         </div>
 
         <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="status" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Status
           </label>
           <select
+            id="status"
             name="status"
             value={formData.status}
             onChange={handleChange}
@@ -300,10 +309,11 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="bio" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Bio / Notes
           </label>
           <textarea
+            id="bio"
             name="bio"
             rows="3"
             value={formData.bio}
@@ -322,15 +332,16 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
 
         {!isEditing && (
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-              User ID <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used by managers to add this user to projects)</span>
+            <label htmlFor="employee_custom_id" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+              Employee ID <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used by managers to add this employee to projects)</span>
             </label>
             <input
+              id="employee_custom_id"
               type="text"
               name="customId"
               value={formData.customId}
               onChange={handleChange}
-              placeholder="e.g. trisha.dev or EMP-042"
+              placeholder="e.g. EMP-042 or raheema.dev"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -382,7 +393,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
             opacity: submitting ? 0.7 : 1,
           }}
         >
-          <Save size={16} /> {submitting ? 'Saving...' : isEditing ? 'Update User' : 'Create User'}
+          <Save size={16} /> {submitting ? 'Saving...' : isEditing ? 'Update Employee' : 'Create Employee'}
         </button>
       </div>
     </form>

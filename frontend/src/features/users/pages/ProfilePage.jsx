@@ -6,6 +6,7 @@ import userService from '../services/userService';
 export const ProfilePage = () => {
   const { user: authUser } = useAuth();
   const [profile, setProfile] = useState({
+    customId: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -27,7 +28,11 @@ export const ProfilePage = () => {
       try {
         const res = await userService.getMyProfile();
         if (res && res.data) {
+          const rawCustomId = res.data.customId || res.data.user_id || authUser?.customId || authUser?.user_id;
+          const fallbackCustomId = res.data.email ? `EMP-${res.data.email.split('@')[0]}` : 'EMP-001';
+
           setProfile({
+            customId: rawCustomId || fallbackCustomId,
             firstName: res.data.firstName || '',
             lastName: res.data.lastName || '',
             email: res.data.email || authUser?.email || '',
@@ -39,10 +44,13 @@ export const ProfilePage = () => {
           });
         }
       } catch (err) {
-        // Fallback to authUser if API endpoint returns offline
         if (authUser) {
+          const rawCustomId = authUser.customId || authUser.user_id;
+          const fallbackCustomId = authUser.email ? `EMP-${authUser.email.split('@')[0]}` : 'EMP-001';
+
           setProfile((prev) => ({
             ...prev,
+            customId: rawCustomId || fallbackCustomId,
             firstName: authUser.firstName || '',
             lastName: authUser.lastName || '',
             email: authUser.email || '',
@@ -76,7 +84,7 @@ export const ProfilePage = () => {
         title: profile.title,
         bio: profile.bio,
       });
-      setMessage('Profile updated successfully!');
+      setMessage('Employee profile updated successfully!');
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to update profile');
     } finally {
@@ -88,12 +96,14 @@ export const ProfilePage = () => {
     return <div style={{ padding: '48px', textAlign: 'center', opacity: 0.7 }}>Loading your profile...</div>;
   }
 
+  const displayEmployeeId = profile.customId || (profile.email ? `EMP-${profile.email.split('@')[0]}` : 'EMP-001');
+
   return (
     <div className="profile-page" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>My Profile</h1>
         <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '14px' }}>
-          Manage your personal information, contact numbers, and preferences.
+          Manage your employee information, contact details, and account preferences.
         </p>
       </div>
 
@@ -110,7 +120,7 @@ export const ProfilePage = () => {
       )}
 
       <form onSubmit={handleSubmit} className="glass-card" style={{ padding: '28px', borderRadius: '16px' }}>
-        {/* Avatar Section */}
+        {/* Avatar & Identifiers Section */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
           <div
             style={{
@@ -128,15 +138,15 @@ export const ProfilePage = () => {
               position: 'relative',
             }}
           >
-            {profile.firstName?.charAt(0).toUpperCase() || 'U'}
+            {profile.firstName?.charAt(0).toUpperCase() || 'E'}
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>
               {profile.firstName} {profile.lastName}
             </h3>
             <p style={{ margin: '2px 0 4px 0', fontSize: '14px', opacity: 0.6 }}>{profile.email}</p>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', opacity: 0.5, fontFamily: 'monospace', userSelect: 'all' }}>
-              ID: {authUser?.id || 'N/A'}
+            <p style={{ margin: '0 0 8px 0', fontSize: '13px', opacity: 0.8, fontFamily: 'monospace', userSelect: 'all' }}>
+              <strong>Employee ID:</strong> {displayEmployeeId}
             </p>
             <button
               type="button"
@@ -160,8 +170,48 @@ export const ProfilePage = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>First Name</label>
+            <label htmlFor="employee_id_display" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+              Employee ID
+            </label>
             <input
+              id="employee_id_display"
+              type="text"
+              value={displayEmployeeId}
+              disabled
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-disabled, #f1f5f9)',
+                fontFamily: 'monospace',
+                fontWeight: 600,
+                color: '#4f46e5',
+              }}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email_display" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Email Address</label>
+            <input
+              id="email_display"
+              type="email"
+              value={profile.email}
+              disabled
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-disabled, #f1f5f9)',
+              }}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="profile_firstName" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>First Name</label>
+            <input
+              id="profile_firstName"
               type="text"
               name="firstName"
               value={profile.firstName}
@@ -177,8 +227,9 @@ export const ProfilePage = () => {
           </div>
 
           <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Last Name</label>
+            <label htmlFor="profile_lastName" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Last Name</label>
             <input
+              id="profile_lastName"
               type="text"
               name="lastName"
               value={profile.lastName}
@@ -194,24 +245,9 @@ export const ProfilePage = () => {
           </div>
 
           <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Email Address</label>
+            <label htmlFor="profile_mobile" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Mobile Phone</label>
             <input
-              type="email"
-              value={profile.email}
-              disabled
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color, #e2e8f0)',
-                background: 'var(--bg-disabled, #f1f5f9)',
-              }}
-            />
-          </div>
-
-          <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Mobile Phone</label>
-            <input
+              id="profile_mobile"
               type="text"
               name="mobile"
               value={profile.mobile}
@@ -228,13 +264,14 @@ export const ProfilePage = () => {
           </div>
 
           <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Department</label>
+            <label htmlFor="profile_department" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Department</label>
             <input
+              id="profile_department"
               type="text"
               name="department"
               value={profile.department}
               onChange={handleChange}
-              placeholder="e.g. User Management"
+              placeholder="e.g. Employee Management"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -245,9 +282,10 @@ export const ProfilePage = () => {
             />
           </div>
 
-          <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Job Title</label>
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label htmlFor="profile_title" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Job Title</label>
             <input
+              id="profile_title"
               type="text"
               name="title"
               value={profile.title}
@@ -264,8 +302,9 @@ export const ProfilePage = () => {
           </div>
 
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>About Me</label>
+            <label htmlFor="profile_bio" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>About Me</label>
             <textarea
+              id="profile_bio"
               name="bio"
               rows="3"
               value={profile.bio}

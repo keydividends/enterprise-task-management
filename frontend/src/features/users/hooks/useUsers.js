@@ -1,48 +1,66 @@
 import { useCallback, useEffect, useState } from 'react';
 import userService from '../services/userService';
 
+// Helper function to ensure every user has a Custom Employee ID
+const getEmployeeCustomId = (u) => {
+  if (u.customId) return u.customId;
+  if (u.email) return `EMP-${u.email.split('@')[0]}`;
+  const rawId = String(u.id || u._id || '001');
+  return `EMP-${rawId.slice(-4)}`;
+};
+
+const normalizeUserObj = (u) => {
+  const customId = getEmployeeCustomId(u);
+  return {
+    ...u,
+    customId,
+    user_id: customId,
+    employeeId: customId,
+  };
+};
+
 // Fallback seed data for local frontend state when API is offline or initial render
 const INITIAL_MOCK_USERS = [
   {
     id: 'user_admin_1',
+    customId: 'ADMIN-001',
     firstName: 'Admin',
     lastName: 'User',
-    fullName: 'Admin User',
+    fullName: 'Admin Employee',
     email: 'admin@etms.com',
     role: 'ADMIN',
     department: 'Management',
     title: 'System Administrator',
     status: 'ACTIVE',
-    customId: 'ADMIN-001',
     createdAt: '2026-01-15T08:00:00.000Z',
   },
   {
     id: 'user_demo_1',
+    customId: 'EMP-001',
     firstName: 'Demo',
-    lastName: 'User',
-    fullName: 'Demo User',
+    lastName: 'Employee',
+    fullName: 'Demo Employee',
     email: 'demo@etms.com',
     role: 'USER',
     department: 'Engineering',
     title: 'Software Engineer',
     status: 'ACTIVE',
-    customId: 'EMP-001',
     createdAt: '2026-02-01T10:30:00.000Z',
   },
   {
     id: 'user_disabled_1',
+    customId: 'EMP-002',
     firstName: 'Disabled',
-    lastName: 'User',
-    fullName: 'Disabled User',
+    lastName: 'Employee',
+    fullName: 'Disabled Employee',
     email: 'disabled@etms.com',
     role: 'USER',
     department: 'QA',
     title: 'Tester',
     status: 'DISABLED',
-    customId: 'EMP-002',
     createdAt: '2026-02-10T14:15:00.000Z',
   },
-];
+].map(normalizeUserObj);
 
 export const useUsers = (initialParams = {}) => {
   const [users, setUsers] = useState(INITIAL_MOCK_USERS);
@@ -69,14 +87,14 @@ export const useUsers = (initialParams = {}) => {
       });
 
       if (res && res.success && Array.isArray(res.data)) {
-        setUsers(res.data);
+        const normalized = res.data.map(normalizeUserObj);
+        setUsers(normalized);
         if (res.pagination) {
           setPagination(res.pagination);
         }
       }
     } catch (err) {
       console.warn('Backend API request failed, using active state:', err.message);
-      // Filter mock users in fallback mode
       let filtered = [...INITIAL_MOCK_USERS];
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -85,13 +103,14 @@ export const useUsers = (initialParams = {}) => {
             u.firstName.toLowerCase().includes(q) ||
             u.lastName.toLowerCase().includes(q) ||
             u.email.toLowerCase().includes(q) ||
-            u.department.toLowerCase().includes(q)
+            u.department.toLowerCase().includes(q) ||
+            (u.customId && u.customId.toLowerCase().includes(q))
         );
       }
       if (statusFilter) {
         filtered = filtered.filter((u) => u.status === statusFilter);
       }
-      setUsers(filtered);
+      setUsers(filtered.map(normalizeUserObj));
       setPagination((prev) => ({ ...prev, totalItems: filtered.length }));
     } finally {
       setLoading(false);
@@ -106,7 +125,8 @@ export const useUsers = (initialParams = {}) => {
     setLoading(true);
     try {
       const res = await userService.createUser(userData);
-      const newUser = res.data || { ...userData, id: `user_${Date.now()}`, status: 'ACTIVE' };
+      const rawUser = res.data || { ...userData, id: `user_${Date.now()}`, status: 'ACTIVE' };
+      const newUser = normalizeUserObj(rawUser);
       setUsers((prev) => [newUser, ...prev]);
       return newUser;
     } catch (err) {
@@ -121,8 +141,8 @@ export const useUsers = (initialParams = {}) => {
     setLoading(true);
     try {
       const res = await userService.updateUser(userId, updateData);
-      const updated = res.data;
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updated } : u)));
+      const updated = normalizeUserObj(res.data);
+      setUsers((prev) => prev.map((u) => ((u.id === userId || u.customId === userId) ? { ...u, ...updated } : u)));
       return updated;
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -141,7 +161,7 @@ export const useUsers = (initialParams = {}) => {
       } else {
         await userService.activateUser(userId);
       }
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u)));
+      setUsers((prev) => prev.map((u) => ((u.id === userId || u.customId === userId) ? { ...u, status: nextStatus } : u)));
     } catch (err) {
       setError(err.response?.data?.message || err.message);
       throw err;
@@ -154,7 +174,7 @@ export const useUsers = (initialParams = {}) => {
     setLoading(true);
     try {
       await userService.deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setUsers((prev) => prev.filter((u) => u.id !== userId && u.customId !== userId));
     } catch (err) {
       setError(err.response?.data?.message || err.message);
       throw err;

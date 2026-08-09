@@ -39,7 +39,7 @@ export const UserDetailsPage = () => {
           setTeams(teamsRes.value.data);
         }
       } catch (err) {
-        setError(err.message || 'Failed to load user details');
+        setError(err.message || 'Failed to load employee details');
       } finally {
         setLoading(false);
       }
@@ -49,23 +49,25 @@ export const UserDetailsPage = () => {
   }, [userId]);
 
   if (loading) {
-    return <div style={{ padding: '48px', textAlign: 'center', opacity: 0.7 }}>Loading profile...</div>;
+    return <div style={{ padding: '48px', textAlign: 'center', opacity: 0.7 }}>Loading employee profile...</div>;
   }
 
   if (error || !user) {
     return (
       <div style={{ padding: '32px', textAlign: 'center' }}>
-        <p style={{ color: '#ef4444' }}>{error || 'User not found'}</p>
+        <p style={{ color: '#ef4444' }}>{error || 'Employee not found'}</p>
         <button
           type="button"
           onClick={() => navigate('/users')}
           style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ccc', cursor: 'pointer' }}
         >
-          Back to User List
+          Back to Employee List
         </button>
       </div>
     );
   }
+
+  const displayEmployeeId = user.customId || user.employeeId || user.user_id || (user.email ? `EMP-${user.email.split('@')[0]}` : 'EMP-001');
 
   return (
     <div className="user-details-page" style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -85,7 +87,7 @@ export const UserDetailsPage = () => {
           fontWeight: 600,
         }}
       >
-        <ArrowLeft size={16} /> Back to Users
+        <ArrowLeft size={16} /> Back to Employees
       </button>
 
       {/* Header Profile Card */}
@@ -107,7 +109,7 @@ export const UserDetailsPage = () => {
                 boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
               }}
             >
-              {user.firstName?.charAt(0).toUpperCase() || 'U'}
+              {user.firstName?.charAt(0).toUpperCase() || 'E'}
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -119,8 +121,8 @@ export const UserDetailsPage = () => {
               <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '15px' }}>
                 {user.title || 'Team Member'} {user.department ? `• ${user.department}` : ''}
               </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.5, fontFamily: 'monospace', userSelect: 'all' }}>
-                User ID: {user.id}
+              <p style={{ margin: '4px 0 0 0', fontSize: '13px', opacity: 0.8, fontFamily: 'monospace', userSelect: 'all' }}>
+                <strong>Employee ID:</strong> {displayEmployeeId}
               </p>
               <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '13px', opacity: 0.8 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -140,7 +142,7 @@ export const UserDetailsPage = () => {
 
           <button
             type="button"
-            onClick={() => navigate(`/users/${user.id}/edit`)}
+            onClick={() => navigate(`/users/${user.id || user.customId}/edit`)}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
