@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -8,8 +8,6 @@ import {
   Edit,
   Flag,
   Loader2,
-  MessageSquareText,
-  Paperclip,
   Trash2,
   User,
   X,
@@ -49,35 +47,18 @@ const TaskDetailsPage = () => {
   const [members, setMembers] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [userMap, setUserMap] = useState({});
+  const [availableLabels, setAvailableLabels] = useState([]);
+  const [selectedLabelId, setSelectedLabelId] = useState('');
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('#6366f1');
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [labelError, setLabelError] = useState(null);
 
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [toast, setToast] = useState(null);
-
-  const loadTask = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await taskService.getTask(taskId);
-      setTask(data);
-    } catch (err) {
-      const status = err.response?.status;
-      const code = err.response?.data?.code;
-      if (status === 403 || code === 'PERMISSION_DENIED') {
-        setError('You do not have permission to view this task.');
-      } else if (status === 404 || code === 'TASK_NOT_FOUND') {
-        setError('Task not found.');
-      } else if (status >= 500 || !err.response) {
-        setError('Unable to load task. Please try again.');
-      } else {
-        setError(err.response?.data?.message || err.message || 'Failed to load task.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [taskId]);
 
   // Build a userId -> fullName map from the real users API for reporter/assignee display.
   useEffect(() => {
@@ -95,8 +76,31 @@ const TaskDetailsPage = () => {
   }, []);
 
   useEffect(() => {
-    loadTask();
-  }, [loadTask]);
+    let active = true;
+    const loadTask = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await taskService.getTask(taskId);
+        if (active) setTask(data);
+      } catch (err) {
+        if (!active) return;
+        const status = err.response?.status;
+        const code = err.response?.data?.code;
+        if (status === 403 || code === 'PERMISSION_DENIED') setError('You do not have permission to view this task.');
+        else if (status === 404 || code === 'TASK_NOT_FOUND') setError('Task not found.');
+        else if (status >= 500 || !err.response) setError('Unable to load task. Please try again.');
+        else setError(err.response?.data?.message || err.message || 'Failed to load task.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void loadTask();
+    return () => {
+      active = false;
+    };
+  }, [taskId]);
 
   useEffect(() => {
     if (task?.projectId) fetchProjectMembers(task.projectId).then(setMembers);
@@ -104,6 +108,13 @@ const TaskDetailsPage = () => {
 
   useEffect(() => {
     if (task?.projectId) fetchProjectSprints(task.projectId).then(setSprints);
+  }, [task?.projectId]);
+
+  useEffect(() => {
+    if (!task?.projectId) return;
+    taskService.listLabels(task.projectId)
+      .then(setAvailableLabels)
+      .catch(() => setAvailableLabels([]));
   }, [task?.projectId]);
 
   const showToast = (message) => {
@@ -146,6 +157,65 @@ const TaskDetailsPage = () => {
       alert(err.response?.data?.message || err.message);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const refreshLabelsAndTask = async () => {
+    const [nextTask, nextLabels] = await Promise.all([
+      taskService.getTask(taskId),
+      taskService.listLabels(task.projectId),
+    ]);
+    setTask(nextTask);
+    setAvailableLabels(nextLabels);
+  };
+
+  const handleAttachLabel = async () => {
+    if (!selectedLabelId || labelBusy) return;
+    setLabelBusy(true);
+    setLabelError(null);
+    try {
+      await taskService.addLabelToTask(taskId, selectedLabelId);
+      await refreshLabelsAndTask();
+      setSelectedLabelId('');
+      showToast('Label added.');
+    } catch (err) {
+      setLabelError(err.response?.data?.message || err.message || 'Failed to add label.');
+    } finally {
+      setLabelBusy(false);
+    }
+  };
+
+  const handleCreateLabel = async (event) => {
+    event.preventDefault();
+    const name = newLabelName.trim();
+    if (!name || labelBusy) return;
+    setLabelBusy(true);
+    setLabelError(null);
+    try {
+      const label = await taskService.createLabel(task.projectId, { name, color: newLabelColor });
+      await taskService.addLabelToTask(taskId, label.id);
+      await refreshLabelsAndTask();
+      setNewLabelName('');
+      showToast('Label created and added.');
+    } catch (err) {
+      setLabelError(err.response?.data?.message || err.message || 'Failed to create label.');
+    } finally {
+      setLabelBusy(false);
+    }
+  };
+
+  const handleRemoveLabel = async (labelId) => {
+    if (labelBusy) return;
+    setLabelBusy(true);
+    setLabelError(null);
+    try {
+      await taskService.removeLabelFromTask(taskId, labelId);
+      await refreshLabelsAndTask();
+      showToast('Label removed.');
+    } catch (err) {
+      setLabelError(err.response?.data?.message || err.message || 'Failed to remove label.');
+    } finally {
+      setLabelBusy(false);
     }
   };
 
@@ -231,15 +301,43 @@ const labels = task.labels || [];
           <h1>{task.title}</h1>
           <p className="task-detail-desc">{task.description || 'No description provided.'}</p>
 
-          {labels.length > 0 && (
-            <div className="task-detail-labels">
-              {labels.map((label) => (
-                <span key={label.id || label._id} className="task-label-chip" style={{ background: `color-mix(in srgb, ${label.color} 18%, transparent)`, color: label.color }}>
-                  {label.name}
-                </span>
-              ))}
+          <div className="task-detail-labels">
+            {labels.map((label) => (
+              <span key={label.id || label._id} className="task-label-chip" style={{ background: `color-mix(in srgb, ${label.color} 18%, transparent)`, color: label.color }}>
+                {label.name}
+                <button
+                  type="button"
+                  className="ghost-button compact"
+                  onClick={() => handleRemoveLabel(label.id || label._id)}
+                  disabled={labelBusy}
+                  aria-label={`Remove ${label.name} label`}
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <div className="task-label-manager">
+            <div className="split-fields">
+              <select value={selectedLabelId} onChange={(event) => setSelectedLabelId(event.target.value)} disabled={labelBusy}>
+                <option value="">Add an existing label...</option>
+                {availableLabels
+                  .filter((label) => !labels.some((attached) => String(attached.id || attached._id) === String(label.id || label._id)))
+                  .map((label) => <option key={label.id || label._id} value={label.id || label._id}>{label.name}</option>)}
+              </select>
+              <button type="button" className="secondary-button compact" onClick={handleAttachLabel} disabled={!selectedLabelId || labelBusy}>
+                Add label
+              </button>
             </div>
-          )}
+
+            <form className="split-fields" onSubmit={handleCreateLabel}>
+              <input value={newLabelName} onChange={(event) => setNewLabelName(event.target.value)} placeholder="Create a label" maxLength="100" disabled={labelBusy} />
+              <input type="color" value={newLabelColor} onChange={(event) => setNewLabelColor(event.target.value)} aria-label="New label color" disabled={labelBusy} />
+              <button type="submit" className="secondary-button compact" disabled={!newLabelName.trim() || labelBusy}>Create and add</button>
+            </form>
+            {labelError && <p className="field-error">{labelError}</p>}
+          </div>
 
           <div className="task-detail-meta-grid">
             <div className="meta-cell">

@@ -13,7 +13,7 @@ const TaskBoardPage = () => {
   useEffect(() => {
     fetchProjects().then((list) => {
       setProjects(list);
-      if (list.length && !projectId) setProjectId(list[0].id);
+      if (list.length) setProjectId((current) => current || list[0].id);
     });
   }, []);
   const { board, boardLoading, error, fetchBoard, changeStatus } = useTasks();

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpDown, Kanban, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
 import useTasks from '../hooks/useTasks';
@@ -14,32 +14,27 @@ const TaskListPage = () => {
 
   const { tasks = [], loading, error, pagination, fetchTasks } = useTasks();
   const [refreshing, setRefreshing] = useState(false);
-  const [lastParams, setLastParams] = useState({});
-
-  useEffect(() => {
-    const params = {
-      page,
-      pageSize,
-      sortBy,
-      sortOrder,
-      ...filters,
-    };
+  const requestParams = useMemo(() => {
+    const params = { page, pageSize, sortBy, sortOrder, ...filters };
     Object.keys(params).forEach((key) => {
       if (params[key] === '' || params[key] === undefined || params[key] === null) delete params[key];
     });
-    setLastParams(params);
-    fetchTasks(params);
-  }, [filters, page, sortBy, sortOrder, fetchTasks]);
+    return params;
+  }, [filters, page, sortBy, sortOrder]);
+
+  useEffect(() => {
+    void fetchTasks(requestParams);
+  }, [fetchTasks, requestParams]);
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      await fetchTasks(lastParams);
+      await fetchTasks(requestParams);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshing, fetchTasks, lastParams]);
+  }, [refreshing, fetchTasks, requestParams]);
 
   const handleFiltersChange = useCallback((next) => {
     setFilters(next);

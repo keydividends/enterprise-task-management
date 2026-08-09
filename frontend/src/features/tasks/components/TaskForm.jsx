@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TASK_STATUSES, TASK_PRIORITIES, TASK_TYPES, STATUS_LABELS, PRIORITY_LABELS, TYPE_LABELS } from '../taskConstants';
-import { MOCK_PROJECTS, MOCK_SPRINTS, fetchProjects, fetchProjectMembers, fetchProjectSprints } from '../hooks/useTasks';
+import { MOCK_PROJECTS, fetchProjects, fetchProjectMembers, fetchProjectSprints } from '../hooks/useTasks';
 import { getNetWorkError } from '../utils/formErrors';
 
 const defaultValues = {
@@ -22,9 +22,6 @@ const defaultValues = {
 
 const EMPTY_INITIAL = {};
 
-const hasDifferences = (prev, next) =>
-  Object.keys(next).some((key) => prev[key] !== next[key]);
-
 const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', onSubmit, loading = false }) => {
   const navigate = useNavigate();
   const [values, setValues] = useState({ ...defaultValues, ...initialValues });
@@ -40,19 +37,31 @@ const TaskForm = ({ initialValues = EMPTY_INITIAL, submitLabel = 'Save task', on
 
   // Reload members and sprints whenever the selected project changes.
   useEffect(() => {
-    if (!values.projectId) { setMembers([]); setSprints([]); return; }
-    fetchProjectMembers(values.projectId).then(setMembers);
-    fetchProjectSprints(values.projectId).then(setSprints);
-  }, [values.projectId]);
+    let active = true;
+    const loadProjectOptions = async () => {
+      if (!values.projectId) {
+        if (active) {
+          setMembers([]);
+          setSprints([]);
+        }
+        return;
+      }
 
-  // Sync initialValues into form state when they change (e.g. edit page load).
-  useEffect(() => {
-    if (Object.keys(initialValues).length === 0) return;
-    setValues((prev) => {
-      if (!hasDifferences(prev, initialValues)) return prev;
-      return { ...defaultValues, ...prev, ...initialValues };
-    });
-  }, [initialValues]);
+      const [nextMembers, nextSprints] = await Promise.all([
+        fetchProjectMembers(values.projectId),
+        fetchProjectSprints(values.projectId),
+      ]);
+      if (active) {
+        setMembers(nextMembers);
+        setSprints(nextSprints);
+      }
+    };
+
+    void loadProjectOptions();
+    return () => {
+      active = false;
+    };
+  }, [values.projectId]);
 
   const setField = (key, value) => {
     setValues((prev) => ({ ...prev, [key]: value }));

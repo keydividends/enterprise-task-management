@@ -108,6 +108,36 @@ const isProjectMember = async (projectId, userId) => {
   return false;
 };
 
+// Resolve the project ids a non-admin caller may read. The task service uses
+// this only for an unfiltered task list; project-specific reads call
+// isProjectMember directly through assertProjectAccess.
+const listAccessibleProjectIds = async (userId, workspaceId = null) => {
+  if (!userId) return [];
+
+  let projects = [];
+  try {
+    const result = await projectRepository.listProjects({ workspaceId, page: 1, pageSize: 100 });
+    projects = result?.items || [];
+  } catch {
+    /* fall through to mock projects */
+  }
+
+  if (!projects.length) {
+    projects = mock.PROJECTS.filter(
+      (project) => !workspaceId || String(project.workspaceId) === String(workspaceId)
+    );
+  }
+
+  const access = await Promise.all(
+    projects.map(async (project) => {
+      const projectId = String(project.id || project._id);
+      return (await isProjectMember(projectId, userId)) ? projectId : null;
+    })
+  );
+
+  return access.filter(Boolean);
+};
+
 // --- Sprints -----------------------------------------------------------------
 // No Sprint module exists yet; keep mock fallback until one is merged.
 
@@ -126,6 +156,7 @@ module.exports = {
   findUserById,
   listProjectUsers,
   isProjectMember,
+  listAccessibleProjectIds,
   findSprintById,
   findEpicById,
 };

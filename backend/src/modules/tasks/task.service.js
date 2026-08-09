@@ -32,6 +32,22 @@ const createError = (code, message, statusCode = 400, field = null) => {
 
 const toObjectId = (id) => (isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id);
 
+// Task audit fields are MongoDB ObjectId references.  During local/mock API
+// flows the auth middleware deliberately exposes the placeholder ids
+// "mock-admin" and "mock-demo"; keep that transport concern outside this
+// module by translating only those known mock identities to task-module seed
+// user ids before persisting audit records.  Real authenticated users retain
+// their own ObjectId unchanged.
+const getActorId = (context = {}) => {
+  const userId = context.userId || context.user?.id;
+  if (isValidObjectId(userId)) return userId;
+
+  if (userId === "mock-admin") return "64a100000000000000000001";
+  if (userId === "mock-demo") return "64a100000000000000000002";
+
+  return userId;
+};
+
 const hasTaskPermission = (context, permission) => {
   const role = String(context.user?.role || "").toUpperCase();
   return ["ADMIN", "SUPER_ADMIN"].includes(role)
@@ -98,6 +114,9 @@ const assertTaskExists = async (taskId, workspaceId) => {
   return task;
 };
 
+const assertTaskReadAccess = async (task, context = {}) =>
+  assertProjectAccess(task.projectId, getActorId(context), context);
+
 const recordHistory = async (taskId, userId, field, oldValue, newValue) => {
   if (oldValue === newValue) return;
   try {
@@ -147,11 +166,19 @@ const buildFilter = (query = {}) => {
 
 const listTasks = async (query, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
+  const userId = getActorId(context);
   const validated = validateTaskQuery(query);
   const { page, pageSize, sortBy, sortOrder } = validated;
 
   const sortField = TASK_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
   const filter = buildFilter(query);
+
+  if (query.projectId) {
+    await assertProjectAccess(query.projectId, userId, context);
+  } else if (!hasProjectWideTaskAccess(context)) {
+    const accessibleProjectIds = await contracts.listAccessibleProjectIds(userId, workspaceId);
+    filter.projectId = { $in: accessibleProjectIds };
+  }
 
   // Only apply workspaceId filter when the context actually provided one.
   // If context.workspaceId is null the mock fallback ID is used, which would
@@ -204,6 +231,7 @@ const getTaskDetail = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   if (!isValidObjectId(taskId)) throw createError("INVALID_IDENTIFIER", "Task ID must be valid.", 400);
   const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
 
   const [labels, assignments, checklists, history] = await Promise.all([
     repo.findLabelsByTask(taskId),
@@ -238,7 +266,7 @@ const getTaskDetail = async (taskId, context = {}) => {
 const createTask = async (payload, context = {}) => {
   validateCreateTask(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
 
   const project = await assertProjectAccess(payload.projectId, userId, context);
   await assertAssigneeEligible(payload.projectId, payload.primaryAssigneeId);
@@ -292,7 +320,7 @@ const createTask = async (payload, context = {}) => {
 const updateTask = async (taskId, payload, context = {}) => {
   validateUpdateTask(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
 
   // TASK_CLOSE is explicitly separate from TASK_UPDATE in the RBAC matrix.
@@ -330,7 +358,7 @@ const updateTask = async (taskId, payload, context = {}) => {
 const changeStatus = async (taskId, payload, context = {}) => {
   validateStatusChange(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
 
   if (!canTransition(task.status, payload.status)) {
@@ -357,7 +385,7 @@ const changePriority = async (taskId, payload, context = {}) => {
     throw createError("VALIDATION_ERROR", "Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL.", 400, "priority");
   }
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
 
   const updated = await repo.updateTask(taskId, workspaceId, { priority: payload.priority, updatedBy: userId });
@@ -373,7 +401,7 @@ const changePriority = async (taskId, payload, context = {}) => {
 const assignTask = async (taskId, payload, context = {}) => {
   validateAssignee(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
 
   const isReassignment = task.primaryAssigneeId && String(task.primaryAssigneeId) !== String(payload.userId);
@@ -408,7 +436,7 @@ const assignTask = async (taskId, payload, context = {}) => {
 
 const unassignTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
 
   assertTaskPermission(context, "TASK_REASSIGN");
@@ -430,7 +458,7 @@ const unassignTask = async (taskId, context = {}) => {
 
 const deleteTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   await assertTaskExists(taskId, workspaceId);
   await repo.softDeleteTask(taskId, workspaceId, userId);
   await recordHistory(taskId, userId, "isDeleted", false, true);
@@ -439,7 +467,7 @@ const deleteTask = async (taskId, context = {}) => {
 
 const restoreTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await repo.restoreTask(taskId, workspaceId);
   if (!task) throw createError("TASK_NOT_FOUND", "Task not found or not deleted.", 404);
   await recordHistory(taskId, userId, "isDeleted", true, false);
@@ -454,6 +482,7 @@ const getBoard = async (query, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const projectId = query.projectId;
   if (!projectId) throw createError("VALIDATION_ERROR", "projectId is required for the board.", 400, "projectId");
+  await assertProjectAccess(projectId, getActorId(context), context);
 
   const extraFilter = {};
   if (query.sprintId) extraFilter.sprintId = query.sprintId;
@@ -487,6 +516,7 @@ const listLabels = async (projectId, query = {}, context = {}) => {
   if (!project || String(project.workspaceId) !== String(workspaceId)) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectAccess(projectId, getActorId(context), context);
   const labels = await repo.findLabelsByProject(projectId, query.search);
   return labels.map(mapLabel);
 };
@@ -494,7 +524,7 @@ const listLabels = async (projectId, query = {}, context = {}) => {
 const createLabel = async (projectId, payload, context = {}) => {
   const { name, color } = validateLabelInput(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const project = await contracts.findProjectById(projectId);
   if (!project || String(project.workspaceId) !== String(workspaceId)) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
@@ -517,7 +547,7 @@ const createLabel = async (projectId, payload, context = {}) => {
 const addLabelToTask = async (taskId, payload, context = {}) => {
   validateLabelId(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
 
   const label = await repo.findLabelById(payload.labelId, task.projectId);
@@ -545,7 +575,7 @@ const removeLabelFromTask = async (taskId, labelId, context = {}) => {
 const createChecklist = async (taskId, payload, context = {}) => {
   const { title } = validateChecklistInput(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   await assertTaskExists(taskId, workspaceId);
 
   const position = await repo.getNextChecklistPosition(taskId);
@@ -569,7 +599,7 @@ const listChecklists = async (taskId, context = {}) => {
 const updateChecklist = async (checklistId, payload, context = {}) => {
   const { title } = validateChecklistInput(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const checklist = await repo.findChecklistById(checklistId);
   if (!checklist) throw createError("CHECKLIST_NOT_FOUND", "Checklist not found.", 404);
 
@@ -596,7 +626,7 @@ const deleteChecklist = async (checklistId, context = {}) => {
 const addChecklistItem = async (checklistId, payload, context = {}) => {
   const { text } = validateChecklistItemInput(payload);
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const checklist = await repo.findChecklistById(checklistId);
   if (!checklist) throw createError("CHECKLIST_NOT_FOUND", "Checklist not found.", 404);
 
@@ -619,7 +649,7 @@ const addChecklistItem = async (checklistId, payload, context = {}) => {
 
 const updateChecklistItem = async (checklistId, itemId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   if (!isValidObjectId(itemId)) throw createError("INVALID_IDENTIFIER", "Item ID must be valid.", 400);
 
   const item = await repo.findChecklistItemById(itemId, checklistId);
@@ -643,7 +673,7 @@ const updateChecklistItem = async (checklistId, itemId, payload, context = {}) =
 
 const completeChecklistItem = async (checklistId, itemId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  const userId = context.userId || context.user?.id;
+  const userId = getActorId(context);
   const item = await repo.findChecklistItemById(itemId, checklistId);
   if (!item) throw createError("CHECKLIST_ITEM_NOT_FOUND", "Checklist item not found.", 404);
 

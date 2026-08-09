@@ -76,7 +76,7 @@ const EditTaskPage = () => {
           <strong>Edit task</strong>
         </div>
         {error && <div className="form-banner danger">{error}</div>}
-        <TaskForm initialValues={initialValues} submitLabel="Save changes" loading={saving} onSubmit={handleSubmit} />
+        <TaskForm key={taskId} initialValues={initialValues} submitLabel="Save changes" loading={saving} onSubmit={handleSubmit} />
       </div>
     </div>
   );

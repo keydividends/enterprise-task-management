@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CalendarDays, MessageSquareText, Paperclip, User } from 'lucide-react';
-import TaskStatusBadge from './TaskStatusBadge';
 import { getUserName } from '../hooks/useTasks';
-import { PRIORITY_LABELS, TYPE_LABELS, TASK_STATUSES, STATUS_LABELS, TASK_STATUS_TRANSITIONS } from '../taskConstants';
+import { PRIORITY_LABELS, TYPE_LABELS, STATUS_LABELS, TASK_STATUS_TRANSITIONS } from '../taskConstants';
 
 const PriorityTag = ({ priority }) => {
   const cls = String(priority || 'medium').toLowerCase();

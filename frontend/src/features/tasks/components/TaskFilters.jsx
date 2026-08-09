@@ -24,9 +24,30 @@ const TaskFilters = ({ initialFilters = {}, onChange }) => {
   }, []);
 
   useEffect(() => {
-    if (!filters.projectId) { setMembers([]); setSprints([]); return; }
-    fetchProjectMembers(filters.projectId).then(setMembers);
-    fetchProjectSprints(filters.projectId).then(setSprints);
+    let active = true;
+    const loadProjectOptions = async () => {
+      if (!filters.projectId) {
+        if (active) {
+          setMembers([]);
+          setSprints([]);
+        }
+        return;
+      }
+
+      const [nextMembers, nextSprints] = await Promise.all([
+        fetchProjectMembers(filters.projectId),
+        fetchProjectSprints(filters.projectId),
+      ]);
+      if (active) {
+        setMembers(nextMembers);
+        setSprints(nextSprints);
+      }
+    };
+
+    void loadProjectOptions();
+    return () => {
+      active = false;
+    };
   }, [filters.projectId]);
 
   const update = (key, value) => {
