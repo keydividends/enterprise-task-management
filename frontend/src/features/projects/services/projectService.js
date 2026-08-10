@@ -31,8 +31,8 @@ const projectService = {
     return unwrapResponse(await axiosClient.post(`/projects/${projectId}/members`, payload));
   },
 
-  async removeProjectMember(projectId, userId) {
-    return unwrapResponse(await axiosClient.delete(`/projects/${projectId}/members/${userId}`));
+  async removeProjectMember(projectId, employeeId) {
+    return unwrapResponse(await axiosClient.delete(`/projects/${projectId}/members/${encodeURIComponent(employeeId)}`));
   },
 
   async getProjectTaskSummary(projectId, params = {}) {

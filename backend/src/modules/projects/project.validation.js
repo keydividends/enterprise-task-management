@@ -159,12 +159,12 @@ const validateProjectId = (projectId) => {
 };
 
 const validateProjectMemberInput = (payload = {}) => {
-  const userId = String(payload.userId || "").trim();
+  const employeeId = String(payload.employeeId || "").trim();
   const projectRole = payload.projectRole ? String(payload.projectRole).trim().toUpperCase() : "DEVELOPER";
   const allocationPercentage = payload.allocationPercentage !== undefined ? Number(payload.allocationPercentage) : 100;
 
-  if (!userId) {
-    throw createValidationError("User ID is required.", "userId");
+  if (!employeeId) {
+    throw createValidationError("Employee ID is required.", "employeeId");
   }
   if (!PROJECT_ROLES.includes(projectRole)) {
     throw createValidationError(`Project role must be one of: ${PROJECT_ROLES.join(", ")}.`, "projectRole");
@@ -174,7 +174,7 @@ const validateProjectMemberInput = (payload = {}) => {
   }
 
   return {
-    userId,
+    employeeId,
     projectRole,
     allocationPercentage,
   };

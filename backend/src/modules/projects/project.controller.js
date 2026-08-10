@@ -76,7 +76,7 @@ const addProjectMember = async (req, res, next) => {
 
 const removeProjectMember = async (req, res, next) => {
   try {
-    const member = await projectService.removeProjectMember(req.params.projectId, req.params.userId, { user: req.user, workspaceId: req.user.workspaceId });
+    const member = await projectService.removeProjectMember(req.params.projectId, req.params.employeeId, { user: req.user, workspaceId: req.user.workspaceId });
     sendSuccess(res, 200, { success: true, message: "Project member removed", data: member });
   } catch (error) {
     next(error);

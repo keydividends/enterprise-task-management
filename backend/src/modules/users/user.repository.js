@@ -305,6 +305,7 @@ const searchUsers = async (query = "", limit = 10) => {
         { firstName: { $regex: s, $options: "i" } },
         { lastName: { $regex: s, $options: "i" } },
         { email: { $regex: s, $options: "i" } },
+        { customId: { $regex: s, $options: "i" } },
       ];
     }
 
@@ -318,7 +319,8 @@ const searchUsers = async (query = "", limit = 10) => {
         !s ||
         u.firstName?.toLowerCase().includes(s) ||
         u.lastName?.toLowerCase().includes(s) ||
-        u.email?.toLowerCase().includes(s)
+        u.email?.toLowerCase().includes(s) ||
+        u.customId?.toLowerCase().includes(s)
     )
     .slice(0, limit);
 };

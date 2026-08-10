@@ -222,7 +222,7 @@ const listProjectMembers = async (projectId, query = {}, context = {}) => {
           const user = await userRepository.findById(uid);
           if (user) {
             member.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
-            member.customId = user.customId || null;
+            member.employeeId = user.customId || null;
           }
         }
       } catch { /* skip */ }
@@ -258,34 +258,23 @@ const addProjectMember = async (projectId, payload, context = {}) => {
   // resolve customId → real MongoDB _id, reject if not found
   let resolvedUserId = null;
   let resolvedUserName = null;
-  let resolvedCustomId = null;
+  let resolvedEmployeeId = null;
 
-  const userByCustomId = await userRepository.findByCustomId(memberInput.userId);
+  const userByCustomId = await userRepository.findByCustomId(memberInput.employeeId);
   if (userByCustomId) {
     if (userByCustomId.isDeleted || userByCustomId.status === "DISABLED") {
-      throw createError("USER_NOT_FOUND", "Member user must be valid and active.", 404, "userId");
+      throw createError("USER_NOT_FOUND", "Member must be an active employee.", 404, "employeeId");
     }
     resolvedUserId = String(userByCustomId._id || userByCustomId.id);
     resolvedUserName = [userByCustomId.firstName, userByCustomId.lastName].filter(Boolean).join(' ') || userByCustomId.email || null;
-    resolvedCustomId = userByCustomId.customId || null;
+    resolvedEmployeeId = userByCustomId.customId || null;
   } else {
-    // fallback: try as MongoDB ObjectId
-    if (/^[a-f0-9]{24}$/i.test(memberInput.userId)) {
-      const user = await userRepository.findById(memberInput.userId);
-      if (!user || user.isDeleted || user.status === "DISABLED") {
-        throw createError("USER_NOT_FOUND", "No user found with that ID.", 404, "userId");
-      }
-      resolvedUserId = String(user._id || user.id);
-      resolvedUserName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
-      resolvedCustomId = user.customId || null;
-    } else {
-      throw createError("USER_NOT_FOUND", "No user found with that ID.", 404, "userId");
-    }
+    throw createError("USER_NOT_FOUND", "No employee found with that employee ID.", 404, "employeeId");
   }
 
   const existing = await projectRepository.findProjectMember(projectId, resolvedUserId);
   if (existing) {
-    throw createError("PROJECT_MEMBER_EXISTS", "User is already a project member.", 409, "userId");
+    throw createError("PROJECT_MEMBER_EXISTS", "Employee is already a project member.", 409, "employeeId");
   }
 
   const created = await projectRepository.createProjectMember({
@@ -298,15 +287,15 @@ const addProjectMember = async (projectId, payload, context = {}) => {
 
   const plain = typeof created.toObject === 'function' ? created.toObject() : { ...created };
   plain.userName = resolvedUserName;
-  plain.customId = resolvedCustomId;
+  plain.employeeId = resolvedEmployeeId;
 
   return toProjectMemberDTO(plain);
 };
 
-const removeProjectMember = async (projectId, userId, context = {}) => {
+const removeProjectMember = async (projectId, employeeId, context = {}) => {
   validateProjectId(projectId);
-  if (!userId || !String(userId).trim()) {
-    throw createError("VALIDATION_ERROR", "User ID is required.", 400, "userId");
+  if (!employeeId || !String(employeeId).trim()) {
+    throw createError("VALIDATION_ERROR", "Employee ID is required.", 400, "employeeId");
   }
 
   const project = await getProjectInWorkspace(projectId, context);
@@ -315,6 +304,11 @@ const removeProjectMember = async (projectId, userId, context = {}) => {
   }
   await assertProjectManagementAccess(project, context, "PROJECT_MANAGE_MEMBERS");
 
+  const user = await userRepository.findByCustomId(String(employeeId).trim());
+  if (!user) {
+    throw createError("PROJECT_MEMBER_NOT_FOUND", "Project member not found.", 404);
+  }
+  const userId = String(user._id || user.id);
   const member = await projectRepository.findProjectMember(projectId, userId);
   if (!member) {
     throw createError("PROJECT_MEMBER_NOT_FOUND", "Project member not found.", 404);

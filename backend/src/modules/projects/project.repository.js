@@ -122,7 +122,7 @@ const updateProject = async (projectId, payload) => {
     return Project.findOneAndUpdate(
       { _id: toObjectId(projectId), isDeleted: false },
       { $set: payload },
-      { returnDocument: "after", new: true }
+      { returnDocument: "after" }
     ).lean();
   }
 
@@ -142,7 +142,7 @@ const deleteProject = async (projectId, deletedBy) => {
     return Project.findOneAndUpdate(
       { _id: toObjectId(projectId), isDeleted: false },
       { $set: { isDeleted: true, status: "ARCHIVED", deletedAt: new Date(), deletedBy: deletedBy ? toObjectId(deletedBy) : null } },
-      { returnDocument: "after", new: true }
+      { returnDocument: "after" }
     ).lean();
   }
 
@@ -165,7 +165,7 @@ const restoreProject = async (projectId) => {
     return Project.findOneAndUpdate(
       { _id: toObjectId(projectId), isDeleted: true },
       { $set: { isDeleted: false, status: "PLANNING", deletedAt: null, deletedBy: null } },
-      { returnDocument: "after", new: true }
+      { returnDocument: "after" }
     ).lean();
   }
 
@@ -259,7 +259,7 @@ const removeProjectMember = async (projectId, userId, removedBy) => {
     return ProjectMember.findOneAndUpdate(
       { projectId: toObjectId(projectId), userId: toObjectId(userId), isDeleted: false },
       { $set: { isDeleted: true, status: "REMOVED", removedAt: new Date(), removedBy: removedBy ? toObjectId(removedBy) : null } },
-      { returnDocument: "after", new: true }
+      { returnDocument: "after" }
     ).lean();
   }
 

@@ -25,7 +25,7 @@ router.delete("/:projectId", authenticate, authorizeProject("PROJECT_DELETE"), p
 router.patch("/:projectId/restore", authenticate, authorizeProject("PROJECT_DELETE"), projectController.restoreProject);
 router.get("/:projectId/members", authenticate, authorizeProject("PROJECT_VIEW"), projectController.listProjectMembers);
 router.post("/:projectId/members", authenticate, authorizeProject("PROJECT_MANAGE_MEMBERS"), projectController.addProjectMember);
-router.delete("/:projectId/members/:userId", authenticate, authorizeProject("PROJECT_MANAGE_MEMBERS"), projectController.removeProjectMember);
+router.delete("/:projectId/members/:employeeId", authenticate, authorizeProject("PROJECT_MANAGE_MEMBERS"), projectController.removeProjectMember);
 router.get("/:projectId/tasks/summary", authenticate, authorizeProject("PROJECT_VIEW"), projectController.getProjectTaskSummary);
 
 module.exports = router;

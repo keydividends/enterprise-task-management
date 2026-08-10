@@ -30,9 +30,8 @@ const toProjectMemberDTO = (member) => {
   return {
     id: String(member._id || member.id),
     projectId: String(member.projectId),
-    userId: String(member.userId),
     userName: member.userName || null,
-    customId: member.customId || null,
+    employeeId: member.employeeId || member.customId || null,
     projectRole: member.projectRole || "DEVELOPER",
     allocationPercentage: member.allocationPercentage ?? 100,
     status: member.status || "ACTIVE",

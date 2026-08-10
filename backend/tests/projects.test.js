@@ -86,11 +86,11 @@ test('addProjectMember succeeds and duplicate members are rejected', async () =>
   }, mockContext);
 
   await withMockProjectUser(async () => {
-    const member = await projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
-    assert.equal(member.userId, 'user_admin_1');
+    const member = await projectService.addProjectMember(created.id, { employeeId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
+    assert.equal(member.employeeId, 'user_admin_1');
 
     await assert.rejects(
-      () => projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext),
+      () => projectService.addProjectMember(created.id, { employeeId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext),
       (error) => {
         assert.equal(error.code, 'PROJECT_MEMBER_EXISTS');
         return true;
@@ -106,7 +106,7 @@ test('removeProjectMember removes an existing member', async () => {
   }, mockContext);
 
   await withMockProjectUser(async () => {
-    await projectService.addProjectMember(created.id, { userId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
+    await projectService.addProjectMember(created.id, { employeeId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
     const removed = await projectService.removeProjectMember(created.id, 'user_admin_1', mockContext);
     assert.equal(removed.status, 'REMOVED');
   });
