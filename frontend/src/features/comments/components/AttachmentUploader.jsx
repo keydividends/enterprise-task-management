@@ -22,25 +22,28 @@ const validateFile = (file) => {
   return null;
 };
 
-const AttachmentUploader = ({ onUpload, uploading, uploadProgress }) => {
+const AttachmentUploader = ({ onUpload, uploading, uploadProgress, disabled = false }) => {
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [validationError, setValidationError] = useState(null);
   const [pendingFile, setPendingFile] = useState(null);
+  const [pendingName, setPendingName] = useState('');
 
   const handleFile = (file) => {
-    if (!file) return;
+    if (!file || disabled) return;
     const err = validateFile(file);
-    if (err) { setValidationError(err); setPendingFile(null); return; }
+    if (err) { setValidationError(err); setPendingFile(null); setPendingName(''); return; }
     setValidationError(null);
     setPendingFile(file);
+    setPendingName(file.name);
   };
 
   const handleConfirmUpload = async () => {
     if (!pendingFile) return;
     try {
-      await onUpload(pendingFile);
+      await onUpload(pendingFile, pendingName);
       setPendingFile(null);
+      setPendingName('');
     } catch {
       // ignore
     }
@@ -74,7 +77,7 @@ const AttachmentUploader = ({ onUpload, uploading, uploadProgress }) => {
       {pendingFile && !uploading && (
         <div className="attach-pending-row">
           <Paperclip size={13} />
-          <span className="attach-pending-name" title={pendingFile.name}>{pendingFile.name}</span>
+          <input className="attach-pending-name" value={pendingName} onChange={(event) => setPendingName(event.target.value)} maxLength="255" aria-label="File name" />
           <button
             type="button"
             className="attach-confirm-btn"
@@ -85,7 +88,7 @@ const AttachmentUploader = ({ onUpload, uploading, uploadProgress }) => {
           <button
             type="button"
             className="attach-cancel-btn"
-            onClick={() => setPendingFile(null)}
+            onClick={() => { setPendingFile(null); setPendingName(''); }}
           >
             <X size={13} />
           </button>
@@ -95,17 +98,20 @@ const AttachmentUploader = ({ onUpload, uploading, uploadProgress }) => {
       {!pendingFile && !uploading && (
         <div
           className={`attach-drop-bar ${dragOver ? 'drag-over' : ''}`}
-          onClick={() => inputRef.current?.click()}
+          onClick={() => !disabled && inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && !disabled && inputRef.current?.click()}
           aria-label="Attach a file"
+          aria-disabled={disabled}
+          title={disabled ? 'Attachment limit reached for this task.' : 'Attach a file'}
+          style={disabled ? { cursor: 'not-allowed', opacity: 0.6 } : undefined}
         >
           <Paperclip size={15} />
-          <span>Attach a file</span>
+          <span>{disabled ? 'Attachment limit reached' : 'Attach a file'}</span>
           <span className="attach-drop-hint"> drag &amp; drop  [max {MAX_SIZE_MB} MB]</span>
         </div>
       )}
@@ -116,7 +122,7 @@ const AttachmentUploader = ({ onUpload, uploading, uploadProgress }) => {
         accept={ALLOWED_TYPES.join(',')}
         style={{ display: 'none' }}
         onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
-        disabled={uploading}
+        disabled={uploading || disabled}
       />
     </div>
   );

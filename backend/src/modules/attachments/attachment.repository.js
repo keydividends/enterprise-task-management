@@ -22,10 +22,18 @@ const softDeleteAttachment = (attachmentId, deletedBy) =>
     { new: true }
   );
 
+const updateAttachmentName = (attachmentId, originalFileName) =>
+  Attachment.findOneAndUpdate(
+    { _id: attachmentId, isDeleted: false },
+    { originalFileName },
+    { new: true }
+  );
+
 module.exports = {
   createAttachment,
   findAttachmentsByEntity,
   countAttachmentsByEntity,
   findAttachmentById,
   softDeleteAttachment,
+  updateAttachmentName,
 };

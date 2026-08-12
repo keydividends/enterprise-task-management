@@ -41,12 +41,12 @@ const useAttachments = (taskId) => {
     }
   }, [taskId]);
 
-  const uploadFile = useCallback(async (file) => {
+  const uploadFile = useCallback(async (file, fileName) => {
     setUploading(true);
     setUploadProgress(0);
     setError(null);
     try {
-      const attachment = await attachmentService.uploadAttachment(taskId, file, (event) => {
+      const attachment = await attachmentService.uploadAttachment(taskId, file, fileName, (event) => {
         if (event.total) {
           setUploadProgress(Math.round((event.loaded * 100) / event.total));
         }
@@ -76,14 +76,44 @@ const useAttachments = (taskId) => {
     }
   }, []);
 
-  const getDownloadUrl = useCallback(
-    (attachmentId) => attachmentService.getDownloadUrl(attachmentId),
-    []
-  );
+  const downloadAttachment = useCallback(async (attachment) => {
+    setError(null);
+    try {
+      await attachmentService.downloadAttachment(attachment);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Could not download the attachment.';
+      setError(msg);
+      throw err;
+    }
+  }, []);
+
+  const viewAttachment = useCallback(async (attachment) => {
+    setError(null);
+    try {
+      await attachmentService.viewAttachment(attachment);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Could not open the attachment preview.';
+      setError(msg);
+      throw err;
+    }
+  }, []);
+
+  const renameAttachment = useCallback(async (attachmentId, fileName) => {
+    setError(null);
+    try {
+      const updated = await attachmentService.renameAttachment(attachmentId, fileName);
+      setAttachments((previous) => previous.map((item) => item.id === attachmentId ? updated : item));
+      return updated;
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Could not rename the attachment.';
+      setError(msg);
+      throw err;
+    }
+  }, []);
 
   return {
     attachments, pagination, loading, uploading, uploadProgress, error,
-    fetchAttachments, uploadFile, removeAttachment, getDownloadUrl,
+    fetchAttachments, uploadFile, removeAttachment, downloadAttachment, viewAttachment, renameAttachment,
   };
 };
 

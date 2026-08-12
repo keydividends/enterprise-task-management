@@ -50,10 +50,22 @@ const validateUploadedFile = (file) => {
   }
 };
 
+const validateDisplayName = (value) => {
+  if (typeof value !== "string" || !value.trim()) {
+    throw createError("File name is required.", "fileName");
+  }
+  const name = value.trim();
+  if (name.length > 255 || name.includes("/") || name.includes("\\")) {
+    throw createError("File name must be at most 255 characters and cannot contain path separators.", "fileName");
+  }
+  return name;
+};
+
 module.exports = {
   validateUploadedFile,
   validateObjectId,
   isValidObjectId,
   MAX_FILE_SIZE,
   ALLOWED_MIME_TYPES,
+  validateDisplayName,
 };

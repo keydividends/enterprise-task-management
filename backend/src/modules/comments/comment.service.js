@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 const repo = require("./comment.repository");
 const { mapComment } = require("./comment.mapper");
 const { validateCreateComment, validateUpdateComment, isValidObjectId } = require("./comment.validation");
+const { assertTaskCollaborationAccess, hasPermission } = require("../collaboration/taskAccess");
+
+const MAX_COMMENTS_PER_TASK = 30;
 
 const createError = (code, message, statusCode = 400) => {
   const err = new Error(message);
@@ -35,15 +38,17 @@ const assertCommentExists = async (commentId) => {
   return comment;
 };
 
-const assertOwner = (comment, userId) => {
+const assertCanModify = (comment, context, permission) => {
+  const userId = context.userId || context.user?.id;
   const isOwner = String(comment.authorId) === String(userId);
-  if (!isOwner) {
-    throw createError("PERMISSION_DENIED", "You can only modify your own comments.", 403);
+  if (!isOwner && !hasPermission(context, permission)) {
+    throw createError("PERMISSION_DENIED", "You can only modify your own comments unless you have the required moderation permission.", 403);
   }
 };
 
 const listComments = async (taskId, query, context = {}) => {
-  await assertTaskExists(taskId);
+  const task = await assertTaskExists(taskId);
+  await assertTaskCollaborationAccess(task, context);
 
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
   const pageSize = Math.min(parseInt(query.pageSize, 10) || 20, 100);
@@ -67,7 +72,17 @@ const listComments = async (taskId, query, context = {}) => {
 
 const createComment = async (taskId, payload, context = {}) => {
   validateCreateComment(payload);
-  await assertTaskExists(taskId);
+  const task = await assertTaskExists(taskId);
+  await assertTaskCollaborationAccess(task, context);
+
+  const commentCount = await repo.countCommentsByTask(taskId);
+  if (commentCount >= MAX_COMMENTS_PER_TASK) {
+    throw createError(
+      "COMMENT_LIMIT_REACHED",
+      `A task can have at most ${MAX_COMMENTS_PER_TASK} comments. Delete an existing comment before adding another.`,
+      409
+    );
+  }
 
   const userId = context.userId || context.user?.id;
   const { firstName, lastName } = context.user || {};
@@ -97,10 +112,10 @@ const createComment = async (taskId, payload, context = {}) => {
 
 const editComment = async (commentId, payload, context = {}) => {
   validateUpdateComment(payload);
-  const userId = context.userId || context.user?.id;
-
   const comment = await assertCommentExists(commentId);
-  assertOwner(comment, userId);
+  const task = await assertTaskExists(comment.taskId);
+  await assertTaskCollaborationAccess(task, context);
+  assertCanModify(comment, context, "COMMENT_UPDATE");
 
   const updated = await repo.updateComment(commentId, {
     text: String(payload.text).trim(),
@@ -112,10 +127,10 @@ const editComment = async (commentId, payload, context = {}) => {
 };
 
 const deleteComment = async (commentId, context = {}) => {
-  const userId = context.userId || context.user?.id;
-
   const comment = await assertCommentExists(commentId);
-  assertOwner(comment, userId);
+  const task = await assertTaskExists(comment.taskId);
+  await assertTaskCollaborationAccess(task, context);
+  assertCanModify(comment, context, "COMMENT_DELETE");
 
   await repo.softDeleteComment(commentId);
   return { id: commentId };
@@ -126,4 +141,5 @@ module.exports = {
   createComment,
   editComment,
   deleteComment,
+  MAX_COMMENTS_PER_TASK,
 };

@@ -1,8 +1,19 @@
 const attachmentService = require("./attachment.service");
+const axios = require("axios");
+
+const isBrowserViewable = (mimeType = "") =>
+  mimeType === "application/pdf"
+  || mimeType === "text/plain"
+  || mimeType === "text/csv"
+  || mimeType.startsWith("image/");
+
+const contentDisposition = (fileName, inline) =>
+  `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 
 const getUserContext = (req) => ({
   userId: req.user?.id,
   user: req.user,
+  fileName: req.body?.fileName,
 });
 
 const sendJson = (res, statusCode, message, data, pagination) => {
@@ -46,13 +57,21 @@ const downloadAttachment = async (req, res, next) => {
       getUserContext(req)
     );
 
-    if (remoteUrl) return res.redirect(remoteUrl);
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${encodeURIComponent(attachment.originalFileName)}"`
-    );
+    // The same protected endpoint serves a browser preview when explicitly
+    // requested for a safe, browser-supported MIME type. Unsupported types
+    // always remain downloads.
+    const inline = req.query.disposition === "inline" && isBrowserViewable(attachment.mimeType);
+    res.setHeader("Content-Disposition", contentDisposition(attachment.originalFileName, inline));
     res.setHeader("Content-Type", attachment.mimeType);
+    if (remoteUrl) {
+      // Do not redirect to a public storage URL. Proxy the approved download
+      // so each request remains protected by the task-access check above.
+      const remoteFile = await axios.get(remoteUrl, { responseType: "stream" });
+      if (remoteFile.headers["content-length"]) {
+        res.setHeader("Content-Length", remoteFile.headers["content-length"]);
+      }
+      return remoteFile.data.pipe(res);
+    }
     return res.sendFile(filePath);
   } catch (error) {
     next(error);
@@ -71,9 +90,23 @@ const deleteAttachment = async (req, res, next) => {
   }
 };
 
+const renameAttachment = async (req, res, next) => {
+  try {
+    const attachment = await attachmentService.renameAttachment(
+      req.params.attachmentId,
+      req.body,
+      getUserContext(req)
+    );
+    return sendJson(res, 200, "Attachment renamed", attachment);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadAttachment,
   listAttachments,
   downloadAttachment,
   deleteAttachment,
+  renameAttachment,
 };

@@ -1,4 +1,6 @@
-import { Download, FileText, Image, FileSpreadsheet, FileArchive, File, Trash2, Paperclip, UserCircle2 } from 'lucide-react';
+import { Download, Eye, FileText, Image, FileSpreadsheet, FileArchive, File, Trash2, Paperclip, UserCircle2, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import attachmentService from '../services/attachmentService';
 
 const formatBytes = (bytes) => {
   if (!bytes) return '—';
@@ -35,7 +37,9 @@ const getFileConfig = (mimeType = '') => {
   return { icon: File, color: 'var(--text-soft)', bg: 'rgba(148,163,184,0.1)' };
 };
 
-const AttachmentList = ({ attachments, onDelete, getDownloadUrl, loading, resolveDisplayName, currentUserId }) => {
+const AttachmentList = ({ attachments, onDelete, onDownload, onView, onRename, loading, resolveDisplayName, currentUserId, canDeleteAny }) => {
+  const [renamingId, setRenamingId] = useState(null);
+  const [name, setName] = useState('');
   if (loading && attachments.length === 0) {
     return (
       <div className="attach-skeletons">
@@ -69,6 +73,7 @@ const AttachmentList = ({ attachments, onDelete, getDownloadUrl, loading, resolv
         const isOwner = Boolean(currentUserId)
           && Boolean(attachment.uploadedBy)
           && String(attachment.uploadedBy) === String(currentUserId);
+        const canDelete = isOwner || canDeleteAny;
 
         return (
           <div key={attachment.id} className="attach-file-card">
@@ -77,9 +82,21 @@ const AttachmentList = ({ attachments, onDelete, getDownloadUrl, loading, resolv
             </div>
 
             <div className="attach-file-info">
-              <span className="attach-file-name" title={attachment.originalFileName}>
-                {attachment.originalFileName}
-              </span>
+              {renamingId === attachment.id ? (
+                <form className="attach-rename-form" onSubmit={(event) => {
+                  event.preventDefault();
+                  const nextName = name.trim();
+                  if (!nextName) return;
+                  onRename(attachment.id, nextName).then(() => setRenamingId(null)).catch(() => {});
+                }}>
+                  <input value={name} onChange={(event) => setName(event.target.value)} maxLength="255" autoFocus aria-label="Attachment file name" />
+                  <button type="submit" className="attach-file-btn" title="Save rename">Save</button>
+                </form>
+              ) : (
+                <span className="attach-file-name" title={attachment.originalFileName}>
+                  {attachment.originalFileName}
+                </span>
+              )}
               <span className="attach-file-meta">
                 {formatBytes(attachment.fileSize)} · {formatDate(attachment.createdAt)}
               </span>
@@ -92,10 +109,20 @@ const AttachmentList = ({ attachments, onDelete, getDownloadUrl, loading, resolv
             </div>
 
             <div className="attach-file-actions">
-              <a href={getDownloadUrl(attachment.id)} className="attach-file-btn" title="Download" download target="_blank" rel="noreferrer">
+              {attachmentService.canViewAttachment(attachment) && (
+                <button type="button" className="attach-file-btn" title="View" onClick={() => onView(attachment).catch(() => {})}>
+                  <Eye size={15} />
+                </button>
+              )}
+              <button type="button" className="attach-file-btn" title="Download" onClick={() => onDownload(attachment).catch(() => {})}>
                 <Download size={15} />
-              </a>
-              {isOwner && (
+              </button>
+              {isOwner && renamingId !== attachment.id && (
+                <button type="button" className="attach-file-btn" title="Rename" onClick={() => { setName(attachment.originalFileName); setRenamingId(attachment.id); }}>
+                  <Pencil size={15} />
+                </button>
+              )}
+              {canDelete && (
                 <button
                   type="button"
                   className="attach-file-btn danger"

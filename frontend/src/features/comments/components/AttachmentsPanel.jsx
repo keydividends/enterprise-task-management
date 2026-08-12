@@ -8,10 +8,11 @@ import { resolveDisplayName } from './collaborationUser';
 
 
 const AttachmentsPanel = ({ taskId }) => {
+  const MAX_ATTACHMENTS_PER_TASK = 15;
   const { user } = useAuth();
   const {
     attachments, pagination, loading, uploading, uploadProgress, error,
-    fetchAttachments, uploadFile, removeAttachment, getDownloadUrl,
+    fetchAttachments, uploadFile, removeAttachment, downloadAttachment, viewAttachment, renameAttachment,
   } = useAttachments(taskId);
 
   const listRef = useRef(null);
@@ -20,8 +21,8 @@ const AttachmentsPanel = ({ taskId }) => {
     fetchAttachments();
   }, [fetchAttachments]);
 
-  const handleUpload = async (file) => {
-    await uploadFile(file);
+  const handleUpload = async (file, fileName) => {
+    await uploadFile(file, fileName);
     listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -31,9 +32,9 @@ const AttachmentsPanel = ({ taskId }) => {
         <div className="chat-panel-title">
           <Paperclip size={16} />
           <span>Attachments</span>
-          {pagination.totalItems > 0 && (
-            <span className="comments-count-badge">{pagination.totalItems}</span>
-          )}
+          <span className="comments-count-badge" title={`Maximum ${MAX_ATTACHMENTS_PER_TASK} attachments per task`}>
+            {pagination.totalItems}/{MAX_ATTACHMENTS_PER_TASK}
+          </span>
         </div>
         <button
           type="button"
@@ -57,9 +58,12 @@ const AttachmentsPanel = ({ taskId }) => {
           attachments={attachments}
           loading={loading}
           onDelete={removeAttachment}
-          getDownloadUrl={getDownloadUrl}
+          onDownload={downloadAttachment}
+          onView={viewAttachment}
+          onRename={renameAttachment}
           resolveDisplayName={resolveDisplayName}
           currentUserId={user?.id || null}
+          canDeleteAny={user?.role === 'ADMIN' || user?.permissions?.includes('ATTACHMENT_DELETE')}
         />
       </div>
 
@@ -68,6 +72,7 @@ const AttachmentsPanel = ({ taskId }) => {
           onUpload={handleUpload}
           uploading={uploading}
           uploadProgress={uploadProgress}
+          disabled={pagination.totalItems >= MAX_ATTACHMENTS_PER_TASK}
         />
       </div>
     </div>

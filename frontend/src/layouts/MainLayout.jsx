@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Bell,
   Briefcase,
   ChevronDown,
-  CreditCard,
   FolderKanban,
   LayoutGrid,
   LogOut,
@@ -17,6 +15,7 @@ import {
   Users,
   UserCheck,
   User,
+  PanelLeftClose, PanelLeftOpen, ClipboardCheck
 } from 'lucide-react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
@@ -61,7 +60,6 @@ export const MainLayout = ({ toggleTheme }) => {
       { label: 'Projects', to: '/projects', icon: FolderKanban },
       { label: 'Teams', to: '/teams', icon: Users },
       { label: 'Tasks', to: '/tasks', icon: Briefcase },
-      { label: 'Reports', to: '/reports', icon: CreditCard },
       { label: 'My Profile', to: '/profile', icon: User },
       { label: 'Settings', to: '/settings', icon: Settings }
     );
@@ -81,7 +79,10 @@ export const MainLayout = ({ toggleTheme }) => {
     <div className="app-shell">
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'collapsed'}`} aria-label="Main sidebar navigation">
         <div className="sidebar-header">
-          <div className="brand-mark" aria-hidden="true">E</div>
+          <div className="brand-mark" aria-hidden="true">
+            <ClipboardCheck size={22} />
+          </div>
+
           {sidebarOpen && <span className="brand-name">ETMS</span>}
         </div>
 
@@ -95,15 +96,20 @@ export const MainLayout = ({ toggleTheme }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <button
-            type="button"
-            className="sidebar-action"
-            onClick={() => setSidebarOpen((current) => !current)}
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            {sidebarOpen ? 'Collapse' : 'Expand'}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="sidebar-action"
+          onClick={() => setSidebarOpen((current) => !current)}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          {sidebarOpen ? (
+            <PanelLeftClose size={20} aria-hidden="true" />
+          ) : (
+            <PanelLeftOpen size={20} aria-hidden="true" />
+          )}
+        </button>
+      </div>
       </aside>
 
       <div className="main-panel">

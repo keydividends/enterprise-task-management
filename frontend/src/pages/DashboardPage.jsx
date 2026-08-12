@@ -46,7 +46,6 @@ const DashboardPage = () => {
 
           <div className="hero-actions">
             <button type="button" className="primary-button compact">Create task</button>
-            <button type="button" className="secondary-button compact">Generate report</button>
           </div>
         </div>
 
@@ -169,7 +168,7 @@ const DashboardPage = () => {
       </section>
 
       <section className="quick-actions-grid">
-        {['Create Task', 'Create Project', 'Invite Member', 'Generate Report'].map((action) => (
+        {['Create Task', 'Create Project', 'Invite Member'].map((action) => (
           <button key={action} type="button" className="quick-action">
             <Sparkles size={18} /> {action}
           </button>

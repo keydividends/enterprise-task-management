@@ -191,6 +191,9 @@
   overflow-wrap: break-word;
   word-break: break-word;
 }
+.ci-bubble:hover{
+  background-color: #bbeafc;
+}
 
 html[data-theme='dark'] .ci-bubble {
   background: rgba(255,255,255,0.05);
@@ -627,10 +630,36 @@ html[data-theme='dark'] .ci-bubble {
 .attach-pending-name {
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border: 1px solid rgba(148,163,184,0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 6px;
   font-weight: 600;
+}
+
+.attach-rename-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.attach-rename-form input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(148,163,184,0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 6px;
+  font: inherit;
+}
+
+.attach-rename-form .attach-file-btn {
+  width: auto;
+  padding: 0 6px;
+  font-size: 0.72rem;
 }
 
 .attach-confirm-btn {

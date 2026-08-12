@@ -3,9 +3,12 @@ const fs = require("node:fs");
 const mongoose = require("mongoose");
 const repo = require("./attachment.repository");
 const { mapAttachment } = require("./attachment.mapper");
-const { validateUploadedFile, isValidObjectId } = require("./attachment.validation");
+const { validateUploadedFile, validateDisplayName, isValidObjectId } = require("./attachment.validation");
 const { UPLOAD_DIR } = require("./attachment.upload");
 const { isImageKitConfigured, uploadToImageKit, deleteFromImageKit } = require("./imagekit.storage");
+const { assertTaskCollaborationAccess, hasPermission } = require("../collaboration/taskAccess");
+
+const MAX_ATTACHMENTS_PER_TASK = 15;
 
 const createError = (code, message, statusCode = 400) => {
   const err = new Error(message);
@@ -39,17 +42,28 @@ const assertAttachmentExists = async (attachmentId) => {
   return attachment;
 };
 
-const assertOwner = (attachment, userId) => {
+const assertCanDelete = (attachment, context = {}) => {
+  const userId = context.userId || context.user?.id;
   const isOwner = String(attachment.uploadedBy) === String(userId);
-  if (!isOwner) {
-    throw createError("PERMISSION_DENIED", "You can only delete your own attachments.", 403);
+  if (!isOwner && !hasPermission(context, "ATTACHMENT_DELETE")) {
+    throw createError("PERMISSION_DENIED", "You can only delete your own attachments unless you have attachment-delete permission.", 403);
   }
 };
 
 
 const uploadTaskAttachment = async (taskId, file, context = {}) => {
-  await assertTaskExists(taskId);
+  const task = await assertTaskExists(taskId);
+  await assertTaskCollaborationAccess(task, context);
   validateUploadedFile(file);
+
+  const attachmentCount = await repo.countAttachmentsByEntity("TASK", taskId);
+  if (attachmentCount >= MAX_ATTACHMENTS_PER_TASK) {
+    throw createError(
+      "ATTACHMENT_LIMIT_REACHED",
+      `A task can have at most ${MAX_ATTACHMENTS_PER_TASK} attachments. Delete an existing attachment before uploading another.`,
+      409
+    );
+  }
 
   const userId = context.userId || context.user?.id;
   const { firstName, lastName } = context.user || {};
@@ -62,7 +76,7 @@ const uploadTaskAttachment = async (taskId, file, context = {}) => {
     attachment = await repo.createAttachment({
       entityType: "TASK",
       entityId: taskId,
-      originalFileName: file.originalname,
+      originalFileName: context.fileName ? validateDisplayName(context.fileName) : file.originalname,
       storedFileName: useImageKit ? remoteFile.fileName : file.filename,
       storageKey: useImageKit ? remoteFile.fileId : file.filename,
       storageProvider: useImageKit ? "IMAGEKIT" : "LOCAL",
@@ -86,7 +100,8 @@ const uploadTaskAttachment = async (taskId, file, context = {}) => {
 
 
 const listTaskAttachments = async (taskId, query, context = {}) => {
-  await assertTaskExists(taskId);
+  const task = await assertTaskExists(taskId);
+  await assertTaskCollaborationAccess(task, context);
 
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
   const pageSize = Math.min(parseInt(query.pageSize, 10) || 20, 100);
@@ -111,6 +126,8 @@ const listTaskAttachments = async (taskId, query, context = {}) => {
 
 const getAttachmentForDownload = async (attachmentId, context = {}) => {
   const attachment = await assertAttachmentExists(attachmentId);
+  const task = await assertTaskExists(attachment.entityId);
+  await assertTaskCollaborationAccess(task, context);
 
   if (attachment.storageProvider === "IMAGEKIT") {
     if (!attachment.remoteUrl) {
@@ -129,10 +146,11 @@ const getAttachmentForDownload = async (attachmentId, context = {}) => {
 
 
 const deleteAttachment = async (attachmentId, context = {}) => {
-  const userId = context.userId || context.user?.id;
-
   const attachment = await assertAttachmentExists(attachmentId);
-  assertOwner(attachment, userId);
+  const task = await assertTaskExists(attachment.entityId);
+  await assertTaskCollaborationAccess(task, context);
+  assertCanDelete(attachment, context);
+  const userId = context.userId || context.user?.id;
 
   await repo.softDeleteAttachment(attachmentId, userId);
 
@@ -150,9 +168,25 @@ const deleteAttachment = async (attachmentId, context = {}) => {
   return { id: attachmentId };
 };
 
+const renameAttachment = async (attachmentId, payload, context = {}) => {
+  const userId = context.userId || context.user?.id;
+  const attachment = await assertAttachmentExists(attachmentId);
+  const task = await assertTaskExists(attachment.entityId);
+  await assertTaskCollaborationAccess(task, context);
+
+  if (String(attachment.uploadedBy) !== String(userId)) {
+    throw createError("PERMISSION_DENIED", "You can only rename files you uploaded.", 403);
+  }
+
+  const updated = await repo.updateAttachmentName(attachmentId, validateDisplayName(payload?.fileName));
+  return mapAttachment(updated);
+};
+
 module.exports = {
   uploadTaskAttachment,
   listTaskAttachments,
   getAttachmentForDownload,
   deleteAttachment,
+  renameAttachment,
+  MAX_ATTACHMENTS_PER_TASK,
 };

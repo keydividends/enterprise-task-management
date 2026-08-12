@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { resolveDisplayName } from './collaborationUser';
 
 const MAX_COMMENT_LENGTH = 1000;
+const MAX_COMMENTS_PER_TASK = 30;
 
 const buildThreads = (comments) => {
   const roots = [];
@@ -45,10 +46,11 @@ const CommentsPanel = ({ taskId }) => {
   }, [comments, loading]);
 
   const { roots, replyMap } = useMemo(() => buildThreads(comments), [comments]);
+  const isCommentLimitReached = pagination.totalItems >= MAX_COMMENTS_PER_TASK;
 
   const handleSend = async () => {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed || sending || isCommentLimitReached) return;
     if (trimmed.length > MAX_COMMENT_LENGTH) {
       setSendError(`Comments are limited to ${MAX_COMMENT_LENGTH} characters.`);
       return;
@@ -86,7 +88,9 @@ const CommentsPanel = ({ taskId }) => {
         <div className="chat-panel-title">
           <MessageSquareText size={16} />
           <span>Comments</span>
-          {pagination.totalItems > 0 && <span className="comments-count-badge">{pagination.totalItems}</span>}
+          <span className="comments-count-badge" title={`Maximum ${MAX_COMMENTS_PER_TASK} comments per task`}>
+            {pagination.totalItems}/{MAX_COMMENTS_PER_TASK}
+          </span>
         </div>
         <button type="button" className="chat-icon-btn" onClick={() => fetchComments()} title="Refresh" disabled={loading}>
           <RefreshCw size={14} className={loading ? 'spin' : ''} />
@@ -159,25 +163,26 @@ const CommentsPanel = ({ taskId }) => {
           </div>
         )}
         {sendError && <p className="chat-send-error">{sendError}</p>}
+        {isCommentLimitReached && <p className="chat-send-error">Comment limit reached for this task.</p>}
         <div className="chat-input-row">
           <div className="chat-input-wrap">
             <textarea
               ref={textareaRef}
               className="chat-textarea"
-              placeholder={replyingTo ? `Reply to ${replyingTo.authorLabel}…` : 'Write a comment here… '}
+              placeholder={isCommentLimitReached ? 'Comment limit reached for this task.' : (replyingTo ? `Reply to ${replyingTo.authorLabel}…` : 'Write a comment here… ')}
               value={text}
               onChange={(e) => { setText(e.target.value); resizeTextarea(e.target); }}
               onKeyDown={handleKeyDown}
               rows={1}
               maxLength={MAX_COMMENT_LENGTH}
-              disabled={sending}
+              disabled={sending || isCommentLimitReached}
             />
           </div>
           <button
             type="button"
             className={`chat-send-btn${text.trim() ? ' active' : ''}`}
             onClick={handleSend}
-            disabled={sending || !text.trim()}
+            disabled={sending || isCommentLimitReached || !text.trim()}
             title="Post comment (Enter)"
           >
             <Send size={16} />

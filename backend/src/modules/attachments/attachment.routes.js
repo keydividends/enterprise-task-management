@@ -13,6 +13,7 @@ const attachmentRouter = express.Router();
 
 attachmentRouter.use(authenticate);
 attachmentRouter.get("/:attachmentId/download", attachmentController.downloadAttachment);
+attachmentRouter.patch("/:attachmentId", express.json(), attachmentController.renameAttachment);
 attachmentRouter.delete("/:attachmentId", attachmentController.deleteAttachment);
 
 module.exports = { taskAttachmentRouter, attachmentRouter };
