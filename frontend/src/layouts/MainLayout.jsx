@@ -27,7 +27,7 @@ export const MainLayout = ({ toggleTheme }) => {
   const [darkMode, setDarkMode] = useState(() => document.documentElement.dataset.theme === 'dark');
 
   const topbarSummary = useMemo(() => ({
-    name: user?.fullName || user?.firstName || 'Raheema',
+    name: user?.fullName || user?.firstName || 'John Doe',
     role: user?.role || 'Administrator',
   }), [user]);
 

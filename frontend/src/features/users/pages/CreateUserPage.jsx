@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserForm } from '../components/UserForm';
 import userService from '../services/userService';
+import { ArrowLeft } from 'lucide-react';
 
 export const CreateUserPage = () => {
   const navigate = useNavigate();
@@ -23,6 +24,25 @@ export const CreateUserPage = () => {
 
   return (
     <div className="create-user-page" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+      <button
+        type="button"
+        onClick={() => navigate('/users')}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '8px 14px',
+          borderRadius: '8px',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          background: 'transparent',
+          cursor: 'pointer',
+          marginBottom: '18px',
+          fontWeight: 600,
+        }}
+      >
+        <ArrowLeft size={16} /> Back to Employees
+      </button>
+
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Create New Employee</h1>
         <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '14px' }}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Lock, Building, Briefcase, Phone, Save, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, Building, Briefcase, Phone, Save, ArrowLeft, UserCheck } from 'lucide-react';
 
 export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = false, submitting = false }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     role: 'USER',
     status: 'ACTIVE',
     customId: '',
+    managerCustomId: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -32,6 +33,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         role: initialValues.role || 'USER',
         status: initialValues.status || 'ACTIVE',
         customId: initialValues.customId || initialValues.user_id || '',
+        managerCustomId: initialValues.managerCustomId || initialValues.managerId || '',
       });
     }
   }, [initialValues]);
@@ -47,19 +49,16 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
   const validate = () => {
     const newErrors = {};
 
-    // 1. Required & Empty First Name Validation
     if (!formData.firstName || !formData.firstName.trim()) {
       newErrors.firstName = 'First name is required.';
     }
 
-    // 2. Email Address Validation
     if (!formData.email || !formData.email.trim()) {
       newErrors.email = 'Email address is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = 'Please enter a valid email address.';
     }
 
-    // 3. Phone / Mobile Number Format Validation
     if (formData.mobile && formData.mobile.trim()) {
       const phoneRegex = /^[+]*[(]?[0-9]{1,4}[)]?[-\s./0-9]{6,15}$/;
       if (!phoneRegex.test(formData.mobile.trim())) {
@@ -67,7 +66,6 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
       }
     }
 
-    // 4. Password Length Validation
     if (!isEditing) {
       if (formData.password && formData.password.length < 6) {
         newErrors.password = 'Password must be at least 6 characters.';
@@ -88,8 +86,8 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
   };
 
   return (
-    <form onSubmit={handleSubmit} className="user-form glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+    <form onSubmit={handleSubmit} className="user-form glass-card" style={{ padding: '28px', borderRadius: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px' }}>
         <div className="form-group">
           <label htmlFor="firstName" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             First Name *
@@ -102,7 +100,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              placeholder="e.g. Raheema"
+              placeholder="e.g. John"
               style={{
                 width: '100%',
                 padding: '10px 12px 10px 36px',
@@ -127,7 +125,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="e.g. Shariff"
+              placeholder="e.g. Doe"
               style={{
                 width: '100%',
                 padding: '10px 12px 10px 36px',
@@ -167,7 +165,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
 
         <div className="form-group">
           <label htmlFor="password" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-            {isEditing ? 'New Password (Optional)' : 'Password (Default: Employee@123)'}
+            {isEditing ? 'New Password (Optional)' : 'Password'}
           </label>
           <div style={{ position: 'relative' }}>
             <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
@@ -177,7 +175,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder={isEditing ? 'Leave blank to keep unchanged' : 'Leave blank for default'}
+              placeholder={isEditing ? 'Leave blank to keep unchanged' : 'Ex: User@123'}
               style={{
                 width: '100%',
                 padding: '10px 12px 10px 36px',
@@ -308,6 +306,55 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
           </select>
         </div>
 
+        <div className="form-group">
+          <label htmlFor="employee_custom_id" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Employee ID <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used to assign projects)</span>
+          </label>
+          <input
+            id="employee_custom_id"
+            type="text"
+            name="customId"
+            value={formData.customId}
+            onChange={handleChange}
+            placeholder="e.g. EMP-042 or john.dev"
+            disabled={isEditing}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: errors.customId ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+              background: isEditing ? 'var(--bg-disabled, #f1f5f9)' : 'var(--bg-input, #ffffff)',
+              fontFamily: 'monospace',
+            }}
+          />
+          {errors.customId && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.customId}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="managerCustomId" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Associate Manager ID
+          </label>
+          <div style={{ position: 'relative' }}>
+            <UserCheck size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+            <input
+              id="managerCustomId"
+              type="text"
+              name="managerCustomId"
+              value={formData.managerCustomId}
+              onChange={handleChange}
+              placeholder="e.g. MGR-001 or ADMIN-001"
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                background: 'var(--bg-input, #ffffff)',
+                fontFamily: 'monospace',
+              }}
+            />
+          </div>
+        </div>
+
         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
           <label htmlFor="bio" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Bio / Notes
@@ -329,31 +376,6 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
             }}
           />
         </div>
-
-        {!isEditing && (
-          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label htmlFor="employee_custom_id" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-              Employee ID <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used by managers to add this employee to projects)</span>
-            </label>
-            <input
-              id="employee_custom_id"
-              type="text"
-              name="customId"
-              value={formData.customId}
-              onChange={handleChange}
-              placeholder="e.g. EMP-042 or raheema.dev"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: errors.customId ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
-                background: 'var(--bg-input, #ffffff)',
-                fontFamily: 'monospace',
-              }}
-            />
-            {errors.customId && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.customId}</span>}
-          </div>
-        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>

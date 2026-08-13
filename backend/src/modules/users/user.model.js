@@ -65,6 +65,11 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       default: null,
     },
+    managerCustomId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     role: {
       type: String,
       default: "USER",
