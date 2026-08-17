@@ -20,7 +20,10 @@ const createError = (code, message, statusCode = 400, field = null) => {
 
 const getWorkspaceId = (context = {}) => context.workspaceId || null;
 
-const isPrivilegedProjectUser = (context = {}) => ["ADMIN", "MANAGER"].includes(context.user?.role);
+// Route middleware enforces the RBAC permission matrix. Keep the legacy
+// ADMIN/MANAGER context support here for direct service callers and existing
+// project ownership flows.
+const isPrivilegedProjectUser = (context = {}) => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(String(context.user?.role || "").toUpperCase());
 const hasProjectPermission = (context = {}, permission) => (
   Array.isArray(context.user?.permissions) && context.user.permissions.includes(permission)
 );

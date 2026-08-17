@@ -75,9 +75,9 @@ const createUser = async (data = {}, currentUser = null) => {
     bio: data.bio || "",
     customId: data.customId ? String(data.customId).trim() : null,
     managerCustomId: data.managerCustomId ? String(data.managerCustomId).trim() : "",
-    role: data.role || "USER",
+    role: data.role || "INTERN",
     roleId: data.roleId || null,
-    permissions: data.permissions || ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
+    permissions: data.permissions || ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
     status: data.status || "ACTIVE",
   });
 

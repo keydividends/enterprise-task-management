@@ -153,12 +153,10 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
     lastName,
     email,
     passwordHash: await hashPassword(password),
-    role: "USER",
+    role: "INTERN",
     permissions: [
-      "USER_VIEW",
-      "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE",
-      "TASK_VIEW", "TASK_CREATE", "TASK_UPDATE",
-      "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE", "TEAM_MANAGE_MEMBERS",
+      "PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE",
+      "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW",
     ],
   });
 

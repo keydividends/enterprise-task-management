@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "seed:tasks": "node scripts/seedTasks.js",
     "seed:projects": "node scripts/seedProjects.js",
+    "seed:roles": "node scripts/seedRoles.js",
     "seed:users": "node scripts/seedUsers.js"
   },
   "dependencies": {

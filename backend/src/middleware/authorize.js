@@ -1,8 +1,9 @@
 const authorize = (requiredPermission) => (req, res, next) => {
   if (!requiredPermission) return next();
 
-  // ADMIN role bypasses all permission checks
-  if (req.user?.role === "ADMIN") return next();
+  // Only the platform-level Super Admin bypasses individual checks. Every
+  // other role, including Organization Admin, is governed by its grants.
+  if (String(req.user?.role || "").toUpperCase() === "SUPER_ADMIN") return next();
 
   const permissions = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
 
