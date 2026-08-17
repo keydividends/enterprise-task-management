@@ -1,3 +1,5 @@
+const { getEffectivePermissions } = require("../modules/auth/rolePermissions");
+
 const authorize = (requiredPermission) => (req, res, next) => {
   if (!requiredPermission) return next();
 
@@ -5,7 +7,9 @@ const authorize = (requiredPermission) => (req, res, next) => {
   // other role, including Organization Admin, is governed by its grants.
   if (String(req.user?.role || "").toUpperCase() === "SUPER_ADMIN") return next();
 
-  const permissions = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+  // Keep authorization aligned with the project role policy even for existing
+  // manager/admin accounts that were created before permissions were stored.
+  const permissions = getEffectivePermissions(req.user);
 
   if (!permissions.includes(requiredPermission)) {
     const error = new Error("Permission denied.");

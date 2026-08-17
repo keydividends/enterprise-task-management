@@ -16,16 +16,31 @@ const makeProjectId = () => `project_${Date.now()}_${Math.random().toString(36).
 const makeMemberKey = (projectId, userId) => `${projectId}:${userId}`;
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const listProjects = async ({ workspaceId, search, status, priority, managerId, page = 1, pageSize = 20, sortBy = "createdAt", sortOrder = -1 }) => {
+const listProjects = async ({ workspaceId, search, status, priority, managerId, userId, page = 1, pageSize = 20, sortBy = "createdAt", sortOrder = -1 }) => {
   if (isDbConnected()) {
     const filter = { isDeleted: false };
     if (workspaceId) filter.workspaceId = toObjectId(workspaceId);
+    if (userId) {
+      const memberships = await ProjectMember.find({ userId: toObjectId(userId), isDeleted: false, status: "ACTIVE" })
+        .select("projectId")
+        .lean();
+      filter.$and = [{
+        $or: [
+          { projectManagerId: toObjectId(userId) },
+          { _id: { $in: memberships.map((membership) => membership.projectId) } },
+        ],
+      }];
+    }
     if (search) {
-      filter.$or = [
+      const searchFilter = {
+        $or: [
         { name: { $regex: search, $options: "i" } },
         { key: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
-      ];
+        ],
+      };
+      if (filter.$and) filter.$and.push(searchFilter);
+      else Object.assign(filter, searchFilter);
     }
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
@@ -44,6 +59,14 @@ const listProjects = async ({ workspaceId, search, status, priority, managerId, 
 
   let items = Array.from(inMemoryProjects.values()).filter((project) => !project.isDeleted);
   if (workspaceId) items = items.filter((project) => String(project.workspaceId) === String(workspaceId));
+  if (userId) {
+    const memberProjectIds = new Set(
+      Array.from(inMemoryProjectMembers.values())
+        .filter((member) => String(member.userId) === String(userId) && !member.isDeleted && member.status === "ACTIVE")
+        .map((member) => String(member.projectId))
+    );
+    items = items.filter((project) => String(project.projectManagerId) === String(userId) || memberProjectIds.has(String(project._id || project.id)));
+  }
   if (search) {
     const normalized = String(search).toLowerCase();
     items = items.filter(
@@ -246,6 +269,8 @@ const createProjectMember = async (payload) => {
     _id: key,
     id: key,
     ...payload,
+    status: payload.status || "ACTIVE",
+    isDeleted: false,
     addedAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),

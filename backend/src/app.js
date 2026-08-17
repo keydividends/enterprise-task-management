@@ -9,7 +9,6 @@ const authRoutes = require("./modules/auth/auth.routes");
 const userRoutes = require("./modules/users/user.routes");
 const { taskRouter, projectLabelRouter, projectTaskRouter, checklistItemRouter, checklistRouter } = require("./modules/tasks/task.routes");
 const teamRoutes = require("./modules/teams/team.routes");
-
 const { taskCommentRouter, commentRouter } = require("./modules/comments/comment.routes");
 const { taskAttachmentRouter, attachmentRouter } = require("./modules/attachments/attachment.routes");
 const projectRoutes = require("./modules/projects/project.routes");

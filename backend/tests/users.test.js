@@ -65,6 +65,32 @@ test("createUser creates user with hashed password and safe DTO", async () => {
   assert.equal(created.passwordHash, undefined);
 });
 
+test("createUser retains the associate manager ID", async () => {
+  const created = await userService.createUser(
+    {
+      firstName: "Managed",
+      email: `managed.test.${Date.now()}@etms.com`,
+      managerCustomId: "MGR-001",
+    },
+    adminUser
+  );
+
+  assert.equal(created.managerCustomId, "MGR-001");
+});
+
+test("createUser accepts the legacy manager ID field", async () => {
+  const created = await userService.createUser(
+    {
+      firstName: "Legacy Managed",
+      email: `legacy-managed.test.${Date.now()}@etms.com`,
+      managerId: "MGR-002",
+    },
+    adminUser
+  );
+
+  assert.equal(created.managerCustomId, "MGR-002");
+});
+
 test("createUser rejects duplicate email", async () => {
   await assert.rejects(
     () =>

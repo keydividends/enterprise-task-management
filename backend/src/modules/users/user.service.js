@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const userRepository = require("./user.repository");
+const { getEffectivePermissions } = require("../auth/rolePermissions");
 const { toUserDTO, toUserListDTO } = require("./user.mapper");
 const {
   validateCreateUser,
@@ -74,10 +75,16 @@ const createUser = async (data = {}, currentUser = null) => {
     title: data.title || "",
     bio: data.bio || "",
     customId: data.customId ? String(data.customId).trim() : null,
-    managerCustomId: data.managerCustomId ? String(data.managerCustomId).trim() : "",
+    // Accept the legacy managerId field as well as the canonical managerCustomId.
+    managerCustomId: data.managerCustomId || data.managerId
+      ? String(data.managerCustomId || data.managerId).trim()
+      : "",
     role: data.role || "INTERN",
     roleId: data.roleId || null,
-    permissions: data.permissions || ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
+    permissions: getEffectivePermissions({
+      role: data.role || "INTERN",
+      permissions: data.permissions || ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
+    }),
     status: data.status || "ACTIVE",
   });
 
@@ -111,7 +118,12 @@ const updateUser = async (userId, updateData = {}, currentUser = null) => {
     }
   }
 
-  const updatedUser = await userRepository.updateUser(userId, updateData);
+  const normalizedUpdate = { ...updateData };
+  if (updateData.role && updateData.permissions === undefined) {
+    normalizedUpdate.permissions = getEffectivePermissions({ role: updateData.role, permissions: existingUser.permissions });
+  }
+
+  const updatedUser = await userRepository.updateUser(userId, normalizedUpdate);
   return toUserDTO(updatedUser);
 };
 

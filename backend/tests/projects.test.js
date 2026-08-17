@@ -6,6 +6,7 @@ const projectRepository = require('../src/modules/projects/project.repository');
 const userRepository = require('../src/modules/users/user.repository');
 const request = require('supertest');
 const app = require('../src/app');
+const { getEffectivePermissions } = require('../src/modules/auth/rolePermissions');
 
 const mockContext = { user: { id: 'mock-admin', role: 'ADMIN' }, workspaceId: '64a000000000000000000001' };
 const mockProjectUser = { id: 'user_admin_1', customId: 'user_admin_1', firstName: 'Project', lastName: 'User', status: 'ACTIVE', isDeleted: false };
@@ -118,6 +119,47 @@ test('project data is isolated by workspace', async () => {
     () => projectService.getProjectById(created.id, { user: { id: 'other-admin', role: 'ADMIN' }, workspaceId: '64a000000000000000000099' }),
     (error) => error.code === 'PROJECT_NOT_FOUND'
   );
+});
+
+test('manager role receives all project management permissions', () => {
+  const permissions = getEffectivePermissions({ role: 'MANAGER', permissions: ['TASK_VIEW'] });
+  assert.deepEqual(
+    permissions.filter((permission) => permission.startsWith('PROJECT_')).sort(),
+    ['PROJECT_CREATE', 'PROJECT_DELETE', 'PROJECT_MANAGE_MEMBERS', 'PROJECT_UPDATE', 'PROJECT_VIEW']
+  );
+});
+
+test('users cannot manage a project even if stale permissions are present', async () => {
+  const project = await projectService.createProject({ name: 'Role Restricted Project', key: 'RRPR' }, mockContext);
+  const userContext = {
+    user: { id: 'user-1', role: 'USER', permissions: ['PROJECT_VIEW', 'PROJECT_UPDATE', 'PROJECT_DELETE', 'PROJECT_MANAGE_MEMBERS'] },
+    workspaceId: mockContext.workspaceId,
+  };
+
+  await assert.rejects(
+    () => projectService.updateProject(project.id, { name: 'Forbidden update' }, userContext),
+    (error) => error.code === 'PROJECT_ACCESS_DENIED'
+  );
+});
+
+test('ordinary users can only list and view projects they manage or belong to', async () => {
+  const memberContext = { user: { id: 'member-1', role: 'USER', permissions: ['PROJECT_VIEW'] }, workspaceId: mockContext.workspaceId };
+  const visibleProject = await projectService.createProject({ name: 'Visible Project', key: 'VSB1' }, mockContext);
+  const hiddenProject = await projectService.createProject({ name: 'Hidden Project', key: 'HDN1' }, mockContext);
+
+  const originalFindByCustomId = userRepository.findByCustomId;
+  userRepository.findByCustomId = async (customId) => (
+    customId === 'MEM-001' ? { id: 'member-1', customId, status: 'ACTIVE', isDeleted: false } : originalFindByCustomId(customId)
+  );
+  try {
+    await projectService.addProjectMember(visibleProject.id, { employeeId: 'MEM-001', projectRole: 'VIEWER' }, mockContext);
+    const projects = await projectService.listProjects({}, memberContext);
+    assert.deepEqual(projects.items.map((project) => project.id), [visibleProject.id]);
+    await assert.rejects(() => projectService.getProjectById(hiddenProject.id, memberContext), (error) => error.code === 'PROJECT_ACCESS_DENIED');
+    assert.equal((await projectService.getProjectById(visibleProject.id, memberContext)).id, visibleProject.id);
+  } finally {
+    userRepository.findByCustomId = originalFindByCustomId;
+  }
 });
 
 test('project API rejects unauthenticated and unauthorized requests', async () => {

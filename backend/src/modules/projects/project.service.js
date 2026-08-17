@@ -23,9 +23,14 @@ const getWorkspaceId = (context = {}) => context.workspaceId || null;
 // Route middleware enforces the RBAC permission matrix. Keep the legacy
 // ADMIN/MANAGER context support here for direct service callers and existing
 // project ownership flows.
-const isPrivilegedProjectUser = (context = {}) => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(String(context.user?.role || "").toUpperCase());
+const isPrivilegedProjectUser = (context = {}) => ["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "PROJECT_MANAGER"].includes(String(context.user?.role || "").toUpperCase());
 const hasProjectPermission = (context = {}, permission) => (
   Array.isArray(context.user?.permissions) && context.user.permissions.includes(permission)
+);
+
+const canBrowseAllProjects = (context = {}) => (
+  isPrivilegedProjectUser(context) ||
+  ["PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_MANAGE_MEMBERS"].some((permission) => hasProjectPermission(context, permission))
 );
 
 const getProjectInWorkspace = async (projectId, context = {}) => (
@@ -34,7 +39,6 @@ const getProjectInWorkspace = async (projectId, context = {}) => (
 
 const assertProjectViewAccess = async (project, context = {}) => {
   if (isPrivilegedProjectUser(context)) return;
-  if (hasProjectPermission(context, "PROJECT_VIEW")) return;
   const userId = context.user?.id;
   if (!userId) throw createError("AUTH_REQUIRED", "Authentication required.", 401);
   if (String(project.projectManagerId) === String(userId)) return;
@@ -47,9 +51,7 @@ const assertProjectViewAccess = async (project, context = {}) => {
 
 const assertProjectManagementAccess = async (project, context = {}, permission) => {
   if (isPrivilegedProjectUser(context)) return;
-  if (hasProjectPermission(context, permission)) return;
-  if (String(project.projectManagerId) === String(context.user?.id)) return;
-  throw createError("PROJECT_ACCESS_DENIED", "Only the project manager can modify this project.", 403);
+  throw createError("PROJECT_ACCESS_DENIED", "Only administrators and managers can modify projects.", 403);
 };
 
 const resolveProjectManagerId = async (managerReference) => {
@@ -93,6 +95,7 @@ const listProjects = async (query = {}, context = {}) => {
     status: validated.status,
     priority: validated.priority,
     managerId: validated.managerId,
+    userId: canBrowseAllProjects(context) ? undefined : context.user?.id,
     page: validated.page,
     pageSize: validated.pageSize,
     sortBy: validated.sortBy,

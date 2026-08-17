@@ -1,10 +1,12 @@
+const { getEffectivePermissions } = require("./rolePermissions");
+
 const mapUser = (user) => ({
   id: user.id,
   firstName: user.firstName,
   lastName: user.lastName,
   email: user.email,
   role: user.role,
-  permissions: user.permissions || [],
+  permissions: getEffectivePermissions(user),
   status: user.status,
   fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
 });
