@@ -127,9 +127,9 @@ export const MainLayout = ({ toggleTheme }) => {
                 type="button"
                 className="quick-add-btn"
                 onClick={() => navigate('/users/create')}
-                aria-label="Quick create employee"
+                aria-label="Create employee"
               >
-                <Plus size={16} /> Quick Create
+                <Plus size={16} /> Create Employee
               </button>
             )}
 

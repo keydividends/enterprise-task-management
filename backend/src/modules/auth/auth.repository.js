@@ -6,6 +6,11 @@ const isDbConnected = () => mongoose.connection && mongoose.connection.readyStat
 
 const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
 const hashResetToken = (token) => crypto.createHash("sha256").update(String(token)).digest("hex");
+const logRegistrationDebug = (message, details) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[auth:register] ${message}`, details);
+  }
+};
 
 const memoryUsers = new Map([
   [
@@ -93,10 +98,24 @@ const resetTokens = new Map();
 const findUserByEmail = async (email) => {
   const normalizedEmail = normalizeEmail(email);
   if (isDbConnected()) {
-    return UserAuth.findOne({ email: normalizedEmail, isDeleted: false });
+    const user = await UserAuth.findOne({ email: normalizedEmail });
+    logRegistrationDebug("duplicate-email lookup", {
+      incomingEmail: String(email),
+      normalizedEmail,
+      collection: UserAuth.collection.name,
+      userFound: Boolean(user),
+      userId: user ? String(user._id) : null,
+    });
+    return user;
   }
 
   const user = memoryUsers.get(normalizedEmail);
+  logRegistrationDebug("duplicate-email lookup (in-memory)", {
+    incomingEmail: String(email),
+    normalizedEmail,
+    collection: "in-memory users",
+    userFound: Boolean(user && !user.isDeleted),
+  });
   return user && !user.isDeleted ? user : null;
 };
 
@@ -117,11 +136,23 @@ const createUser = async ({ firstName, lastName, email, passwordHash, googleId, 
         status: "ACTIVE",
       });
     } catch (error) {
-      if (error && error.code === 11000) {
+      const duplicateEmail = error && error.code === 11000 && (
+        error.keyPattern?.email || Object.prototype.hasOwnProperty.call(error.keyValue || {}, "email")
+      );
+
+      if (duplicateEmail) {
         error.code = "USER_ALREADY_EXISTS";
         error.statusCode = 409;
         error.message = "A user with this email already exists.";
       }
+
+      logRegistrationDebug("user creation failed", {
+        normalizedEmail,
+        collection: UserAuth.collection.name,
+        errorCode: error?.code,
+        duplicateEmail,
+        duplicateKey: error?.keyPattern || null,
+      });
       throw error;
     }
   }

@@ -11,6 +11,7 @@ const RegisterPage = () => {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
+    role: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -41,6 +42,11 @@ const RegisterPage = () => {
       return;
     }
 
+    if (!form.role) {
+      setError('Please select a role.');
+      return;
+    }
+
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
       setError('Please enter a valid email address.');
       return;
@@ -63,7 +69,7 @@ const RegisterPage = () => {
         ...form,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
       });
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
@@ -75,9 +81,9 @@ const RegisterPage = () => {
 
   return (
     <div className="auth-standalone-page">
-      <motion.div className="auth-card glass-card auth-card-compact" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="auth-card glass-card auth-card-compact registration-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <div className="auth-card-header center">
-          <div className="brand-mark small">E</div>
+          <div className="brand-mark small">ETMS</div>
           <p className="eyebrow secondary">Create account</p>
           <h2>Join ETMS</h2>
         </div>
@@ -88,7 +94,7 @@ const RegisterPage = () => {
               <span>First name</span>
               <div className="input-wrap">
                 <UserRound size={18} />
-                <input id="firstName" name="firstName" type="text" value={form.firstName} onChange={handleChange} placeholder="Jane" autoComplete="given-name" required />
+                <input id="firstName" name="firstName" type="text" value={form.firstName} onChange={handleChange} placeholder="First Name" autoComplete="given-name" required />
               </div>
             </label>
 
@@ -96,10 +102,22 @@ const RegisterPage = () => {
               <span>Last name</span>
               <div className="input-wrap">
                 <UserRound size={18} />
-                <input id="lastName" name="lastName" type="text" value={form.lastName} onChange={handleChange} placeholder="Doe" autoComplete="family-name" required />
+                <input id="lastName" name="lastName" type="text" value={form.lastName} onChange={handleChange} placeholder="Last Name" autoComplete="family-name" required />
               </div>
             </label>
           </div>
+
+          <label className="field-group">
+            <span>Role</span>
+            <div className="input-wrap">
+              <UserRound size={18} />
+              <select id="role" name="role" value={form.role} onChange={handleChange} aria-label="Role" required>
+                <option value="" disabled>Select Role</option>
+                <option value="Manager">Manager</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+          </label>
 
           <label className="field-group">
             <span>Email</span>
@@ -133,7 +151,7 @@ const RegisterPage = () => {
           {error && <div className="form-banner danger" role="alert"><CheckCircle2 size={16} /> {error}</div>}
 
           <button type="submit" className="primary-button" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? 'Creating account...' : 'Create Account'}
             <ArrowRight size={18} />
           </button>
         </form>

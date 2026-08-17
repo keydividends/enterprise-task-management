@@ -11,7 +11,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     department: '',
     title: '',
     bio: '',
-    role: 'USER',
+    role: '',
     status: 'ACTIVE',
     customId: '',
   });
@@ -29,7 +29,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         department: initialValues.department || '',
         title: initialValues.title || '',
         bio: initialValues.bio || '',
-        role: initialValues.role || 'USER',
+        role: initialValues.role || '',
         status: initialValues.status || 'ACTIVE',
         customId: initialValues.customId || initialValues.user_id || '',
       });
@@ -50,6 +50,10 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     // 1. Required & Empty First Name Validation
     if (!formData.firstName || !formData.firstName.trim()) {
       newErrors.firstName = 'First name is required.';
+    }
+
+    if (!formData.role) {
+      newErrors.role = 'Please select a role.';
     }
 
     // 2. Email Address Validation
@@ -239,6 +243,31 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
+          <label htmlFor="role" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Role *
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: errors.role ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+              background: 'var(--bg-input, #ffffff)',
+            }}
+          >
+            <option value="" disabled>Select Role</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+          {errors.role && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.role}</span>}
+        </div>
+
+        <div className="form-group">
           <label htmlFor="mobile" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Mobile Phone
           </label>
@@ -261,29 +290,6 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
             />
           </div>
           {errors.mobile && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.mobile}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="role" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-            Role
-          </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
-              background: 'var(--bg-input, #ffffff)',
-            }}
-          >
-            <option value="USER">Employee</option>
-            <option value="ADMIN">Administrator</option>
-            <option value="MANAGER">Manager</option>
-          </select>
         </div>
 
         <div className="form-group">

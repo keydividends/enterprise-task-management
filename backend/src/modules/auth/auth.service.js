@@ -140,10 +140,19 @@ const verifyRefreshToken = (token) => {
   }
 };
 
-const registerUser = async ({ firstName, lastName, email, password, confirmPassword }) => {
-  validateRegisterInput({ firstName, lastName, email, password, confirmPassword });
+const registerUser = async ({ firstName, lastName, email, password, confirmPassword, role }) => {
+  validateRegisterInput({ firstName, lastName, email, password, confirmPassword, role });
 
-  const existingUser = await findUserByEmail(email);
+  const normalizedEmail = String(email).trim().toLowerCase();
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[auth:register] registration request", {
+      incomingEmail: String(email),
+      normalizedEmail,
+      role,
+    });
+  }
+
+  const existingUser = await findUserByEmail(normalizedEmail);
   if (existingUser) {
     throw createAuthError("USER_ALREADY_EXISTS", "A user with this email already exists.", 409);
   }
@@ -151,9 +160,9 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
   const createdUser = await createUser({
     firstName,
     lastName,
-    email,
+    email: normalizedEmail,
     passwordHash: await hashPassword(password),
-    role: "USER",
+    role,
     permissions: [
       "USER_VIEW",
       "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE",

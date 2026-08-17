@@ -1,5 +1,6 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_STATUSES = ["ACTIVE", "DISABLED", "LOCKED", "DELETED"];
+const ALLOWED_EMPLOYEE_ROLES = ["ADMIN", "MANAGER"];
 
 const createValidationError = (message, details = null) => {
   const error = new Error(message);
@@ -18,6 +19,10 @@ const validateCreateUser = (data = {}) => {
 
   if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
     throw createValidationError("A valid email address is required.");
+  }
+
+  if (!role || !ALLOWED_EMPLOYEE_ROLES.includes(String(role).trim().toUpperCase())) {
+    throw createValidationError("Please select a role.");
   }
 
   if (status && !ALLOWED_STATUSES.includes(status)) {
@@ -40,6 +45,10 @@ const validateUpdateUser = (data = {}) => {
 
   if (data.status && !ALLOWED_STATUSES.includes(data.status)) {
     throw createValidationError(`Invalid status. Must be one of: ${ALLOWED_STATUSES.join(", ")}`);
+  }
+
+  if (data.role && !ALLOWED_EMPLOYEE_ROLES.includes(String(data.role).trim().toUpperCase())) {
+    throw createValidationError("Role must be either Admin or Manager.");
   }
 };
 
@@ -87,4 +96,5 @@ module.exports = {
   validateListQuery,
   createValidationError,
   ALLOWED_STATUSES,
+  ALLOWED_EMPLOYEE_ROLES,
 };

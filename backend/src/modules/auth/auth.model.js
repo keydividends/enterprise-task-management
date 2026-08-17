@@ -33,7 +33,8 @@ const userAuthSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "USER",
+      enum: ["Manager", "Admin"],
+      required: true,
     },
     permissions: {
       type: [String],
@@ -53,7 +54,6 @@ const userAuthSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       sparse: true,
-      default: null,
     },
     mobile: {
       type: String,

@@ -69,7 +69,7 @@ const createUser = async (data = {}, currentUser = null) => {
     title: data.title || "",
     bio: data.bio || "",
     customId: data.customId ? String(data.customId).trim() : null,
-    role: data.role || "USER",
+    role: String(data.role).trim().toUpperCase(),
     roleId: data.roleId || null,
     permissions: data.permissions || ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
     status: data.status || "ACTIVE",
@@ -97,7 +97,10 @@ const updateUser = async (userId, updateData = {}, currentUser = null) => {
     }
   }
 
-  const updatedUser = await userRepository.updateUser(userId, updateData);
+  const normalizedUpdateData = updateData.role
+    ? { ...updateData, role: String(updateData.role).trim().toUpperCase() }
+    : updateData;
+  const updatedUser = await userRepository.updateUser(userId, normalizedUpdateData);
   return toUserDTO(updatedUser);
 };
 
