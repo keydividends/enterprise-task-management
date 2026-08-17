@@ -25,6 +25,7 @@ const CommentsPanel = ({ taskId }) => {
   const { user } = useAuth();
   const { comments, pagination, loading, error, fetchComments, addComment, updateComment, removeComment } = useComments(taskId);
   const currentUserId = user?.id || null;
+  const canManageAny = ['ADMIN', 'SUPER_ADMIN', 'ORG_ADMIN', 'ORGANIZATION_ADMIN'].includes(String(user?.role || '').toUpperCase());
 
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -126,6 +127,7 @@ const CommentsPanel = ({ taskId }) => {
             <CommentItem
               comment={comment}
               currentUserId={currentUserId}
+              canManageAny={canManageAny}
               onUpdate={updateComment}
               onDelete={removeComment}
               onReply={handleReply}
@@ -141,9 +143,9 @@ const CommentsPanel = ({ taskId }) => {
                 <CommentItem
                   comment={reply}
                   currentUserId={currentUserId}
+                  canManageAny={canManageAny}
                   onUpdate={updateComment}
                   onDelete={removeComment}
-                  onReply={null}
                   resolveDisplayName={resolveDisplayName}
                 />
               </div>

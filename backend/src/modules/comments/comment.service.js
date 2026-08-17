@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const repo = require("./comment.repository");
 const { mapComment } = require("./comment.mapper");
 const { validateCreateComment, validateUpdateComment, isValidObjectId } = require("./comment.validation");
-const { assertTaskCollaborationAccess, hasPermission } = require("../collaboration/taskAccess");
+const { assertTaskCollaborationAccess, isAdministrator } = require("../collaboration/taskAccess");
 
 const MAX_COMMENTS_PER_TASK = 30;
 
@@ -38,11 +38,11 @@ const assertCommentExists = async (commentId) => {
   return comment;
 };
 
-const assertCanModify = (comment, context, permission) => {
+const assertCanModify = (comment, context) => {
   const userId = context.userId || context.user?.id;
   const isOwner = String(comment.authorId) === String(userId);
-  if (!isOwner && !hasPermission(context, permission)) {
-    throw createError("PERMISSION_DENIED", "You can only modify your own comments unless you have the required moderation permission.", 403);
+  if (!isOwner && !isAdministrator(context)) {
+    throw createError("PERMISSION_DENIED", "You can only modify your own comments unless you are an administrator.", 403);
   }
 };
 
@@ -115,7 +115,7 @@ const editComment = async (commentId, payload, context = {}) => {
   const comment = await assertCommentExists(commentId);
   const task = await assertTaskExists(comment.taskId);
   await assertTaskCollaborationAccess(task, context);
-  assertCanModify(comment, context, "COMMENT_UPDATE");
+  assertCanModify(comment, context);
 
   const updated = await repo.updateComment(commentId, {
     text: String(payload.text).trim(),
@@ -130,7 +130,7 @@ const deleteComment = async (commentId, context = {}) => {
   const comment = await assertCommentExists(commentId);
   const task = await assertTaskExists(comment.taskId);
   await assertTaskCollaborationAccess(task, context);
-  assertCanModify(comment, context, "COMMENT_DELETE");
+  assertCanModify(comment, context);
 
   await repo.softDeleteComment(commentId);
   return { id: commentId };
