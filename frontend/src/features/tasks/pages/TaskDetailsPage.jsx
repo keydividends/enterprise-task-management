@@ -451,7 +451,7 @@ const labels = task.labels || [];
 
             <h3 id="delete-modal-title">Delete Task</h3>
             <p className="modal-message">
-              Are you sure you want to delete this task? This action can't be undone.
+              Are you sure you want to delete this task? This action can&apos;t be undone.
             </p>
 
             <div className="modal-task-summary">

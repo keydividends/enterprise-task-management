@@ -108,11 +108,11 @@ Login → Users/Roles → Project → Team → Task → Comment → Attachment �
 
 | # | Step | Expected | Status | Notes |
 |---|------|----------|--------|-------|
-| R8.1 | GET `/api/v1/dashboard/summary` | 200, counts match seeded data | NOT IMPLEMENTED | BUG-006 |
-| R8.2 | GET `/api/v1/dashboard/tasks-by-status` | 200, status groups | NOT IMPLEMENTED | BUG-006 |
-| R8.3 | GET `/api/v1/reports/project-progress` | 200 | NOT IMPLEMENTED | BUG-006 |
-| R8.4 | GET `/api/v1/reports/overdue-tasks` | 200 | NOT IMPLEMENTED | BUG-006 |
-| R8.5 | Dashboard numbers reflect tasks created in R5 | Counts updated | NOT IMPLEMENTED | BUG-006 |
+| R8.1 | GET `/api/v1/dashboard/summary` | 200, counts match seeded data | READY | Dashboard API test added |
+| R8.2 | GET `/api/v1/dashboard/tasks-by-status` | 200, status groups | READY | Dashboard API test added |
+| R8.3 | GET `/api/v1/reports/projects/progress` | 200 | READY | Canonical route implemented |
+| R8.4 | GET `/api/v1/reports/tasks/overdue` | 200 | READY | Canonical route implemented |
+| R8.5 | Dashboard numbers reflect tasks created in R5 | Counts updated | READY | Live dashboard service connected |
 
 ---
 
@@ -150,7 +150,7 @@ Login → Users/Roles → Project → Team → Task → Comment → Attachment �
 | Tasks | ✅ Ready | None |
 | Comments | ⚠️ Partial | BUG-004 (wrong permissions) |
 | Attachments | ⚠️ Partial | BUG-005 (no RBAC) |
-| Dashboard | ❌ Not Ready | BUG-006 (not implemented) |
-| Reports | ❌ Not Ready | BUG-006 (not implemented) |
+| Dashboard | ⚠️ Code Ready | Runtime test requires compatible Node/dependencies |
+| Reports | ⚠️ Code Ready | Runtime test requires compatible Node/dependencies |
 
 **Full regression cannot run until BUG-006 (Dashboard/Reports) is resolved.** BUG-008 (Teams persistence) is resolved, so teams are regression-ready.

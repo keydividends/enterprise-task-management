@@ -1,10 +1,7 @@
 import { motion } from 'framer-motion';
 import {
-  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
-  CircleDashed,
-  Clock3,
   FolderKanban,
   MessageSquareText,
   Sparkles,

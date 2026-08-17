@@ -1,13 +1,34 @@
 const request = require("supertest");
+const { describe, it, before, after } = require("node:test");
+const assert = require("node:assert/strict");
 const app = require("../src/app");
 const Role = require("../src/modules/roles/role.model");
 const Permission = require("../src/modules/roles/permission.model");
 const RolePermission = require("../src/modules/roles/rolePermission.model");
+const { startDatabase, stopDatabase } = require("./testDatabase");
+
+const expect = (value) => ({
+  toBe: (expected) => assert.strictEqual(value, expected),
+  toBeDefined: () => assert.notStrictEqual(value, undefined),
+  toBeNull: () => assert.strictEqual(value, null),
+  toContain: (expected) => assert.ok(value.includes(expected)),
+});
+
+const beforeAll = before;
+const afterAll = after;
+
+beforeAll(async () => {
+  await startDatabase();
+});
+
+afterAll(async () => {
+  await stopDatabase();
+});
 
 describe("Role and Permission APIs", () => {
   let testRole;
   let testPermission;
-  let adminToken = "Bearer test-admin-token"; // Mock token - should be replaced with actual auth
+  const adminToken = "Bearer mock-token";
 
   beforeAll(async () => {
     // Create test permission

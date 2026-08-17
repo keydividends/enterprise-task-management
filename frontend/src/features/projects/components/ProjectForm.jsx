@@ -16,7 +16,6 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
   useEffect(() => {
     if (initialValues) {
       // This synchronizes form state when an asynchronously loaded project changes.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: initialValues.name || '',
         key: initialValues.key || '',

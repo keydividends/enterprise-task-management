@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, RefreshCw, Search, User, Users } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, RefreshCw, Search, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PermissionGate from '../../roles/components/PermissionGate';
 import useTeams from '../hooks/useTeams';

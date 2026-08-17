@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { User, Mail, Phone, Building, Briefcase, Calendar, Shield, Edit3, ArrowLeft, CheckCircle2, Clock, Folder, Users as UsersIcon, UserCheck } from 'lucide-react';
+import { Mail, Phone, Shield, Edit3, ArrowLeft, Folder, Users as UsersIcon, UserCheck } from 'lucide-react';
 import userService from '../services/userService';
 import { UserStatusBadge } from '../components/UserStatusBadge';
 import { useAuth } from '../../auth/hooks/useAuth';

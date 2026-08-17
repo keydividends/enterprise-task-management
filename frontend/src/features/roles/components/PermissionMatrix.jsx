@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { usePermissions } from "../hooks/useRoles";
 import "../styles/PermissionMatrix.css";
 
-const PermissionMatrix = ({ roleId, selectedPermissionIds, onPermissionChange }) => {
+const PermissionMatrix = ({ selectedPermissionIds, onPermissionChange }) => {
   const { permissions, fetchPermissions } = usePermissions();
   const [selectedPermissions, setSelectedPermissions] = useState(
     selectedPermissionIds || []
