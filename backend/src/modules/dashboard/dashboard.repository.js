@@ -89,16 +89,23 @@ const getUpcomingDeadlines = async (context, query) => {
 
 const getMyWork = async (context, query) => {
   const match = taskMatch(context, query);
-  if (mongoose.Types.ObjectId.isValid(String(context.userId))) match.primaryAssigneeId = new mongoose.Types.ObjectId(context.userId);
+  if (context.userId) {
+    const assigneeConditions = [context.userId];
+    if (mongoose.Types.ObjectId.isValid(String(context.userId))) {
+      assigneeConditions.push(new mongoose.Types.ObjectId(context.userId));
+    }
+    match.primaryAssigneeId = { $in: assigneeConditions };
+  }
   const now = new Date();
   const dueSoon = new Date(now.getTime() + 7 * 86400000);
-  const [assigned, inProgress, overdue, dueSoonCount] = await Promise.all([
+  const [assigned, inProgress, overdue, dueSoonCount, completed] = await Promise.all([
     countTasks(match),
     countTasks({ ...match, status: "IN_PROGRESS" }),
     countTasks({ ...match, status: { $nin: ["DONE", "CANCELLED"] }, dueDate: { $lt: now } }),
     countTasks({ ...match, status: { $nin: ["DONE", "CANCELLED"] }, dueDate: { $gte: now, $lte: dueSoon } }),
+    countTasks({ ...match, status: "DONE" }),
   ]);
-  return { assigned, inProgress, dueSoon: dueSoonCount, overdue };
+  return { assigned, inProgress, dueSoon: dueSoonCount, overdue, completed };
 };
 
 const getRecentActivity = async (context, query) => {

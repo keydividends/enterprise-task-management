@@ -63,7 +63,7 @@ const MOCK_TOKEN_PROFILES = {
     lastName: "User",
     role: "USER",
     workspaceId: "64a000000000000000000001",
-    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW"],
+    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW", "DASHBOARD_VIEW", "REPORT_VIEW"],
     status: "ACTIVE",
   },
 };

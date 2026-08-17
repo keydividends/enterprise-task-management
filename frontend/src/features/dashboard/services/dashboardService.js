@@ -4,6 +4,7 @@ const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 
 const dashboardService = {
   getSummary: (params = {}) => axiosClient.get('/dashboard/summary', { params }).then(unwrap),
+  getMyWork: (params = {}) => axiosClient.get('/dashboard/my-work', { params }).then(unwrap),
   getStatus: (params = {}) => axiosClient.get('/dashboard/tasks-by-status', { params }).then(unwrap),
   getPriority: (params = {}) => axiosClient.get('/dashboard/tasks-by-priority', { params }).then(unwrap),
   getProjectProgress: (params = {}) => axiosClient.get('/dashboard/project-progress', { params }).then(unwrap),
