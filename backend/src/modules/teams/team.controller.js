@@ -4,7 +4,7 @@ const sendSuccess = (res, statusCode, payload) => res.status(statusCode).json(pa
 
 const listTeams = async (req, res, next) => {
   try {
-    const result = await teamService.listTeams(req.query);
+    const result = await teamService.listTeams(req.query, req.user);
     sendSuccess(res, 200, { success: true, data: result.items, pagination: result.pagination });
   } catch (error) {
     next(error);

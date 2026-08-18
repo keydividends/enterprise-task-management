@@ -14,6 +14,7 @@ const TeamMemberManager = ({ teamId, team = null, members = [], onMembersChange,
   // Real users from the Users API
   const [availableUsers, setAvailableUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState('');
 
   // Multi-team confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -22,14 +23,18 @@ const TeamMemberManager = ({ teamId, team = null, members = [], onMembersChange,
   useEffect(() => {
     let cancelled = false;
     setUsersLoading(true);
-    userService.getUsers({ pageSize: 100, status: 'ACTIVE' })
+    userService.getTeamMemberCandidates({ pageSize: 100 })
       .then((res) => {
         if (cancelled) return;
         const list = Array.isArray(res?.data) ? res.data : [];
         setAvailableUsers(list);
+        setUsersError('');
       })
-      .catch(() => {
-        if (!cancelled) setAvailableUsers([]);
+      .catch((error) => {
+        if (!cancelled) {
+          setAvailableUsers([]);
+          setUsersError(error?.response?.data?.message || 'Failed to load users.');
+        }
       })
       .finally(() => {
         if (!cancelled) setUsersLoading(false);
@@ -215,10 +220,10 @@ const TeamMemberManager = ({ teamId, team = null, members = [], onMembersChange,
                 id="member-select"
                 value={userId}
                 onChange={(event) => setUserId(event.target.value)}
-                disabled={usersLoading}
+                disabled={usersLoading || Boolean(usersError) || availableUsers.length === 0}
               >
                 <option value="">
-                  {usersLoading ? 'Loading users...' : '-- Select a user --'}
+                  {usersLoading ? 'Loading users...' : usersError ? 'Failed to load users' : availableUsers.length ? '-- Select a user --' : 'No users available'}
                 </option>
                 {availableUsers.map((u) => {
                   const uid = String(u.id || u._id);
@@ -235,6 +240,8 @@ const TeamMemberManager = ({ teamId, team = null, members = [], onMembersChange,
                 })}
               </select>
             </div>
+            {usersError ? <small className="field-error" role="alert">{usersError}</small> : null}
+            {!usersLoading && !usersError && availableUsers.length === 0 ? <small className="helper-copy">No users available.</small> : null}
           </div>
           <div className="field-group">
             <label htmlFor="member-role">Role</label>
@@ -249,7 +256,7 @@ const TeamMemberManager = ({ teamId, team = null, members = [], onMembersChange,
           <button
             type="submit"
             className="primary-button member-add-btn"
-            disabled={submitting || !userId.trim() || usersLoading}
+            disabled={submitting || !userId.trim() || usersLoading || Boolean(usersError)}
           >
             <UserPlus size={15} /> {submitting ? 'Adding...' : 'Add member'}
           </button>

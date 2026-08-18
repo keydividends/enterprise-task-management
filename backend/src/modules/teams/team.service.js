@@ -44,9 +44,15 @@ const mapTeamWithManager = async (team) => {
   };
 };
 
-const listTeams = async (query = {}) => {
+const listTeams = async (query = {}, currentUser = {}) => {
   const validated = validateListQuery(query);
-  const result = await teamRepository.listTeams(validated);
+  const role = String(currentUser.role || "").toUpperCase();
+  const isDirectoryViewer = ["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "LEAD"].includes(role)
+    || (currentUser.permissions || []).includes("TEAM_VIEW");
+  const result = await teamRepository.listTeams({
+    ...validated,
+    memberUserId: isDirectoryViewer ? undefined : currentUser.id,
+  });
 
   return {
     items: result.items.map(mapTeamSummary),

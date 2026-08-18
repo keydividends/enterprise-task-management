@@ -58,6 +58,7 @@ const listTeams = async ({
   pageSize = 20,
   sortBy = "createdAt",
   sortOrder = -1,
+  memberUserId,
 } = {}) => {
   const normalized = String(search).trim().toLowerCase();
 
@@ -71,6 +72,27 @@ const listTeams = async ({
     }
     if (status) filter.status = String(status).toUpperCase();
     if (leadId) filter.leadId = String(leadId);
+    if (memberUserId) {
+      filter.$or = [
+        ...(filter.$or || []),
+        { leadId: String(memberUserId) },
+        { members: { $elemMatch: { userId: String(memberUserId), status: "ACTIVE", isDeleted: false } } },
+      ];
+      // A search filter and membership condition must both apply.
+      if (normalized) {
+        filter.$and = [
+          { $or: [
+            { name: { $regex: normalized, $options: "i" } },
+            { description: { $regex: normalized, $options: "i" } },
+          ] },
+          { $or: [
+            { leadId: String(memberUserId) },
+            { members: { $elemMatch: { userId: String(memberUserId), status: "ACTIVE", isDeleted: false } } },
+          ] },
+        ];
+        delete filter.$or;
+      }
+    }
 
     const totalItems = await Team.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize) || 1;
@@ -100,6 +122,10 @@ const listTeams = async ({
     );
   }
   if (leadId) items = items.filter((t) => String(t.leadId) === String(leadId));
+  if (memberUserId) {
+    items = items.filter((team) => String(team.leadId) === String(memberUserId)
+      || team.members?.some((member) => String(member.userId) === String(memberUserId) && member.status !== "REMOVED" && !member.isDeleted));
+  }
 
   items.sort((a, b) => {
     const va = a[sortBy] || "", vb = b[sortBy] || "";

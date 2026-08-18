@@ -202,6 +202,15 @@ const getEligibleTeamLeads = async (req, res, next) => {
   }
 };
 
+const getTeamMemberCandidates = async (req, res, next) => {
+  try {
+    const users = await userService.getTeamMemberCandidates(req.query);
+    res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getUserProjects = async (req, res, next) => {
   try {
     const projects = await userService.getUserProjects(req.params.userId);
@@ -264,6 +273,7 @@ module.exports = {
   removeAvatar,
   searchUsers,
   getEligibleTeamLeads,
+  getTeamMemberCandidates,
   getUserProjects,
   getUserTeams,
   getUserWorkload,

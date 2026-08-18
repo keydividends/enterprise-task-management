@@ -239,6 +239,19 @@ const getEligibleTeamLeads = async () => {
     .map(({ id, fullName, email, role }) => ({ id, name: fullName, email, role }));
 };
 
+const getTeamMemberCandidates = async (query = {}) => {
+  const validatedQuery = validateListQuery({ ...query, status: "ACTIVE" });
+  const { items } = await userRepository.findAll(validatedQuery);
+  return toUserListDTO(items).map(({ id, firstName, lastName, fullName, email, role }) => ({
+    id,
+    firstName,
+    lastName,
+    name: fullName,
+    email,
+    role,
+  }));
+};
+
 const getUserProjects = async (userId) => {
   const user = await userRepository.findById(userId);
   if (!user) {
@@ -279,6 +292,7 @@ module.exports = {
   removeAvatar,
   searchUsers,
   getEligibleTeamLeads,
+  getTeamMemberCandidates,
   getUserProjects,
   getUserTeams,
   getUserWorkload,

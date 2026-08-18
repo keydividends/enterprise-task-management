@@ -25,6 +25,7 @@ router.get("/lookup/:customId", authenticate, authorize("USER_VIEW"), userContro
 
 // Collection routes
 router.get("/eligible-team-leads", authenticate, authorize("TEAM_VIEW"), userController.getEligibleTeamLeads);
+router.get("/team-member-candidates", authenticate, authorize("TEAM_MANAGE_MEMBERS"), userController.getTeamMemberCandidates);
 router.get("/", authenticate, authorize("USER_VIEW"), userController.getUsers);
 router.post("/", authenticate, authorize("USER_CREATE"), userController.createUser);
 
