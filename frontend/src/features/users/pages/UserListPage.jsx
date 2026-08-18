@@ -75,7 +75,7 @@ export const UserListPage = () => {
       // Exclude self from employees table
       const isSelf = (
         (currentUser?.id && u.id === currentUser.id) ||
-        (currentUser?.customId && u.customId === currentUser.customId) ||
+        (currentUser?.employeeId && u.employeeId === currentUser.employeeId) ||
         (currentUser?.email && u.email?.toLowerCase() === currentUser.email.toLowerCase())
       );
       if (isSelf) return false;
@@ -84,7 +84,7 @@ export const UserListPage = () => {
       if (isAdminOrManager) {
         if (currentUser?.role === 'MANAGER') {
           return (
-            u.managerCustomId === currentUser?.customId ||
+            u.managerEmployeeId === currentUser?.employeeId ||
             u.createdBy === currentUser?.id ||
             u.role === 'USER'
           );
@@ -393,9 +393,9 @@ export const UserListPage = () => {
               </tr>
             ) : (
               filteredUsers.map((user) => {
-                const targetId = user.id || user.customId;
-                const displayEmployeeId = user.customId || user.user_id || user.employeeId || 'EMP-000';
-                const rawManagerId = user.managerCustomId || user.managerId;
+                const targetId = user.id || user.employeeId;
+                const displayEmployeeId = user.employeeId || 'EMP-000';
+                const rawManagerId = user.managerEmployeeId || user.managerId;
                 const displayManagerId = rawManagerId && String(rawManagerId).trim() ? String(rawManagerId).trim() : 'Not Assigned';
 
                 return (

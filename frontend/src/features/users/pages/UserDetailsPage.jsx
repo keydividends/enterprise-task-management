@@ -69,8 +69,8 @@ export const UserDetailsPage = () => {
     );
   }
 
-  const displayEmployeeId = user.customId || user.employeeId || user.user_id || (user.email ? `EMP-${user.email.split('@')[0]}` : 'EMP-001');
-  const displayManagerId = user.managerCustomId || 'Not Assigned';
+  const displayEmployeeId = user.employeeId || (user.email ? `EMP-${user.email.split('@')[0]}` : 'EMP-001');
+  const displayManagerId = user.managerEmployeeId || 'Not Assigned';
 
   // Rule 3: Only Managers and Admins can edit employee profiles
   const canEdit = currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER' || currentUser?.permissions?.includes('USER_UPDATE');
@@ -152,7 +152,7 @@ export const UserDetailsPage = () => {
           {canEdit && (
             <button
               type="button"
-              onClick={() => navigate(`/users/${user.id || user.customId}/edit`)}
+              onClick={() => navigate(`/users/${user.id || user.employeeId}/edit`)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

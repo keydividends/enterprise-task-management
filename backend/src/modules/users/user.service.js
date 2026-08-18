@@ -7,6 +7,7 @@ const {
   validateUpdateUser,
   validateStatusUpdate,
   validateProfileUpdate,
+  validateEmployeeId,
   validateListQuery,
   createValidationError,
 } = require("./user.validation");
@@ -69,16 +70,15 @@ const createUser = async (data = {}, currentUser = null) => {
     department: data.department || "",
     title: data.title || "",
     bio: data.bio || "",
-    customId: data.customId ? String(data.customId).trim() : null,
-    // Accept the legacy managerId field as well as the canonical managerCustomId.
-    role: String(data.role).trim().toUpperCase(),
-    managerCustomId: data.managerCustomId || data.managerId
-      ? String(data.managerCustomId || data.managerId).trim()
+    ...(data.employeeId ? { employeeId: String(data.employeeId).trim() } : {}),
+    // Accept the legacy managerId field as well as the canonical managerEmployeeId.
+    managerEmployeeId: data.managerEmployeeId || data.managerId
+      ? String(data.managerEmployeeId || data.managerId).trim()
       : "",
-    role: data.role || "INTERN",
+    role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
     roleId: data.roleId || null,
     permissions: getEffectivePermissions({
-      role: data.role || "INTERN",
+      role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
       permissions: data.permissions || ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
     }),
     status: data.status || "ACTIVE",
@@ -188,9 +188,9 @@ const restoreUser = async (userId, currentUser = null) => {
   return toUserDTO(restoredUser);
 };
 
-const getUserByCustomId = async (customId) => {
-  if (!customId) throw createUserError("INVALID_IDENTIFIER", "Custom ID is required.");
-  const user = await userRepository.findByCustomId(customId);
+const getUserByEmployeeId = async (employeeId) => {
+  if (!employeeId) throw createUserError("INVALID_IDENTIFIER", "Employee ID is required.");
+  const user = await userRepository.findByEmployeeId(employeeId);
   if (!user) throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   return toUserDTO(user);
 };
@@ -206,7 +206,37 @@ const updateMyProfile = async (currentUser, profileData = {}) => {
   }
 
   validateProfileUpdate(profileData);
+
+  if (profileData.employeeId) {
+    const normalizedEmployeeId = validateEmployeeId(profileData.employeeId);
+    const existingUser = await userRepository.findByEmployeeId(normalizedEmployeeId);
+    if (existingUser && String(existingUser.id || existingUser._id) !== String(currentUser.id)) {
+      throw createUserError("EMPLOYEE_ID_ALREADY_EXISTS", "This Employee ID is already in use.", 409);
+    }
+    profileData.employeeId = normalizedEmployeeId;
+  }
+
   return updateUser(currentUser.id, profileData, currentUser);
+};
+
+const updateMyEmployeeId = async (currentUser, employeeId) => {
+  if (!currentUser || !currentUser.id) {
+    throw createUserError("AUTH_REQUIRED", "Authentication required.", 401);
+  }
+
+  const normalizedEmployeeId = validateEmployeeId(employeeId);
+  const existingUser = await userRepository.findByEmployeeId(normalizedEmployeeId);
+
+  if (existingUser && String(existingUser.id || existingUser._id) !== String(currentUser.id)) {
+    throw createUserError("EMPLOYEE_ID_ALREADY_EXISTS", "This Employee ID is already in use.", 409);
+  }
+
+  const updatedUser = await userRepository.updateUser(currentUser.id, { employeeId: normalizedEmployeeId });
+  if (!updatedUser) {
+    throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+  }
+
+  return toUserDTO(updatedUser);
 };
 
 const uploadAvatar = async (currentUser, avatarUrl) => {
@@ -268,11 +298,12 @@ module.exports = {
   restoreUser,
   getUserProfile,
   updateMyProfile,
+  updateMyEmployeeId,
   uploadAvatar,
   removeAvatar,
   searchUsers,
   getUserProjects,
   getUserTeams,
   getUserWorkload,
-  getUserByCustomId,
+  getUserByEmployeeId,
 };

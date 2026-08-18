@@ -58,20 +58,21 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    customId: {
+    employeeId: {
       type: String,
       trim: true,
       unique: true,
       sparse: true,
     },
-    managerCustomId: {
+    managerEmployeeId: {
       type: String,
       trim: true,
       default: "",
     },
     role: {
       type: String,
-      default: "manager",
+      enum: ["MANAGER", "ADMIN", "USER", "INTERN"],
+      default: "MANAGER",
     },
     roleId: {
       type: String,

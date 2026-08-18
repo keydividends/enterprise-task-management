@@ -101,6 +101,7 @@ const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, ro
         { firstName: { $regex: search, $options: "i" } },
         { lastName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
+        { employeeId: { $regex: search, $options: "i" } },
         { department: { $regex: search, $options: "i" } },
       ];
     }
@@ -131,6 +132,7 @@ const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, ro
         u.firstName?.toLowerCase().includes(s) ||
         u.lastName?.toLowerCase().includes(s) ||
         u.email?.toLowerCase().includes(s) ||
+        u.employeeId?.toLowerCase().includes(s) ||
         u.department?.toLowerCase().includes(s)
     );
   }
@@ -152,13 +154,13 @@ const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, ro
   return { items, totalItems, page, pageSize, totalPages };
 };
 
-const findByCustomId = async (customId) => {
-  if (!customId) return null;
+const findByEmployeeId = async (employeeId) => {
+  if (!employeeId) return null;
   if (isDbConnected()) {
-    return User.findOne({ customId: String(customId).trim(), isDeleted: false });
+    return User.findOne({ employeeId: String(employeeId).trim(), isDeleted: false });
   }
   return Array.from(inMemoryUsers.values()).find(
-    (u) => u.customId === String(customId).trim() && !u.isDeleted
+    (u) => u.employeeId === String(employeeId).trim() && !u.isDeleted
   ) || null;
 };
 
@@ -191,9 +193,12 @@ const createUser = async (userData) => {
       return await User.create({ ...userData, email: normalized });
     } catch (error) {
       if (error && error.code === 11000) {
-        error.code = "USER_EMAIL_ALREADY_EXISTS";
+        const isEmployeeIdConflict = error.keyPattern?.employeeId || error.keyValue?.employeeId;
+        error.code = isEmployeeIdConflict ? "EMPLOYEE_ID_ALREADY_EXISTS" : "USER_EMAIL_ALREADY_EXISTS";
         error.statusCode = 409;
-        error.message = "A user with this email address already exists.";
+        error.message = isEmployeeIdConflict
+          ? "This Employee ID is already in use."
+          : "A user with this email address already exists.";
       }
       throw error;
     }
@@ -219,8 +224,8 @@ const createUser = async (userData) => {
     department: userData.department || "",
     title: userData.title || "",
     bio: userData.bio || "",
-    customId: userData.customId || null,
-    managerCustomId: userData.managerCustomId || "",
+    employeeId: userData.employeeId || null,
+    managerEmployeeId: userData.managerEmployeeId || "",
     role: userData.role || "USER",
     permissions: userData.permissions || [
       "USER_VIEW",
@@ -306,7 +311,7 @@ const searchUsers = async (query = "", limit = 10) => {
         { firstName: { $regex: s, $options: "i" } },
         { lastName: { $regex: s, $options: "i" } },
         { email: { $regex: s, $options: "i" } },
-        { customId: { $regex: s, $options: "i" } },
+        { employeeId: { $regex: s, $options: "i" } },
       ];
     }
 
@@ -321,7 +326,7 @@ const searchUsers = async (query = "", limit = 10) => {
         u.firstName?.toLowerCase().includes(s) ||
         u.lastName?.toLowerCase().includes(s) ||
         u.email?.toLowerCase().includes(s) ||
-        u.customId?.toLowerCase().includes(s)
+        u.employeeId?.toLowerCase().includes(s)
     )
     .slice(0, limit);
 };
@@ -385,6 +390,6 @@ module.exports = {
   getUserProjects,
   getUserTeams,
   getUserWorkload,
-  findByCustomId,
+  findByEmployeeId,
   inMemoryUsers,
 };

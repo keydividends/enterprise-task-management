@@ -9,17 +9,17 @@ const app = require('../src/app');
 const { getEffectivePermissions } = require('../src/modules/auth/rolePermissions');
 
 const mockContext = { user: { id: 'mock-admin', role: 'ADMIN' }, workspaceId: '64a000000000000000000001' };
-const mockProjectUser = { id: 'user_admin_1', customId: 'user_admin_1', firstName: 'Project', lastName: 'User', status: 'ACTIVE', isDeleted: false };
+const mockProjectUser = { id: 'user_admin_1', employeeId: 'user_admin_1', firstName: 'Project', lastName: 'User', status: 'ACTIVE', isDeleted: false };
 
 const withMockProjectUser = async (callback) => {
-  const originalFindByCustomId = userRepository.findByCustomId;
-  userRepository.findByCustomId = async (customId) => (
-    customId === mockProjectUser.customId ? mockProjectUser : originalFindByCustomId(customId)
+  const originalFindByEmployeeId = userRepository.findByEmployeeId;
+  userRepository.findByEmployeeId = async (employeeId) => (
+    employeeId === mockProjectUser.employeeId ? mockProjectUser : originalFindByEmployeeId(employeeId)
   );
   try {
     return await callback();
   } finally {
-    userRepository.findByCustomId = originalFindByCustomId;
+    userRepository.findByEmployeeId = originalFindByEmployeeId;
   }
 };
 
@@ -37,14 +37,14 @@ test('createProject creates a project successfully', async () => {
 });
 
 test('createProject resolves a project manager custom ID', async () => {
-  const originalFindByCustomId = userRepository.findByCustomId;
+  const originalFindByEmployeeId = userRepository.findByEmployeeId;
   const originalFindById = userRepository.findById;
   const managerId = '64a100000000000000000030';
-  userRepository.findByCustomId = async (customId) => (
-    customId === 'test-30' ? { id: managerId, customId, status: 'ACTIVE', isDeleted: false } : null
+  userRepository.findByEmployeeId = async (employeeId) => (
+    employeeId === 'test-30' ? { id: managerId, employeeId, status: 'ACTIVE', isDeleted: false } : null
   );
   userRepository.findById = async (userId) => (
-    userId === managerId ? { id: managerId, customId: 'test-30', status: 'ACTIVE', isDeleted: false } : null
+    userId === managerId ? { id: managerId, employeeId: 'test-30', status: 'ACTIVE', isDeleted: false } : null
   );
 
   try {
@@ -55,9 +55,9 @@ test('createProject resolves a project manager custom ID', async () => {
     }, mockContext);
 
     assert.equal(result.projectManagerId, managerId);
-    assert.equal(result.projectManagerCustomId, 'test-30');
+    assert.equal(result.projectManagerEmployeeId, 'test-30');
   } finally {
-    userRepository.findByCustomId = originalFindByCustomId;
+    userRepository.findByEmployeeId = originalFindByEmployeeId;
     userRepository.findById = originalFindById;
   }
 });
@@ -147,9 +147,9 @@ test('ordinary users can only list and view projects they manage or belong to', 
   const visibleProject = await projectService.createProject({ name: 'Visible Project', key: 'VSB1' }, mockContext);
   const hiddenProject = await projectService.createProject({ name: 'Hidden Project', key: 'HDN1' }, mockContext);
 
-  const originalFindByCustomId = userRepository.findByCustomId;
-  userRepository.findByCustomId = async (customId) => (
-    customId === 'MEM-001' ? { id: 'member-1', customId, status: 'ACTIVE', isDeleted: false } : originalFindByCustomId(customId)
+  const originalFindByEmployeeId = userRepository.findByEmployeeId;
+  userRepository.findByEmployeeId = async (employeeId) => (
+    employeeId === 'MEM-001' ? { id: 'member-1', employeeId, status: 'ACTIVE', isDeleted: false } : originalFindByEmployeeId(employeeId)
   );
   try {
     await projectService.addProjectMember(visibleProject.id, { employeeId: 'MEM-001', projectRole: 'VIEWER' }, mockContext);
@@ -158,7 +158,7 @@ test('ordinary users can only list and view projects they manage or belong to', 
     await assert.rejects(() => projectService.getProjectById(hiddenProject.id, memberContext), (error) => error.code === 'PROJECT_ACCESS_DENIED');
     assert.equal((await projectService.getProjectById(visibleProject.id, memberContext)).id, visibleProject.id);
   } finally {
-    userRepository.findByCustomId = originalFindByCustomId;
+    userRepository.findByEmployeeId = originalFindByEmployeeId;
   }
 });
 

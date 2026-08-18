@@ -5,6 +5,7 @@ const mapUser = (user) => ({
   firstName: user.firstName,
   lastName: user.lastName,
   email: user.email,
+  employeeId: user.employeeId || "",
   role: user.role,
   permissions: getEffectivePermissions(user),
   status: user.status,

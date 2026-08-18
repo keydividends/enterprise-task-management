@@ -3,7 +3,7 @@ import { Trash2, UserPlus } from 'lucide-react';
 import projectService from '../services/projectService';
 import userService from '../../users/services/userService';
 
-const employeeCode = (user) => user?.customId || user?.employeeId || user?.user_id || '';
+const employeeCode = (user) => user?.employeeId || '';
 const employeeName = (user) => user?.fullName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || employeeCode(user);
 
 const ProjectMemberManager = ({ projectId, members = [], onMembersChange, onMessage, onError, canManageMembers = false }) => {

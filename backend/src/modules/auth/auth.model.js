@@ -33,10 +33,8 @@ const userAuthSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      // Legacy roles remain readable for existing accounts. Public registration
-      // is constrained by auth.service to the manager role below.
-      enum: ["manager", "Manager", "Admin", "USER", "ADMIN", "INTERN"],
-      default: "manager",
+      enum: ["MANAGER", "ADMIN", "USER", "INTERN"],
+      default: "MANAGER",
       required: true,
     },
     permissions: {
@@ -52,11 +50,16 @@ const userAuthSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    customId: {
+    employeeId: {
       type: String,
       trim: true,
       unique: true,
       sparse: true,
+    },
+    managerEmployeeId: {
+      type: String,
+      trim: true,
+      default: "",
     },
     mobile: {
       type: String,

@@ -1,4 +1,5 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMPLOYEE_ID_REGEX = /^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/;
 const ALLOWED_STATUSES = ["ACTIVE", "DISABLED", "LOCKED", "DELETED"];
 const ALLOWED_EMPLOYEE_ROLES = ["ADMIN", "MANAGER"];
 
@@ -59,7 +60,7 @@ const validateStatusUpdate = (status) => {
 };
 
 const validateProfileUpdate = (data = {}) => {
-  const allowedProfileFields = ["firstName", "lastName", "mobile", "department", "title", "bio"];
+  const allowedProfileFields = ["employeeId", "firstName", "lastName", "mobile", "department", "title", "bio"];
   const keys = Object.keys(data);
 
   const disallowed = keys.filter((k) => !allowedProfileFields.includes(k));
@@ -88,11 +89,26 @@ const validateListQuery = (query = {}) => {
   };
 };
 
+const validateEmployeeId = (employeeId) => {
+  const normalizedEmployeeId = String(employeeId || "").trim();
+
+  if (!normalizedEmployeeId) {
+    throw createValidationError("Employee ID is required.");
+  }
+
+  if (!EMPLOYEE_ID_REGEX.test(normalizedEmployeeId)) {
+    throw createValidationError("Employee ID may contain only letters, numbers, periods, hyphens, and underscores.");
+  }
+
+  return normalizedEmployeeId;
+};
+
 module.exports = {
   validateCreateUser,
   validateUpdateUser,
   validateStatusUpdate,
   validateProfileUpdate,
+  validateEmployeeId,
   validateListQuery,
   createValidationError,
   ALLOWED_STATUSES,

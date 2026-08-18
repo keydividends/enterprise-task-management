@@ -1,4 +1,4 @@
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailPattern = /^(?=.{1,254}$)[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
 const passwordPolicy = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 const createValidationError = (message, field = "general") => {
@@ -11,7 +11,7 @@ const createValidationError = (message, field = "general") => {
 
 const validateLoginInput = ({ email, password }) => {
   if (!email || !emailPattern.test(String(email).trim())) {
-    throw createValidationError("Email is required and must be valid.", "email");
+    throw createValidationError("Please enter a valid email address.", "email");
   }
 
   if (!password || !String(password).trim()) {
@@ -31,7 +31,7 @@ const validateRegisterInput = ({ firstName, lastName, email, password, confirmPa
   }
 
   if (!email || !emailPattern.test(String(email).trim())) {
-    throw createValidationError("Email is required and must be valid.", "email");
+    throw createValidationError("Please enter a valid email address.", "email");
   }
 
   if (!password || !String(password).trim()) {
@@ -51,7 +51,7 @@ const validateRegisterInput = ({ firstName, lastName, email, password, confirmPa
 
 const validateForgotPasswordInput = ({ email }) => {
   if (!email || !emailPattern.test(String(email).trim())) {
-    throw createValidationError("Email is required and must be valid.", "email");
+    throw createValidationError("Please enter a valid email address.", "email");
   }
 
   return true;

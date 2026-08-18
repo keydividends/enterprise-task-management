@@ -4,9 +4,9 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import userService from '../services/userService';
 
 export const ProfilePage = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, setUser, refreshUser } = useAuth();
   const [profile, setProfile] = useState({
-    customId: '',
+    employeeId: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -16,6 +16,7 @@ export const ProfilePage = () => {
     bio: '',
     avatarUrl: '',
   });
+  const [savedProfile, setSavedProfile] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,11 +29,11 @@ export const ProfilePage = () => {
       try {
         const res = await userService.getMyProfile();
         if (res && res.data) {
-          const rawCustomId = res.data.customId || res.data.user_id || authUser?.customId || authUser?.user_id;
-          const fallbackCustomId = res.data.email ? `EMP-${res.data.email.split('@')[0]}` : 'EMP-001';
+          const rawEmployeeId = res.data.employeeId || authUser?.employeeId;
+          const fallbackEmployeeId = res.data.email ? `EMP-${res.data.email.split('@')[0]}` : 'EMP-001';
 
-          setProfile({
-            customId: rawCustomId || fallbackCustomId,
+          const initialData = {
+            employeeId: rawEmployeeId || fallbackEmployeeId,
             firstName: res.data.firstName || '',
             lastName: res.data.lastName || '',
             email: res.data.email || authUser?.email || '',
@@ -41,21 +42,29 @@ export const ProfilePage = () => {
             title: res.data.title || '',
             bio: res.data.bio || '',
             avatarUrl: res.data.avatarUrl || '',
-          });
+          };
+          setProfile(initialData);
+          setSavedProfile(initialData);
         }
       } catch {
         if (authUser) {
-          const rawCustomId = authUser.customId || authUser.user_id;
-          const fallbackCustomId = authUser.email ? `EMP-${authUser.email.split('@')[0]}` : 'EMP-001';
+          const rawEmployeeId = authUser.employeeId;
+          const fallbackEmployeeId = authUser.email ? `EMP-${authUser.email.split('@')[0]}` : 'EMP-001';
 
-          setProfile((prev) => ({
-            ...prev,
-            customId: rawCustomId || fallbackCustomId,
+          const initialData = {
+            employeeId: rawEmployeeId || fallbackEmployeeId,
             firstName: authUser.firstName || '',
             lastName: authUser.lastName || '',
             email: authUser.email || '',
+            mobile: '',
+            department: '',
+            title: '',
+            bio: '',
+            avatarUrl: '',
             role: authUser.role || 'USER',
-          }));
+          };
+          setProfile(initialData);
+          setSavedProfile(initialData);
         }
       } finally {
         setLoading(false);
@@ -70,13 +79,37 @@ export const ProfilePage = () => {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.target.blur();
+      handleSubmit(e);
+    } else if (e.key === 'Escape') {
+      if (savedProfile && e.target.name) {
+        setProfile((prev) => ({
+          ...prev,
+          [e.target.name]: savedProfile[e.target.name] ?? prev[e.target.name],
+        }));
+      }
+      e.target.blur();
+    }
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setSaving(true);
     setMessage(null);
     setError(null);
     try {
-      await userService.updateMyProfile({
+      if (savedProfile && profile.employeeId && profile.employeeId !== savedProfile.employeeId) {
+        const empRes = await userService.updateMyEmployeeId(profile.employeeId);
+        if (empRes?.data?.employeeId) {
+          setProfile((prev) => ({ ...prev, employeeId: empRes.data.employeeId }));
+        }
+      }
+
+      const res = await userService.updateMyProfile({
+        employeeId: profile.employeeId,
         firstName: profile.firstName,
         lastName: profile.lastName,
         mobile: profile.mobile,
@@ -84,6 +117,25 @@ export const ProfilePage = () => {
         title: profile.title,
         bio: profile.bio,
       });
+
+      const updatedData = res?.data || profile;
+      setSavedProfile((prev) => ({ ...prev, ...updatedData, employeeId: profile.employeeId }));
+      if (setUser) {
+        setUser((prev) => (prev ? {
+          ...prev,
+          employeeId: profile.employeeId,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          fullName: `${profile.firstName} ${profile.lastName}`.trim(),
+        } : null));
+      }
+      if (refreshUser) {
+        try {
+          await refreshUser();
+        } catch {
+          // ignore background refresh errors
+        }
+      }
       setMessage('Employee profile updated successfully!');
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to update profile');
@@ -96,7 +148,7 @@ export const ProfilePage = () => {
     return <div style={{ padding: '48px', textAlign: 'center', opacity: 0.7 }}>Loading your profile...</div>;
   }
 
-  const displayEmployeeId = profile.customId || (profile.email ? `EMP-${profile.email.split('@')[0]}` : 'EMP-001');
+  const displayEmployeeId = profile.employeeId || (profile.email ? `EMP-${profile.email.split('@')[0]}` : 'EMP-001');
 
   return (
     <div className="profile-page" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
@@ -170,20 +222,23 @@ export const ProfilePage = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div className="form-group">
-            <label htmlFor="employee_id_display" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            <label htmlFor="profile_employeeId" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
               Employee ID
             </label>
             <input
-              id="employee_id_display"
+              id="profile_employeeId"
               type="text"
-              value={displayEmployeeId}
-              disabled
+              name="employeeId"
+              value={profile.employeeId}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              placeholder="e.g. EMP-001"
               style={{
                 width: '100%',
                 padding: '10px 12px',
                 borderRadius: '8px',
                 border: '1px solid var(--border-color, #e2e8f0)',
-                background: 'var(--bg-disabled, #f1f5f9)',
+                background: 'var(--bg-input, #ffffff)',
                 fontFamily: 'monospace',
                 fontWeight: 600,
                 color: '#4f46e5',
@@ -216,6 +271,7 @@ export const ProfilePage = () => {
               name="firstName"
               value={profile.firstName}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -234,6 +290,7 @@ export const ProfilePage = () => {
               name="lastName"
               value={profile.lastName}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -252,6 +309,7 @@ export const ProfilePage = () => {
               name="mobile"
               value={profile.mobile}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               placeholder="+1 (555) 000-0000"
               style={{
                 width: '100%',
@@ -271,6 +329,7 @@ export const ProfilePage = () => {
               name="department"
               value={profile.department}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               placeholder="e.g. Employee Management"
               style={{
                 width: '100%',
@@ -290,6 +349,7 @@ export const ProfilePage = () => {
               name="title"
               value={profile.title}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               placeholder="e.g. Lead Engineer"
               style={{
                 width: '100%',

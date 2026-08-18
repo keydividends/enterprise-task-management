@@ -70,12 +70,12 @@ test("createUser retains the associate manager ID", async () => {
     {
       firstName: "Managed",
       email: `managed.test.${Date.now()}@etms.com`,
-      managerCustomId: "MGR-001",
+      managerEmployeeId: "MGR-001",
     },
     adminUser
   );
 
-  assert.equal(created.managerCustomId, "MGR-001");
+  assert.equal(created.managerEmployeeId, "MGR-001");
 });
 
 test("createUser accepts the legacy manager ID field", async () => {
@@ -88,7 +88,7 @@ test("createUser accepts the legacy manager ID field", async () => {
     adminUser
   );
 
-  assert.equal(created.managerCustomId, "MGR-002");
+  assert.equal(created.managerEmployeeId, "MGR-002");
 });
 
 test("createUser rejects duplicate email", async () => {

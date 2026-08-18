@@ -84,7 +84,7 @@ const ProjectDetailsPage = () => {
               <div><span>Project key</span><strong>{project.key}</strong></div>
               <div><span>Status</span><strong>{project.status}</strong></div>
               <div><span>Priority</span><strong>{project.priority}</strong></div>
-              <div><span>Manager</span><strong>{project.projectManagerCustomId || project.projectManagerId || 'Unassigned'}</strong></div>
+              <div><span>Manager</span><strong>{project.projectManagerEmployeeId || project.projectManagerId || 'Unassigned'}</strong></div>
               <div><span>Start date</span><strong>{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</strong></div>
               <div><span>Target end date</span><strong>{project.targetEndDate ? new Date(project.targetEndDate).toLocaleDateString() : 'Not set'}</strong></div>
             </div>

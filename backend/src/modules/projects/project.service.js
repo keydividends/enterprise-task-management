@@ -58,8 +58,8 @@ const resolveProjectManagerId = async (managerReference) => {
   const reference = String(managerReference || "").trim();
   if (!reference) return null;
 
-  // Project forms can use either a user's MongoDB ID or their employee/custom ID.
-  let manager = await userRepository.findByCustomId(reference);
+  // Project forms can use either a user's MongoDB ID or their Employee ID.
+  let manager = await userRepository.findByEmployeeId(reference);
   if (!manager && isValidObjectId(reference)) {
     manager = await userRepository.findById(reference);
   }
@@ -79,10 +79,10 @@ const toProjectDTOWithManager = async (project) => {
     const manager = await userRepository.findById(dto.projectManagerId);
     return {
       ...dto,
-      projectManagerCustomId: manager?.customId || null,
+      projectManagerEmployeeId: manager?.employeeId || null,
     };
   } catch {
-    return { ...dto, projectManagerCustomId: null };
+    return { ...dto, projectManagerEmployeeId: null };
   }
 };
 
@@ -228,7 +228,7 @@ const listProjectMembers = async (projectId, query = {}, context = {}) => {
           const user = await userRepository.findById(uid);
           if (user) {
             member.userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || null;
-            member.employeeId = user.customId || null;
+            member.employeeId = user.employeeId || null;
           }
         }
       } catch { /* skip */ }
@@ -261,19 +261,19 @@ const addProjectMember = async (projectId, payload, context = {}) => {
 
   const memberInput = validateProjectMemberInput(payload);
 
-  // resolve customId → real MongoDB _id, reject if not found
+  // resolve employeeId → real MongoDB _id, reject if not found
   let resolvedUserId = null;
   let resolvedUserName = null;
   let resolvedEmployeeId = null;
 
-  const userByCustomId = await userRepository.findByCustomId(memberInput.employeeId);
-  if (userByCustomId) {
-    if (userByCustomId.isDeleted || userByCustomId.status === "DISABLED") {
+  const userByEmployeeId = await userRepository.findByEmployeeId(memberInput.employeeId);
+  if (userByEmployeeId) {
+    if (userByEmployeeId.isDeleted || userByEmployeeId.status === "DISABLED") {
       throw createError("USER_NOT_FOUND", "Member must be an active employee.", 404, "employeeId");
     }
-    resolvedUserId = String(userByCustomId._id || userByCustomId.id);
-    resolvedUserName = [userByCustomId.firstName, userByCustomId.lastName].filter(Boolean).join(' ') || userByCustomId.email || null;
-    resolvedEmployeeId = userByCustomId.customId || null;
+    resolvedUserId = String(userByEmployeeId._id || userByEmployeeId.id);
+    resolvedUserName = [userByEmployeeId.firstName, userByEmployeeId.lastName].filter(Boolean).join(' ') || userByEmployeeId.email || null;
+    resolvedEmployeeId = userByEmployeeId.employeeId || null;
   } else {
     throw createError("USER_NOT_FOUND", "No employee found with that employee ID.", 404, "employeeId");
   }
@@ -310,7 +310,7 @@ const removeProjectMember = async (projectId, employeeId, context = {}) => {
   }
   await assertProjectManagementAccess(project, context, "PROJECT_MANAGE_MEMBERS");
 
-  const user = await userRepository.findByCustomId(String(employeeId).trim());
+  const user = await userRepository.findByEmployeeId(String(employeeId).trim());
   if (!user) {
     throw createError("PROJECT_MEMBER_NOT_FOUND", "Project member not found.", 404);
   }

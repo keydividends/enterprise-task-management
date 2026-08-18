@@ -22,7 +22,7 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
         description: initialValues.description || '',
         status: initialValues.status || 'PLANNING',
         priority: initialValues.priority || 'MEDIUM',
-        projectManagerId: initialValues.projectManagerCustomId || initialValues.projectManagerId || '',
+        projectManagerId: initialValues.projectManagerEmployeeId || initialValues.projectManagerId || '',
         startDate: initialValues.startDate ? initialValues.startDate.slice(0, 10) : '',
         targetEndDate: initialValues.targetEndDate ? initialValues.targetEndDate.slice(0, 10) : '',
       });

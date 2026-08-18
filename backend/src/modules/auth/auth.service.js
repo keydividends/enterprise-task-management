@@ -150,7 +150,7 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
     console.log("[auth:register] registration request", {
       incomingEmail: String(email),
       normalizedEmail,
-      assignedRole: "manager",
+      assignedRole: "MANAGER",
     });
   }
 
@@ -164,7 +164,7 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
     lastName,
     email: normalizedEmail,
     passwordHash: await hashPassword(password),
-    role: "manager",
+    role: "MANAGER",
     permissions: [
       "PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE",
       "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW",

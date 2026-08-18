@@ -153,6 +153,19 @@ const updateMyProfile = async (req, res, next) => {
   }
 };
 
+const updateMyEmployeeId = async (req, res, next) => {
+  try {
+    const user = await userService.updateMyEmployeeId(req.user, req.body.employeeId);
+    res.status(200).json({
+      success: true,
+      message: "Employee ID updated",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const uploadAvatar = async (req, res, next) => {
   try {
     const avatarUrl = req.file ? `/uploads/avatars/${req.file.filename}` : (req.body.avatarUrl || "/uploads/users/avatar.jpg");
@@ -229,9 +242,9 @@ const getUserWorkload = async (req, res, next) => {
   }
 };
 
-const getUserByCustomId = async (req, res, next) => {
+const getUserByEmployeeId = async (req, res, next) => {
   try {
-    const user = await userService.getUserByCustomId(req.params.customId);
+    const user = await userService.getUserByEmployeeId(req.params.employeeId);
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     next(error);
@@ -251,11 +264,12 @@ module.exports = {
   getUserProfile,
   getMyProfile,
   updateMyProfile,
+  updateMyEmployeeId,
   uploadAvatar,
   removeAvatar,
   searchUsers,
   getUserProjects,
   getUserTeams,
   getUserWorkload,
-  getUserByCustomId,
+  getUserByEmployeeId,
 };

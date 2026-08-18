@@ -19,9 +19,10 @@ const canSearchProjectMembers = (req, res, next) => {
 router.get("/search", authenticate, canSearchProjectMembers, userController.searchUsers);
 router.get("/me/profile", authenticate, userController.getMyProfile);
 router.put("/me/profile", authenticate, userController.updateMyProfile);
+router.patch("/me/employee-id", authenticate, userController.updateMyEmployeeId);
 router.post("/me/avatar", authenticate, userController.uploadAvatar);
 router.delete("/me/avatar", authenticate, userController.removeAvatar);
-router.get("/lookup/:customId", authenticate, authorize("USER_VIEW"), userController.getUserByCustomId);
+router.get("/lookup/:employeeId", authenticate, authorize("USER_VIEW"), userController.getUserByEmployeeId);
 
 // Collection routes
 router.get("/", authenticate, authorize("USER_VIEW"), userController.getUsers);

@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, Mail, Us
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
+const emailPattern = /^(?=.{1,254}$)[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+
 const RegisterPage = () => {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -11,7 +13,6 @@ const RegisterPage = () => {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
-    role: 'manager',
     email: '',
     password: '',
     confirmPassword: '',
@@ -42,12 +43,7 @@ const RegisterPage = () => {
       return;
     }
 
-    if (!form.role) {
-      setError('Please select a role.');
-      return;
-    }
-
-    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+    if (!emailPattern.test(form.email.trim())) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -66,10 +62,11 @@ const RegisterPage = () => {
 
     try {
       await register({
-        ...form,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
       });
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
@@ -106,16 +103,6 @@ const RegisterPage = () => {
               </div>
             </label>
           </div>
-
-          <label className="field-group">
-            <span>Role</span>
-            <div className="input-wrap">
-              <UserRound size={18} />
-              <select id="role" name="role" value={form.role} onChange={handleChange} aria-label="Role" required>
-                <option value="manager">Manager</option>
-              </select>
-            </div>
-          </label>
 
           <label className="field-group">
             <span>Email</span>

@@ -216,7 +216,7 @@ const listProjectMembers = async ({ projectId, page = 1, pageSize = 20, role, st
       const users = await User.find({
         isDeleted: false,
         $or: [
-          { customId: pattern },
+          { employeeId: pattern },
           { email: pattern },
           { firstName: pattern },
           { lastName: pattern },

@@ -61,6 +61,11 @@ export const userService = {
     return response.data;
   },
 
+  async updateMyEmployeeId(employeeId) {
+    const response = await axiosClient.patch('/users/me/employee-id', { employeeId });
+    return response.data;
+  },
+
   async uploadAvatar(formData) {
     const response = await axiosClient.post('/users/me/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -68,8 +73,8 @@ export const userService = {
     return response.data;
   },
 
-  async getUserByCustomId(customId) {
-    const response = await axiosClient.get(`/users/lookup/${customId}`);
+  async getUserByEmployeeId(employeeId) {
+    const response = await axiosClient.get(`/users/lookup/${employeeId}`);
     return response.data;
   },
 

@@ -2,28 +2,27 @@ import { useCallback, useEffect, useState } from 'react';
 import userService from '../services/userService';
 
 // Helper function to ensure every user has a Custom Employee ID
-const getEmployeeCustomId = (u) => {
-  if (u.customId) return u.customId;
+const getEmployeeEmployeeId = (u) => {
+  if (u.employeeId) return u.employeeId;
   if (u.email) return `EMP-${u.email.split('@')[0]}`;
   const rawId = String(u.id || u._id || '001');
   return `EMP-${rawId.slice(-4)}`;
 };
 
 const normalizeUserObj = (u) => {
-  const customId = getEmployeeCustomId(u);
-  const managerCustomId =
-    u.managerCustomId !== undefined && u.managerCustomId !== null
-      ? u.managerCustomId
+  const employeeId = getEmployeeEmployeeId(u);
+  const managerEmployeeId =
+    u.managerEmployeeId !== undefined && u.managerEmployeeId !== null
+      ? u.managerEmployeeId
       : u.managerId !== undefined && u.managerId !== null
       ? u.managerId
       : '';
 
   return {
     ...u,
-    customId,
-    user_id: customId,
-    employeeId: customId,
-    managerCustomId,
+    employeeId,
+    employeeId: employeeId,
+    managerEmployeeId,
   };
 };
 
@@ -31,7 +30,7 @@ const normalizeUserObj = (u) => {
 const INITIAL_MOCK_USERS = [
   {
     id: 'user_admin_1',
-    customId: 'ADMIN-001',
+    employeeId: 'ADMIN-001',
     firstName: 'Admin',
     lastName: 'User',
     fullName: 'Admin Employee',
@@ -40,12 +39,12 @@ const INITIAL_MOCK_USERS = [
     department: 'Management',
     title: 'System Administrator',
     status: 'ACTIVE',
-    managerCustomId: '',
+    managerEmployeeId: '',
     createdAt: '2026-01-15T08:00:00.000Z',
   },
   {
     id: 'user_mgr_1',
-    customId: 'MGR-001',
+    employeeId: 'MGR-001',
     firstName: 'Sarah',
     lastName: 'Manager',
     fullName: 'Sarah Manager',
@@ -54,12 +53,12 @@ const INITIAL_MOCK_USERS = [
     department: 'Engineering',
     title: 'Engineering Manager',
     status: 'ACTIVE',
-    managerCustomId: 'ADMIN-001',
+    managerEmployeeId: 'ADMIN-001',
     createdAt: '2026-01-20T09:00:00.000Z',
   },
   {
     id: 'user_demo_1',
-    customId: 'EMP-001',
+    employeeId: 'EMP-001',
     firstName: 'Demo',
     lastName: 'Employee',
     fullName: 'Demo Employee',
@@ -68,12 +67,12 @@ const INITIAL_MOCK_USERS = [
     department: 'Engineering',
     title: 'Software Engineer',
     status: 'ACTIVE',
-    managerCustomId: 'MGR-001',
+    managerEmployeeId: 'MGR-001',
     createdAt: '2026-02-01T10:30:00.000Z',
   },
   {
     id: 'user_disabled_1',
-    customId: 'EMP-002',
+    employeeId: 'EMP-002',
     firstName: 'Disabled',
     lastName: 'Employee',
     fullName: 'Disabled Employee',
@@ -82,7 +81,7 @@ const INITIAL_MOCK_USERS = [
     department: 'QA',
     title: 'Tester',
     status: 'DISABLED',
-    managerCustomId: 'MGR-001',
+    managerEmployeeId: 'MGR-001',
     createdAt: '2026-02-10T14:15:00.000Z',
   },
 ].map(normalizeUserObj);
@@ -129,8 +128,8 @@ export const useUsers = (initialParams = {}) => {
             u.lastName.toLowerCase().includes(q) ||
             u.email.toLowerCase().includes(q) ||
             u.department.toLowerCase().includes(q) ||
-            (u.customId && u.customId.toLowerCase().includes(q)) ||
-            (u.managerCustomId && u.managerCustomId.toLowerCase().includes(q))
+            (u.employeeId && u.employeeId.toLowerCase().includes(q)) ||
+            (u.managerEmployeeId && u.managerEmployeeId.toLowerCase().includes(q))
         );
       }
       if (statusFilter) {
@@ -174,12 +173,12 @@ export const useUsers = (initialParams = {}) => {
     try {
       const res = await userService.updateUser(userId, updateData);
       const updated = normalizeUserObj(res.data || updateData);
-      setUsers((prev) => prev.map((u) => ((u.id === userId || u.customId === userId) ? { ...u, ...updated } : u)));
+      setUsers((prev) => prev.map((u) => ((u.id === userId || u.employeeId === userId) ? { ...u, ...updated } : u)));
       return updated;
     } catch (err) {
       console.warn('API error during updateUser, applying local edit state:', err.message);
       const updatedLocally = normalizeUserObj(updateData);
-      setUsers((prev) => prev.map((u) => ((u.id === userId || u.customId === userId) ? { ...u, ...updatedLocally } : u)));
+      setUsers((prev) => prev.map((u) => ((u.id === userId || u.employeeId === userId) ? { ...u, ...updatedLocally } : u)));
       return updatedLocally;
     } finally {
       setLoading(false);
@@ -195,9 +194,9 @@ export const useUsers = (initialParams = {}) => {
       } else {
         await userService.activateUser(userId);
       }
-      setUsers((prev) => prev.map((u) => ((u.id === userId || u.customId === userId) ? { ...u, status: nextStatus } : u)));
+      setUsers((prev) => prev.map((u) => ((u.id === userId || u.employeeId === userId) ? { ...u, status: nextStatus } : u)));
     } catch (err) {
-      setUsers((prev) => prev.map((u) => ((u.id === userId || u.customId === userId) ? { ...u, status: nextStatus } : u)));
+      setUsers((prev) => prev.map((u) => ((u.id === userId || u.employeeId === userId) ? { ...u, status: nextStatus } : u)));
     } finally {
       setLoading(false);
     }
@@ -207,9 +206,9 @@ export const useUsers = (initialParams = {}) => {
     setLoading(true);
     try {
       await userService.deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId && u.customId !== userId));
+      setUsers((prev) => prev.filter((u) => u.id !== userId && u.employeeId !== userId));
     } catch (err) {
-      setUsers((prev) => prev.filter((u) => u.id !== userId && u.customId !== userId));
+      setUsers((prev) => prev.filter((u) => u.id !== userId && u.employeeId !== userId));
     } finally {
       setLoading(false);
     }

@@ -16,7 +16,7 @@ const ProjectCard = ({ project, onDelete, canUpdate = false, canDelete = false }
         <div className="task-meta project-card-meta">
           <span><Layers size={14} /> {project.key}</span>
           <span><Clock size={14} /> {project.targetEndDate ? new Date(project.targetEndDate).toLocaleDateString() : 'No deadline'}</span>
-          <span><ShieldCheck size={14} /> Manager: {project.projectManagerCustomId || project.projectManagerId || 'Unassigned'}</span>
+          <span><ShieldCheck size={14} /> Manager: {project.projectManagerEmployeeId || project.projectManagerId || 'Unassigned'}</span>
         </div>
       </div>
       <div className="button-row project-card-actions">

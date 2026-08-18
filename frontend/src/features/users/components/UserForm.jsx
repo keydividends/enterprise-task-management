@@ -13,8 +13,8 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     bio: '',
     role: '',
     status: 'ACTIVE',
-    customId: '',
-    managerCustomId: '',
+    employeeId: '',
+    managerEmployeeId: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -32,8 +32,8 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         bio: initialValues.bio || '',
         role: initialValues.role || '',
         status: initialValues.status || 'ACTIVE',
-        customId: initialValues.customId || initialValues.user_id || '',
-        managerCustomId: initialValues.managerCustomId || initialValues.managerId || '',
+        employeeId: initialValues.employeeId || '',
+        managerEmployeeId: initialValues.managerEmployeeId || initialValues.managerId || '',
       });
     }
   }, [initialValues]);
@@ -87,10 +87,10 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
     e.preventDefault();
     if (validate()) {
       // `managerId` is retained as a compatibility alias for older API builds.
-      // The canonical field is `managerCustomId`.
+      // The canonical field is `managerEmployeeId`.
       onSubmit({
         ...formData,
-        managerId: formData.managerCustomId,
+        managerId: formData.managerEmployeeId,
       });
     }
   };
@@ -325,8 +325,8 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
           <input
             id="employee_custom_id"
             type="text"
-            name="customId"
-            value={formData.customId}
+            name="employeeId"
+            value={formData.employeeId}
             onChange={handleChange}
             placeholder="e.g. EMP-042 or john.dev"
             disabled={isEditing}
@@ -334,25 +334,25 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
               width: '100%',
               padding: '10px 12px',
               borderRadius: '8px',
-              border: errors.customId ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+              border: errors.employeeId ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
               background: isEditing ? 'var(--bg-disabled, #f1f5f9)' : 'var(--bg-input, #ffffff)',
               fontFamily: 'monospace',
             }}
           />
-          {errors.customId && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.customId}</span>}
+          {errors.employeeId && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.employeeId}</span>}
         </div>
 
         <div className="form-group">
-          <label htmlFor="managerCustomId" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+          <label htmlFor="managerEmployeeId" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
             Associate Manager ID
           </label>
           <div style={{ position: 'relative' }}>
             <UserCheck size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
             <input
-              id="managerCustomId"
+              id="managerEmployeeId"
               type="text"
-              name="managerCustomId"
-              value={formData.managerCustomId}
+              name="managerEmployeeId"
+              value={formData.managerEmployeeId}
               onChange={handleChange}
               placeholder="e.g. MGR-001 or ADMIN-001"
               style={{
