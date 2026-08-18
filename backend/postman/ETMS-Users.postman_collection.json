@@ -151,7 +151,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"firstName\": \"Raheema\",\n  \"lastName\": \"Shariff\",\n  \"mobile\": \"9876543210\",\n  \"department\": \"Engineering\",\n  \"title\": \"User Management Lead\",\n  \"bio\": \"Module owner for ETMS User Management.\"\n}"
+          "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"mobile\": \"9876543210\",\n  \"department\": \"Engineering\",\n  \"title\": \"User Management Lead\",\n  \"bio\": \"Module owner for ETMS User Management.\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/v1/users/me/profile",

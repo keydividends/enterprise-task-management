@@ -80,7 +80,7 @@ const updateRole = async (roleId, updateData) => {
   }
 
   // Prevent updating protected system roles
-  if (role.isSystem && role.name !== "USER") {
+  if (role.isSystem) {
     const error = new Error("System roles cannot be modified");
     error.code = "SYSTEM_ROLE_PROTECTED";
     error.statusCode = 403;
@@ -116,9 +116,8 @@ const deleteRole = async (roleId) => {
     throw error;
   }
 
-  // Prevent deleting protected system roles.
-  // Allow deleting the seeded USER role while protecting ADMIN and other system roles.
-  if (role.isSystem && role.name !== "USER") {
+  // Document-defined roles are system roles and cannot be deleted.
+  if (role.isSystem) {
     const error = new Error("System roles cannot be deleted");
     error.code = "SYSTEM_ROLE_PROTECTED";
     error.statusCode = 403;
@@ -197,7 +196,7 @@ const updateRolePermissions = async (roleId, permissionIds) => {
   }
 
   // Prevent updating protected system roles
-  if (role.isSystem && role.name !== "USER") {
+  if (role.isSystem) {
     const error = new Error("System roles cannot be modified");
     error.code = "SYSTEM_ROLE_PROTECTED";
     error.statusCode = 403;

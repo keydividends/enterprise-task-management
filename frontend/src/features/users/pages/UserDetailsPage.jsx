@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { User, Mail, Phone, Building, Briefcase, Calendar, Shield, Edit3, ArrowLeft, CheckCircle2, Clock, Folder, Users as UsersIcon } from 'lucide-react';
+import { User, Mail, Phone, Building, Briefcase, Calendar, Shield, Edit3, ArrowLeft, CheckCircle2, Clock, Folder, Users as UsersIcon, UserCheck } from 'lucide-react';
 import userService from '../services/userService';
 import { UserStatusBadge } from '../components/UserStatusBadge';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 export const UserDetailsPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   const [user, setUser] = useState(null);
   const [workload, setWorkload] = useState(null);
@@ -68,6 +70,10 @@ export const UserDetailsPage = () => {
   }
 
   const displayEmployeeId = user.customId || user.employeeId || user.user_id || (user.email ? `EMP-${user.email.split('@')[0]}` : 'EMP-001');
+  const displayManagerId = user.managerCustomId || 'Not Assigned';
+
+  // Rule 3: Only Managers and Admins can edit employee profiles
+  const canEdit = currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER' || currentUser?.permissions?.includes('USER_UPDATE');
 
   return (
     <div className="user-details-page" style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -121,9 +127,11 @@ export const UserDetailsPage = () => {
               <p style={{ margin: '4px 0 0 0', opacity: 0.7, fontSize: '15px' }}>
                 {user.title || 'Team Member'} {user.department ? `• ${user.department}` : ''}
               </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '13px', opacity: 0.8, fontFamily: 'monospace', userSelect: 'all' }}>
-                <strong>Employee ID:</strong> {displayEmployeeId}
-              </p>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '6px', fontSize: '13px', opacity: 0.8, fontFamily: 'monospace' }}>
+                <span><strong>Employee ID:</strong> {displayEmployeeId}</span>
+                {/* Rule 2: Show Associate Manager ID */}
+                <span><strong>Associate Manager ID:</strong> {displayManagerId}</span>
+              </div>
               <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '13px', opacity: 0.8 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <Mail size={14} /> {user.email}
@@ -140,24 +148,27 @@ export const UserDetailsPage = () => {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate(`/users/${user.id || user.customId}/edit`)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '10px 18px',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
-              color: '#ffffff',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <Edit3 size={16} /> Edit Profile
-          </button>
+          {/* Rule 3: Only Managers and Admins can edit profile */}
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => navigate(`/users/${user.id || user.customId}/edit`)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
+                color: '#ffffff',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <Edit3 size={16} /> Edit Profile
+            </button>
+          )}
         </div>
       </div>
 

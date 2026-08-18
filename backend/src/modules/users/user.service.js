@@ -48,6 +48,11 @@ const getUserById = async (userId) => {
 };
 
 const createUser = async (data = {}, currentUser = null) => {
+  // Allow Admins and Managers to create employees
+  if (currentUser && currentUser.role !== "ADMIN" && currentUser.role !== "MANAGER" && !currentUser.permissions?.includes("USER_CREATE")) {
+    throw createUserError("FORBIDDEN", "Only Administrators and Managers are allowed to create employees.", 403);
+  }
+
   validateCreateUser(data);
 
   const existing = await userRepository.findByEmail(data.email);
@@ -70,8 +75,10 @@ const createUser = async (data = {}, currentUser = null) => {
     bio: data.bio || "",
     customId: data.customId ? String(data.customId).trim() : null,
     role: String(data.role).trim().toUpperCase(),
+    managerCustomId: data.managerCustomId ? String(data.managerCustomId).trim() : "",
+    role: data.role || "INTERN",
     roleId: data.roleId || null,
-    permissions: data.permissions || ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW"],
+    permissions: data.permissions || ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
     status: data.status || "ACTIVE",
   });
 
@@ -81,6 +88,14 @@ const createUser = async (data = {}, currentUser = null) => {
 const updateUser = async (userId, updateData = {}, currentUser = null) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
+  }
+
+  // Restrict editing employee profiles strictly to Admins and Managers (unless self-updating)
+  if (currentUser && String(currentUser.id) !== String(userId)) {
+    const isAllowed = currentUser.role === "ADMIN" || currentUser.role === "MANAGER" || currentUser.permissions?.includes("USER_UPDATE");
+    if (!isAllowed) {
+      throw createUserError("FORBIDDEN", "Only Administrators and Managers are permitted to edit employee profiles.", 403);
+    }
   }
 
   validateUpdateUser(updateData);

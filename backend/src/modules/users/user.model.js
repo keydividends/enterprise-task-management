@@ -64,9 +64,14 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    managerCustomId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     role: {
       type: String,
-      default: "USER",
+      default: "INTERN",
     },
     roleId: {
       type: String,
@@ -74,7 +79,7 @@ const userSchema = new mongoose.Schema(
     },
     permissions: {
       type: [String],
-      default: ["USER_VIEW", "PROJECT_VIEW", "TASK_VIEW", "TEAM_VIEW"],
+      default: ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
     },
     status: {
       type: String,

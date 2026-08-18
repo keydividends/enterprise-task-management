@@ -7,12 +7,12 @@ const taskCommentRouter = express.Router({ mergeParams: true });
 
 taskCommentRouter.use(authenticate);
 taskCommentRouter.get("/", authorize("TASK_VIEW"), commentController.listComments);
-taskCommentRouter.post("/", authorize("TASK_VIEW"), commentController.createComment);
+taskCommentRouter.post("/", authorize("COMMENT_CREATE"), commentController.createComment);
 
 const commentRouter = express.Router();
 
 commentRouter.use(authenticate);
-commentRouter.patch("/:commentId", authorize("TASK_VIEW"), commentController.editComment);
-commentRouter.delete("/:commentId", authorize("TASK_VIEW"), commentController.deleteComment);
+commentRouter.patch("/:commentId", authorize("COMMENT_UPDATE"), commentController.editComment);
+commentRouter.delete("/:commentId", authorize("COMMENT_DELETE"), commentController.deleteComment);
 
 module.exports = { taskCommentRouter, commentRouter };

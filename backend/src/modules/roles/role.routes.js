@@ -3,38 +3,27 @@ const authenticate = require("../../middleware/authenticate");
 const authorize = require("../../middleware/authorize");
 const roleController = require("./role.controller");
 
-const ensureAdmin = (req, res, next) => {
-  if (req.user?.role === "ADMIN") {
-    return next();
-  }
-
-  const error = new Error("Admin access required.");
-  error.code = "PERMISSION_DENIED";
-  error.statusCode = 403;
-  return next(error);
-};
-
 const router = express.Router();
 
 // Role Routes
 router.post(
   "/",
   authenticate,
-  ensureAdmin,
+  authorize("ROLE_CREATE"),
   roleController.createRole
 );
-router.get("/", authenticate, roleController.listRoles);
-router.get("/:roleId", authenticate, roleController.getRoleById);
+router.get("/", authenticate, authorize("ROLE_VIEW"), roleController.listRoles);
+router.get("/:roleId", authenticate, authorize("ROLE_VIEW"), roleController.getRoleById);
 router.patch(
   "/:roleId",
   authenticate,
-  ensureAdmin,
+  authorize("ROLE_UPDATE"),
   roleController.updateRole
 );
 router.delete(
   "/:roleId",
   authenticate,
-  ensureAdmin,
+  authorize("ROLE_DELETE"),
   roleController.deleteRole
 );
 
@@ -42,12 +31,13 @@ router.delete(
 router.get(
   "/:roleId/permissions",
   authenticate,
+  authorize("ROLE_VIEW"),
   roleController.getRolePermissions
 );
 router.put(
   "/:roleId/permissions",
   authenticate,
-  ensureAdmin,
+  authorize("ROLE_UPDATE"),
   roleController.updateRolePermissions
 );
 

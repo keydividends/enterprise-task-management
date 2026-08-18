@@ -29,12 +29,13 @@ const permissionSchema = new mongoose.Schema(
         "NOTIFICATION",
         "ATTACHMENT",
         "COMMENT",
+        "AUDIT",
       ],
       required: true,
     },
     category: {
       type: String,
-      enum: ["VIEW", "CREATE", "UPDATE", "DELETE", "MANAGE"],
+      enum: ["VIEW", "CREATE", "UPDATE", "DELETE", "MANAGE", "EXPORT"],
       required: true,
     },
     isActive: {
