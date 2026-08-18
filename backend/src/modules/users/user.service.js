@@ -49,11 +49,6 @@ const getUserById = async (userId) => {
 };
 
 const createUser = async (data = {}, currentUser = null) => {
-  // Allow Admins and Managers to create employees
-  if (currentUser && currentUser.role !== "ADMIN" && currentUser.role !== "MANAGER" && !currentUser.permissions?.includes("USER_CREATE")) {
-    throw createUserError("FORBIDDEN", "Only Administrators and Managers are allowed to create employees.", 403);
-  }
-
   validateCreateUser(data);
 
   const existing = await userRepository.findByEmail(data.email);
@@ -119,7 +114,12 @@ const updateUser = async (userId, updateData = {}, currentUser = null) => {
     }
   }
 
-  const updatedUser = await userRepository.updateUser(userId, updateData);
+  const normalizedUpdate = { ...updateData };
+  if (updateData.role && updateData.permissions === undefined) {
+    normalizedUpdate.permissions = getEffectivePermissions({ role: updateData.role, permissions: existingUser.permissions });
+  }
+
+  const updatedUser = await userRepository.updateUser(userId, normalizedUpdate);
   return toUserDTO(updatedUser);
 };
 
