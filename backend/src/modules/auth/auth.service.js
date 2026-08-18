@@ -142,15 +142,15 @@ const verifyRefreshToken = (token) => {
   }
 };
 
-const registerUser = async ({ firstName, lastName, email, password, confirmPassword, role }) => {
-  validateRegisterInput({ firstName, lastName, email, password, confirmPassword, role });
+const registerUser = async ({ firstName, lastName, email, password, confirmPassword }) => {
+  validateRegisterInput({ firstName, lastName, email, password, confirmPassword });
 
   const normalizedEmail = String(email).trim().toLowerCase();
   if (process.env.NODE_ENV !== "production") {
     console.log("[auth:register] registration request", {
       incomingEmail: String(email),
       normalizedEmail,
-      role,
+      assignedRole: "manager",
     });
   }
 
@@ -164,7 +164,7 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
     lastName,
     email: normalizedEmail,
     passwordHash: await hashPassword(password),
-    role: "INTERN",
+    role: "manager",
     permissions: [
       "PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE",
       "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW",

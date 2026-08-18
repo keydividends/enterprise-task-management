@@ -119,7 +119,7 @@ const findUserByEmail = async (email) => {
   return user && !user.isDeleted ? user : null;
 };
 
-const createUser = async ({ firstName, lastName, email, passwordHash, googleId, microsoftId, role = "USER", permissions = [] }) => {
+const createUser = async ({ firstName, lastName, email, passwordHash, googleId, microsoftId, role = "manager", permissions = [] }) => {
   const normalizedEmail = normalizeEmail(email);
 
   if (isDbConnected()) {

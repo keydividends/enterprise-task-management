@@ -11,7 +11,7 @@ const RegisterPage = () => {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
-    role: '',
+    role: 'manager',
     email: '',
     password: '',
     confirmPassword: '',
@@ -112,9 +112,7 @@ const RegisterPage = () => {
             <div className="input-wrap">
               <UserRound size={18} />
               <select id="role" name="role" value={form.role} onChange={handleChange} aria-label="Role" required>
-                <option value="" disabled>Select Role</option>
-                <option value="Manager">Manager</option>
-                <option value="Admin">Admin</option>
+                <option value="manager">Manager</option>
               </select>
             </div>
           </label>

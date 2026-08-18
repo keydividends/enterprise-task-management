@@ -21,7 +21,7 @@ const validateLoginInput = ({ email, password }) => {
   return true;
 };
 
-const validateRegisterInput = ({ firstName, lastName, email, password, confirmPassword, role }) => {
+const validateRegisterInput = ({ firstName, lastName, email, password, confirmPassword }) => {
   if (!firstName || !String(firstName).trim()) {
     throw createValidationError("First name is required.", "firstName");
   }
@@ -32,10 +32,6 @@ const validateRegisterInput = ({ firstName, lastName, email, password, confirmPa
 
   if (!email || !emailPattern.test(String(email).trim())) {
     throw createValidationError("Email is required and must be valid.", "email");
-  }
-
-  if (!["Manager", "Admin"].includes(role)) {
-    throw createValidationError("Please select a role.", "role");
   }
 
   if (!password || !String(password).trim()) {

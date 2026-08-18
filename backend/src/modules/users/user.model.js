@@ -71,7 +71,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "INTERN",
+      default: "manager",
     },
     roleId: {
       type: String,
