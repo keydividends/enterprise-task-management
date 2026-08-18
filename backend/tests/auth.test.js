@@ -296,6 +296,7 @@ test('getUserPermissions returns the current permission set', async () => {
     'TEAM_UPDATE',
     'TEAM_DELETE',
     'TEAM_MANAGE_MEMBERS',
+    'PROJECT_MANAGE_MEMBERS',
   ]);
 });
 

@@ -47,7 +47,7 @@ const LoginPage = () => {
       } finally {
         setLoading(false);
       }
-    }).catch(e => {
+    }).catch(() => {
       setError('Microsoft login was cancelled or failed.');
     });
   };

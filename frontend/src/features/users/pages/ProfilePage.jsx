@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Phone, Building, Briefcase, Save, Camera, Check } from 'lucide-react';
+import { Save, Camera, Check } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import userService from '../services/userService';
 
@@ -43,7 +43,7 @@ export const ProfilePage = () => {
             avatarUrl: res.data.avatarUrl || '',
           });
         }
-      } catch (err) {
+      } catch {
         if (authUser) {
           const rawCustomId = authUser.customId || authUser.user_id;
           const fallbackCustomId = authUser.email ? `EMP-${authUser.email.split('@')[0]}` : 'EMP-001';

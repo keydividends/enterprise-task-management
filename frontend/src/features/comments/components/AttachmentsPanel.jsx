@@ -10,6 +10,7 @@ import { resolveDisplayName } from './collaborationUser';
 const AttachmentsPanel = ({ taskId }) => {
   const MAX_ATTACHMENTS_PER_TASK = 15;
   const { user } = useAuth();
+  const canManageAny = ['ADMIN', 'SUPER_ADMIN', 'ORG_ADMIN', 'ORGANIZATION_ADMIN'].includes(String(user?.role || '').toUpperCase());
   const {
     attachments, pagination, loading, uploading, uploadProgress, error,
     fetchAttachments, uploadFile, removeAttachment, downloadAttachment, viewAttachment, renameAttachment,
@@ -63,7 +64,7 @@ const AttachmentsPanel = ({ taskId }) => {
           onRename={renameAttachment}
           resolveDisplayName={resolveDisplayName}
           currentUserId={user?.id || null}
-          canDeleteAny={user?.role === 'ADMIN' || user?.permissions?.includes('ATTACHMENT_DELETE')}
+          canManageAny={canManageAny}
         />
       </div>
 

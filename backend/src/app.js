@@ -9,12 +9,13 @@ const authRoutes = require("./modules/auth/auth.routes");
 const userRoutes = require("./modules/users/user.routes");
 const { taskRouter, projectLabelRouter, projectTaskRouter, checklistItemRouter, checklistRouter } = require("./modules/tasks/task.routes");
 const teamRoutes = require("./modules/teams/team.routes");
-
 const { taskCommentRouter, commentRouter } = require("./modules/comments/comment.routes");
 const { taskAttachmentRouter, attachmentRouter } = require("./modules/attachments/attachment.routes");
 const projectRoutes = require("./modules/projects/project.routes");
 const roleRoutes = require("./modules/roles/role.routes");
 const permissionRoutes = require("./modules/roles/permissions.routes");
+const dashboardRoutes = require("./modules/dashboard/dashboard.routes");
+const reportRoutes = require("./modules/reports/report.routes");
 
 const app = express();
 
@@ -48,6 +49,8 @@ app.use("/api/v1/tasks/:taskId/attachments", taskAttachmentRouter);
 app.use("/api/v1/attachments", attachmentRouter);
 app.use("/api/v1/roles", roleRoutes);
 app.use("/api/v1/permissions", permissionRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/reports", reportRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

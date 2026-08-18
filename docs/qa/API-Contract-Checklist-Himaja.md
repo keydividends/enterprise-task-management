@@ -198,19 +198,19 @@
 
 | Method | Path | Auth | Permission | Status | Notes |
 |--------|------|------|------------|--------|-------|
-| GET | `/api/v1/dashboard/summary` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/dashboard/tasks-by-status` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/dashboard/tasks-by-priority` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/dashboard/team-workload` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/dashboard/widgets` | — | — | ❌ | Backend module not created |
-| PUT | `/api/v1/dashboard/widgets` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/reports/project-progress` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/reports/overdue-tasks` | — | — | ❌ | Backend module not created |
-| GET | `/api/v1/reports/task-history` | — | — | ❌ | Backend module not created |
+| GET | `/api/v1/dashboard/summary` | Bearer | `DASHBOARD_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/dashboard/tasks-by-status` | Bearer | `DASHBOARD_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/dashboard/tasks-by-priority` | Bearer | `DASHBOARD_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/dashboard/team-workload` | Bearer | `DASHBOARD_VIEW` or `REPORT_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/dashboard/widgets` | Bearer | Authenticated | ✅ | Implemented |
+| PUT | `/api/v1/dashboard/widgets` | Bearer | Authenticated | ✅ | Implemented |
+| GET | `/api/v1/reports/projects/progress` | Bearer | `REPORT_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/reports/tasks/status` | Bearer | `REPORT_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/reports/tasks/overdue` | Bearer | `REPORT_VIEW` | ✅ | Implemented |
+| GET | `/api/v1/reports/teams/workload` | Bearer | `REPORT_VIEW` | ✅ | Implemented |
 
-**Frontend:** DashboardPage.jsx exists but uses 100% hardcoded static data — no API calls. → BUG-006  
-**No `frontend/src/features/dashboard/` feature folder exists.** → BUG-006  
-**Status: BLOCKED — Konaiah's module not yet implemented.**
+**Frontend:** Dashboard and reports pages use dashboard/report services and include loading, empty, error, permission, filter, and widget-save states. ✅
+**Status: IMPLEMENTED — runtime regression is pending local Node/dependency compatibility.**
 
 ---
 

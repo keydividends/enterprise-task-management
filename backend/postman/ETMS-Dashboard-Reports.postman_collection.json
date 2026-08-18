@@ -1,0 +1,36 @@
+{
+  "info": {
+    "name": "ETMS Dashboard and Reports",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "accessToken", "value": "mock-token" }
+  ],
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/summary" } },
+        { "name": "My Work", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/my-work" } },
+        { "name": "Tasks by status", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/tasks-by-status" } },
+        { "name": "Tasks by priority", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/tasks-by-priority" } },
+        { "name": "Project Progress", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/project-progress" } },
+        { "name": "Team workload", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/team-workload" } },
+        { "name": "Upcoming Deadlines", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/upcoming-deadlines" } },
+        { "name": "Recent Activity", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/recent-activity" } },
+        { "name": "Widgets (GET)", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/dashboard/widgets" } },
+        { "name": "Widgets (PUT)", "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"widgets\": [{\"widgetType\": \"summary\", \"position\": 0, \"visible\": true}]}" }, "url": "{{baseUrl}}/dashboard/widgets" } }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        { "name": "Project progress", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reports/projects/progress" } },
+        { "name": "Task status", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reports/tasks/status" } },
+        { "name": "Overdue tasks", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reports/tasks/overdue" } },
+        { "name": "Team workload", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reports/teams/workload" } }
+      ]
+    }
+  ]
+}

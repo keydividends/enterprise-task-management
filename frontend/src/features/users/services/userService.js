@@ -46,8 +46,8 @@ export const userService = {
     return response.data;
   },
 
-  async searchUsers(query = '') {
-    const response = await axiosClient.get('/users/search', { params: { q: query } });
+  async searchUsers(query = '', limit = 10) {
+    const response = await axiosClient.get('/users/search', { params: { q: query, limit } });
     return response.data;
   },
 

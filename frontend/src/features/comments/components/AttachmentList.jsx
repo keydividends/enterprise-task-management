@@ -37,7 +37,7 @@ const getFileConfig = (mimeType = '') => {
   return { icon: File, color: 'var(--text-soft)', bg: 'rgba(148,163,184,0.1)' };
 };
 
-const AttachmentList = ({ attachments, onDelete, onDownload, onView, onRename, loading, resolveDisplayName, currentUserId, canDeleteAny }) => {
+const AttachmentList = ({ attachments, onDelete, onDownload, onView, onRename, loading, resolveDisplayName, currentUserId, canManageAny }) => {
   const [renamingId, setRenamingId] = useState(null);
   const [name, setName] = useState('');
   if (loading && attachments.length === 0) {
@@ -73,7 +73,7 @@ const AttachmentList = ({ attachments, onDelete, onDownload, onView, onRename, l
         const isOwner = Boolean(currentUserId)
           && Boolean(attachment.uploadedBy)
           && String(attachment.uploadedBy) === String(currentUserId);
-        const canDelete = isOwner || canDeleteAny;
+        const canManage = isOwner || canManageAny;
 
         return (
           <div key={attachment.id} className="attach-file-card">
@@ -117,12 +117,12 @@ const AttachmentList = ({ attachments, onDelete, onDownload, onView, onRename, l
               <button type="button" className="attach-file-btn" title="Download" onClick={() => onDownload(attachment).catch(() => {})}>
                 <Download size={15} />
               </button>
-              {isOwner && renamingId !== attachment.id && (
+              {canManage && renamingId !== attachment.id && (
                 <button type="button" className="attach-file-btn" title="Rename" onClick={() => { setName(attachment.originalFileName); setRenamingId(attachment.id); }}>
                   <Pencil size={15} />
                 </button>
               )}
-              {canDelete && (
+              {canManage && (
                 <button
                   type="button"
                   className="attach-file-btn danger"

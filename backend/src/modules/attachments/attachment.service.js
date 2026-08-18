@@ -6,7 +6,7 @@ const { mapAttachment } = require("./attachment.mapper");
 const { validateUploadedFile, validateDisplayName, isValidObjectId } = require("./attachment.validation");
 const { UPLOAD_DIR } = require("./attachment.upload");
 const { isImageKitConfigured, uploadToImageKit, deleteFromImageKit } = require("./imagekit.storage");
-const { assertTaskCollaborationAccess, hasPermission } = require("../collaboration/taskAccess");
+const { assertTaskCollaborationAccess, isAdministrator } = require("../collaboration/taskAccess");
 
 const MAX_ATTACHMENTS_PER_TASK = 15;
 
@@ -45,8 +45,8 @@ const assertAttachmentExists = async (attachmentId) => {
 const assertCanDelete = (attachment, context = {}) => {
   const userId = context.userId || context.user?.id;
   const isOwner = String(attachment.uploadedBy) === String(userId);
-  if (!isOwner && !hasPermission(context, "ATTACHMENT_DELETE")) {
-    throw createError("PERMISSION_DENIED", "You can only delete your own attachments unless you have attachment-delete permission.", 403);
+  if (!isOwner && !isAdministrator(context)) {
+    throw createError("PERMISSION_DENIED", "You can only delete your own attachments unless you are an administrator.", 403);
   }
 };
 
@@ -174,8 +174,8 @@ const renameAttachment = async (attachmentId, payload, context = {}) => {
   const task = await assertTaskExists(attachment.entityId);
   await assertTaskCollaborationAccess(task, context);
 
-  if (String(attachment.uploadedBy) !== String(userId)) {
-    throw createError("PERMISSION_DENIED", "You can only rename files you uploaded.", 403);
+  if (String(attachment.uploadedBy) !== String(userId) && !isAdministrator(context)) {
+    throw createError("PERMISSION_DENIED", "You can only rename files you uploaded unless you are an administrator.", 403);
   }
 
   const updated = await repo.updateAttachmentName(attachmentId, validateDisplayName(payload?.fileName));

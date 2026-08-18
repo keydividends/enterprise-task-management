@@ -4,7 +4,8 @@ import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
 import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage';
 import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
-import DashboardPage from '../pages/DashboardPage';
+import DashboardPage from '../features/dashboard/pages/DashboardPage';
+import ReportsPage from '../features/reports/pages/ReportsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import MainLayout from '../layouts/MainLayout';
 
@@ -43,6 +44,10 @@ const AppRoutes = ({ toggleTheme }) => (
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout toggleTheme={toggleTheme} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reports/projects" element={<ReportsPage />} />
+          <Route path="/reports/tasks" element={<ReportsPage />} />
+          <Route path="/reports/people" element={<ReportsPage />} />
           <Route path="/users" element={<UserListPage />} />
           <Route path="/users/create" element={<CreateUserPage />} />
           <Route path="/users/:userId" element={<UserDetailsPage />} />

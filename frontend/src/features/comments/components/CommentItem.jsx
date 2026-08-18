@@ -26,7 +26,7 @@ const getAvatarColor = (id = '') => {
   return AVATAR_COLORS[id.charCodeAt(id.length - 1) % AVATAR_COLORS.length];
 };
 
-const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, onReply, resolveDisplayName }) => {
+const CommentItem = ({ comment, currentUserId, canManageAny, onUpdate, onDelete, onReply, resolveDisplayName }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
   const [saving, setSaving] = useState(false);
@@ -34,6 +34,7 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, onReply, reso
   const [actionError, setActionError] = useState(null);
 
   const isMine = Boolean(currentUserId) && String(comment.authorId) === String(currentUserId);
+  const canManage = isMine || canManageAny;
 
   const displayName = resolveDisplayName
     ? resolveDisplayName(comment.authorId, comment.authorName)
@@ -118,7 +119,7 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, onReply, reso
                 <CornerUpLeft size={12} /> Reply
               </button>
             )}
-            {isMine && (
+            {canManage && (
               <>
                 <button type="button" className="ci-action-btn" onClick={() => { setEditText(comment.text); setEditing(true); }}>
                   <Edit2 size={12} /> Edit

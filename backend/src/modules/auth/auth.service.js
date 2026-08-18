@@ -23,6 +23,7 @@ const {
   invalidateAllResetTokensForUser,
 } = require("./auth.repository");
 const { mapUser } = require("./auth.mapper");
+const { getEffectivePermissions } = require("./rolePermissions");
 const {
   validateLoginInput,
   validateRegisterInput,
@@ -48,6 +49,7 @@ const createAuthError = (code, message, statusCode = 401) => {
 
 const createTokenPair = (user) => {
   const userId = user.id || user._id;
+  const permissions = getEffectivePermissions(user);
   const accessToken = jwt.sign(
     {
       sub: userId,
@@ -56,7 +58,7 @@ const createTokenPair = (user) => {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      permissions: user.permissions,
+      permissions,
       workspaceId: user.workspaceId || "64a000000000000000000001",
       status: user.status,
       type: "access",
@@ -311,7 +313,7 @@ const getUserPermissions = async (userId) => {
     throw createAuthError("USER_NOT_FOUND", "User not found.", 404);
   }
 
-  return Array.isArray(user.permissions) ? user.permissions : [];
+  return getEffectivePermissions(user);
 };
 
 const refreshAccessToken = async ({ refreshToken }) => {

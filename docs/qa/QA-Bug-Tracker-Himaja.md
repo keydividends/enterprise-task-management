@@ -105,7 +105,7 @@
 | **Module** | Dashboard & Reports |
 | **Severity** | High |
 | **Owner** | Konaiah |
-| **Status** | OPEN |
+| **Status** | RESOLVED |
 | **File** | `backend/src/modules/` (no dashboard/reports folder exists); `frontend/src/pages/DashboardPage.jsx` lines 17–20 |
 | **Title** | Dashboard/Reports backend module not implemented; frontend uses 100% hardcoded static data |
 | **Steps to Reproduce** | 1. GET `/api/v1/dashboard/summary` → 404. 2. Open `/dashboard` → shows static numbers regardless of real data. |
@@ -284,7 +284,7 @@
 | BUG-003 | Projects (FE) | Medium | OPEN | Trisha |
 | BUG-004 | Comments | Medium | OPEN | Bhavinash |
 | BUG-005 | Attachments | High | OPEN | Bhavinash |
-| BUG-006 | Dashboard/Reports | High | OPEN | Konaiah |
+| BUG-006 | Dashboard/Reports | High | **RESOLVED** | Konaiah |
 | BUG-007 | Seed Data | Medium | OPEN | Himaja/Raheema/Trisha |
 | BUG-008 | Teams | High | **RESOLVED** | LakshmiPrasanna |
 | BUG-009 | Roles (Tests) | High | OPEN | Venkat |

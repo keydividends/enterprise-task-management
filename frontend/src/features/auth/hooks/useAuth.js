@@ -39,7 +39,7 @@ useEffect(() => {
         // the latest role and permissions (avoids stale-session bugs where
         // action buttons such as Create team / Manage members are hidden).
         setUser(currentUser);
-      } catch (error) {
+      } catch {
         setToken(null);
         setUser(null);
       } finally {
@@ -48,7 +48,6 @@ useEffect(() => {
     };
 
     bootstrapCurrentUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
@@ -145,7 +144,7 @@ useEffect(() => {
     refreshUser,
     setUser,
     setToken,
-  }), [user, token, loading]);
+  }), [user, token, loading, refreshUser]);
 
   return createElement(AuthContext.Provider, { value }, children);
 };

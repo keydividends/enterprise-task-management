@@ -32,8 +32,6 @@ const fileFilter = (_req, file, cb) => {
 };
 
 const upload = multer({
-  // ImageKit needs the uploaded bytes in memory; local mode retains the
-  // existing disk-based Multer behavior and generated local filenames.
   storage: isImageKitConfigured() ? multer.memoryStorage() : storage,
   fileFilter,
   limits: { fileSize: MAX_FILE_SIZE },

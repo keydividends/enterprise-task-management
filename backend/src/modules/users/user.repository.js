@@ -220,6 +220,7 @@ const createUser = async (userData) => {
     title: userData.title || "",
     bio: userData.bio || "",
     customId: userData.customId || null,
+    managerCustomId: userData.managerCustomId || "",
     role: userData.role || "USER",
     permissions: userData.permissions || [
       "USER_VIEW",

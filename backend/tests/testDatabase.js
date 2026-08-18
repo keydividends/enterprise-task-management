@@ -1,3 +1,6 @@
+const { webcrypto } = require("node:crypto");
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 

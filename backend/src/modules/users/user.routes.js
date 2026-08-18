@@ -5,8 +5,18 @@ const authorize = require("../../middleware/authorize");
 
 const router = express.Router();
 
+const canSearchProjectMembers = (req, res, next) => {
+  const role = String(req.user?.role || "").toUpperCase();
+  if (["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "PROJECT_MANAGER"].includes(role) || req.user?.permissions?.includes("USER_VIEW")) return next();
+
+  const error = new Error("Permission denied.");
+  error.code = "PERMISSION_DENIED";
+  error.statusCode = 403;
+  return next(error);
+};
+
 // Specific routes MUST come before parameterized :userId routes
-router.get("/search", authenticate, authorize("USER_VIEW"), userController.searchUsers);
+router.get("/search", authenticate, canSearchProjectMembers, userController.searchUsers);
 router.get("/me/profile", authenticate, userController.getMyProfile);
 router.put("/me/profile", authenticate, userController.updateMyProfile);
 router.post("/me/avatar", authenticate, userController.uploadAvatar);

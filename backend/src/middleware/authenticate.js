@@ -1,4 +1,5 @@
 const { verifyAccessToken } = require("../modules/auth/auth.service");
+const { getEffectivePermissions } = require("../modules/auth/rolePermissions");
 const { User } = require("../modules/users/user.model");
 const mongoose = require("mongoose");
 
@@ -20,7 +21,7 @@ const resolveMockUser = async (email, staticProfile) => {
           firstName: dbUser.firstName,
           lastName: dbUser.lastName,
           role: dbUser.role,
-          permissions: dbUser.permissions || [],
+          permissions: getEffectivePermissions(dbUser),
           workspaceId: staticProfile.workspaceId,
           status: dbUser.status,
         };
@@ -63,7 +64,7 @@ const MOCK_TOKEN_PROFILES = {
     lastName: "User",
     role: "USER",
     workspaceId: "64a000000000000000000001",
-    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW"],
+    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW", "DASHBOARD_VIEW", "REPORT_VIEW"],
     status: "ACTIVE",
   },
 };
@@ -94,7 +95,7 @@ const authenticate = async (req, res, next) => {
       firstName: payload.firstName,
       lastName: payload.lastName,
       role: payload.role,
-      permissions: payload.permissions || [],
+      permissions: getEffectivePermissions(payload),
       workspaceId: payload.workspaceId || null,
       status: payload.status,
     };

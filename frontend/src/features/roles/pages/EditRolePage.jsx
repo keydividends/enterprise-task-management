@@ -14,10 +14,6 @@ const EditRolePage = () => {
   const [error, setError] = useState(null);
   const { updateRole, getRoleById } = useRoles();
 
-  if (user?.role !== "ADMIN") {
-    return <Navigate to="/roles" replace />;
-  }
-
   useEffect(() => {
     const fetchRole = async () => {
       try {
@@ -34,13 +30,13 @@ const EditRolePage = () => {
     };
 
     fetchRole();
-  }, [roleId]);
+  }, [roleId, getRoleById]);
 
   const handleSubmit = async (formData) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await updateRole(roleId, formData);
+      await updateRole(roleId, formData);
       alert("Role updated successfully");
       navigate(`/roles/${roleId}`);
     } catch (err) {
@@ -54,6 +50,10 @@ const EditRolePage = () => {
   const handleCancel = () => {
     navigate(`/roles/${roleId}`);
   };
+
+  if (user?.role !== "ADMIN") {
+    return <Navigate to="/roles" replace />;
+  }
 
   if (loading && !role) {
     return <div className="role-create-edit-page"><p>Loading role...</p></div>;

@@ -2414,7 +2414,7 @@ html[data-theme='dark'] .divider span {
 .project-member-role-field .input-wrap { padding: 0; overflow: hidden; }
 .project-member-role-field select { width: 100%; min-height: 46px; padding: 0 42px 0 14px; border: 0; border-radius: 10px; background: linear-gradient(135deg, #ffffff, #f7f8ff); box-shadow: none; color: #24324a; font-size: 0.88rem; font-weight: 650; cursor: pointer; }
 .project-member-role-field select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14); outline: none; }
-.employee-match-menu { position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; left: 0; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; background: #fff; box-shadow: 0 14px 30px rgba(30, 41, 59, 0.16); }
+.employee-match-menu { position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; left: 0; max-height: 280px; overflow-y: auto; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; background: #fff; box-shadow: 0 14px 30px rgba(30, 41, 59, 0.16); }
 .employee-match-option { display: flex; width: 100%; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-bottom: 1px solid rgba(148, 163, 184, 0.14); background: transparent; color: inherit; cursor: pointer; text-align: left; }
 .employee-match-option:last-child { border-bottom: 0; }
 .employee-match-option:hover, .employee-match-option:focus-visible { background: #f5f6ff; outline: none; }

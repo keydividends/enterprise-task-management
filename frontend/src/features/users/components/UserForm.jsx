@@ -86,7 +86,12 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(formData);
+      // `managerId` is retained as a compatibility alias for older API builds.
+      // The canonical field is `managerCustomId`.
+      onSubmit({
+        ...formData,
+        managerId: formData.managerCustomId,
+      });
     }
   };
 
