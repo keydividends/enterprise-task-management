@@ -1,35 +1,45 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useAuth } from '../../auth/hooks/useAuth';
+import teamService from '../services/teamService';
 
 const TeamForm = ({ initialValues = {}, onSubmit, submitting = false, submitLabel = 'Save team', error, onCancel, onBack }) => {
-  const { user } = useAuth();
-  const [form, setForm] = useState({ name: '', description: '', leadId: 'mock-admin' });
+  const [form, setForm] = useState({ name: '', description: '', leadId: '' });
   const [fieldErrors, setFieldErrors] = useState({});
-
-  // Hardcoded lead options are not ideal; the realistic approach is to load
-  // users from the backend. For this sprint we expose the known mock users
-  // plus the currently authenticated user so the lead drop-down is usable.
-  const leadOptions = useMemo(() => {
-    const options = [
-      { id: 'mock-admin', label: 'Ava Cole (Admin)' },
-      { id: 'mock-maya', label: 'Maya Singh' },
-      { id: 'mock-alex', label: 'Alex Chen' },
-    ];
-    if (user?.id && !options.some((o) => o.id === user.id)) {
-      options.unshift({ id: user.id, label: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || user.id });
-    }
-    return options;
-  }, [user]);
+  const [managerOptions, setManagerOptions] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(true);
+  const [managersError, setManagersError] = useState('');
 
   useEffect(() => {
     setForm({
       name: initialValues.name || '',
       description: initialValues.description || '',
-      leadId: initialValues.leadId || 'mock-admin',
+      leadId: initialValues.leadId || '',
     });
     setFieldErrors({});
   }, [initialValues]);
+
+  useEffect(() => {
+    let active = true;
+    const loadManagers = async () => {
+      setManagersLoading(true);
+      try {
+        const managers = await teamService.getEligibleManagers();
+        if (active) {
+          setManagerOptions(managers);
+          setManagersError('');
+        }
+      } catch (requestError) {
+        if (active) {
+          setManagerOptions([]);
+          setManagersError(requestError?.response?.data?.message || 'Unable to load eligible managers.');
+        }
+      } finally {
+        if (active) setManagersLoading(false);
+      }
+    };
+    loadManagers();
+    return () => { active = false; };
+  }, []);
 
   const validate = () => {
     const errors = {};
@@ -37,6 +47,9 @@ const TeamForm = ({ initialValues = {}, onSubmit, submitting = false, submitLabe
       errors.name = 'Team name is required.';
     } else if (form.name.trim().length > 150) {
       errors.name = 'Team name must be 150 characters or fewer.';
+    }
+    if (!form.leadId) {
+      errors.leadId = 'Select a manager.';
     }
     return errors;
   };
@@ -92,19 +105,27 @@ const TeamForm = ({ initialValues = {}, onSubmit, submitting = false, submitLabe
       </div>
 
       <div className="field-group">
-        <label htmlFor="team-lead">Team lead</label>
+        <label htmlFor="team-lead">Manager <span className="required-mark">*</span></label>
         <div className="input-wrap">
           <select
             id="team-lead"
             name="leadId"
             value={form.leadId}
             onChange={(event) => handleChange('leadId', event.target.value)}
+            disabled={managersLoading || Boolean(managersError) || managerOptions.length === 0}
+            aria-invalid={Boolean(fieldErrors.leadId)}
           >
-            {leadOptions.map((option) => (
-              <option key={option.id} value={option.id}>{option.label}</option>
+            <option value="">
+              {managersLoading ? 'Loading managers...' : managerOptions.length ? 'Select manager' : 'No eligible managers available'}
+            </option>
+            {managerOptions.map((option) => (
+              <option key={option.id} value={option.id}>{option.name || option.email || option.id}{option.email ? ` — ${option.email}` : ''}</option>
             ))}
           </select>
         </div>
+        {managersError ? <small className="field-error" role="alert">{managersError}</small> : null}
+        {!managersLoading && !managersError && managerOptions.length === 0 ? <small className="helper-copy">No active users with an eligible manager or lead role are available.</small> : null}
+        {fieldErrors.leadId ? <small className="field-error" role="alert">{fieldErrors.leadId}</small> : null}
       </div>
 
       <div className="team-form-actions">

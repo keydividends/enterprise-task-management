@@ -317,6 +317,9 @@ const removeMember = async (teamId, userId) => {
 //   3. Mock users from team.model (used ONLY by automated tests without DB)
 
 const { mockUsers } = require("./team.model");
+const ELIGIBLE_TEAM_LEAD_ROLES = ["ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "LEAD"];
+const isEligibleTeamLead = (user) =>
+  Boolean(user) && ELIGIBLE_TEAM_LEAD_ROLES.includes(String(user.role || "").toUpperCase());
 
 const findUserById = async (userId) => {
   if (!userId) return null;
@@ -333,6 +336,7 @@ const findUserById = async (userId) => {
           lastName: realUser.lastName,
           role: realUser.role,
           status: realUser.status,
+          email: realUser.email,
         };
       }
     } catch (err) {
@@ -351,6 +355,7 @@ const findUserById = async (userId) => {
         lastName: authUser.lastName,
         role: authUser.role,
         status: authUser.status,
+        email: authUser.email,
       };
     }
   } catch (err) {
@@ -395,5 +400,6 @@ module.exports = {
   removeMember,
   findUserById,
   listUsers,
+  isEligibleTeamLead,
   getInMemoryTeams,
 };

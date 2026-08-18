@@ -11,6 +11,15 @@ const authorize = (requiredPermission) => (req, res, next) => {
   // manager/admin accounts that were created before permissions were stored.
   const permissions = getEffectivePermissions(req.user);
 
+  const role = String(req.user?.role || "").toUpperCase();
+  const teamWritePermissions = ["TEAM_CREATE", "TEAM_UPDATE", "TEAM_MANAGE_MEMBERS", "TEAM_DELETE"];
+  if (teamWritePermissions.includes(requiredPermission) && !["ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "LEAD"].includes(role)) {
+    const error = new Error("Permission denied.");
+    error.code = "PERMISSION_DENIED";
+    error.statusCode = 403;
+    return next(error);
+  }
+
   if (!permissions.includes(requiredPermission)) {
     const error = new Error("Permission denied.");
     error.code = "PERMISSION_DENIED";

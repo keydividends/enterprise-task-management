@@ -416,7 +416,7 @@ const googleLogin = async ({ credential, accessToken }) => {
       email: email,
       googleId: googleId,
       role: "USER",
-      permissions: ["USER_VIEW", "PROJECT_VIEW", "PROJECT_CREATE", "TASK_VIEW", "TASK_CREATE", "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_MANAGE_MEMBERS"],
+      permissions: ["USER_VIEW", "PROJECT_VIEW", "PROJECT_CREATE", "TASK_VIEW", "TASK_CREATE", "TEAM_VIEW"],
     });
   } else if (!user.googleId) {
     if (typeof user.save === 'function') {
@@ -467,7 +467,7 @@ const microsoftLogin = async ({ accessToken }) => {
       email: email,
       microsoftId: microsoftId,
       role: "USER",
-      permissions: ["USER_VIEW", "PROJECT_VIEW", "PROJECT_CREATE", "TASK_VIEW", "TASK_CREATE", "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_MANAGE_MEMBERS"],
+      permissions: ["USER_VIEW", "PROJECT_VIEW", "PROJECT_CREATE", "TASK_VIEW", "TASK_CREATE", "TEAM_VIEW"],
     });
   } else if (!user.microsoftId) {
     if (typeof user.save === 'function') {

@@ -30,6 +30,20 @@ const ensureUniqueMembers = (members = []) => {
   }
 };
 
+const mapTeamWithManager = async (team) => {
+  const mapped = mapTeamDetail(team);
+  const manager = await teamRepository.findUserById(mapped.leadId);
+  return {
+    ...mapped,
+    manager: manager ? {
+      id: manager.id,
+      name: `${manager.firstName || ""} ${manager.lastName || ""}`.trim(),
+      email: manager.email || "",
+      role: manager.role,
+    } : null,
+  };
+};
+
 const listTeams = async (query = {}) => {
   const validated = validateListQuery(query);
   const result = await teamRepository.listTeams(validated);
@@ -51,25 +65,22 @@ const getTeam = async (teamId) => {
   if (!team) {
     throw createAuthError("TEAM_NOT_FOUND", "Team not found.", 404);
   }
-  return mapTeamDetail(team);
+  return mapTeamWithManager(team);
 };
 
 const createTeam = async (payload) => {
   const validated = validateCreateTeam(payload);
 
+  if (!validated.leadId) {
+    throw createAuthError("VALIDATION_ERROR", "Manager is required.", 400);
+  }
+
   ensureUniqueMembers(validated.members);
 
   let lead = null;
-  if (validated.leadId) {
-    lead = await teamRepository.findUserById(validated.leadId);
-    if (!lead) {
-      throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
-    }
-  } else {
-    lead = await teamRepository.findUserById("mock-admin");
-    if (!lead) {
-      throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
-    }
+  lead = await teamRepository.findUserById(validated.leadId);
+  if (!lead || !teamRepository.isEligibleTeamLead(lead)) {
+    throw createAuthError("INVALID_LEAD", "Manager must be an active user with an eligible role.", 400);
   }
 
   const normalizedMembers = [];
@@ -108,8 +119,8 @@ const updateTeam = async (teamId, payload) => {
   // If the lead is being changed, validate the new lead.
   if (validated.leadId && validated.leadId !== team.leadId) {
     const newLead = await teamRepository.findUserById(validated.leadId);
-    if (!newLead) {
-      throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
+    if (!newLead || !teamRepository.isEligibleTeamLead(newLead)) {
+      throw createAuthError("INVALID_LEAD", "Manager must be an active user with an eligible role.", 400);
     }
 
     // The new lead automatically becomes a member (LEAD role).
@@ -231,8 +242,8 @@ const assignTeamLead = async (teamId, payload) => {
 
   const team = await getTeam(teamId);
   const user = await teamRepository.findUserById(userId);
-  if (!user) {
-    throw createAuthError("INVALID_LEAD", "Team lead must be a valid active user.", 400);
+  if (!user || !teamRepository.isEligibleTeamLead(user)) {
+    throw createAuthError("INVALID_LEAD", "Manager must be an active user with an eligible role.", 400);
   }
 
   // Ensure the new lead is a member (role LEAD).

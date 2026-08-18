@@ -83,7 +83,7 @@ const TeamDetailsPage = () => {
           <h1>{team.name}</h1>
           <p className="helper-copy">{team.description || 'Shared work context for projects and tasks.'}</p>
           <div className="team-card-meta" style={{ marginTop: '8px' }}>
-            <span><User size={14} /> Lead: {team.leadId}</span>
+            <span><User size={14} /> Manager: {team.manager?.name || team.leadId}{team.manager?.email ? ` — ${team.manager.email}` : ''}</span>
             <span><CalendarDays size={14} /> Created: {formatDate(team.createdAt)}</span>
             <span className={`status-tag ${team.isActive ? 'review' : 'danger'}`}>{team.status || (team.isActive ? 'ACTIVE' : 'INACTIVE')}</span>
           </div>
@@ -110,21 +110,33 @@ const TeamDetailsPage = () => {
           <div className="panel-header">
             <h3>Overview</h3>
           </div>
-          <p><strong>Lead:</strong> {team.leadId}</p>
+          <p><strong>Manager:</strong> {team.manager?.name || team.leadId}{team.manager?.email ? ` — ${team.manager.email}` : ''}</p>
           <p><strong>Status:</strong> {team.status || (team.isActive ? 'Active' : 'Inactive')}</p>
           <p><strong>Member count:</strong> {members.length}</p>
           <p><strong>Projects:</strong> {team.projectIds?.length ? team.projectIds.join(', ') : 'None'}</p>
           <p><strong>Created:</strong> {formatDate(team.createdAt)}</p>
         </div>
 
-        <TeamMemberManager
-          teamId={teamId}
-          team={team}
-          members={members}
-          onMembersChange={setMembers}
-          onMessage={(msg) => success(msg)}
-          onError={pushError}
-        />
+        <PermissionGate permission="TEAM_MANAGE_MEMBERS" fallback={
+          <div className="panel-block glass-card">
+            <div className="panel-header"><h3>Team members</h3><span className="status-tag review">{members.length} members</span></div>
+            {members.length ? members.map((member) => (
+              <div key={member.userId} className="member-row">
+                <span className="member-row-name">{member.userId}</span>
+                <span className="status-tag review">{member.role}</span>
+              </div>
+            )) : <div className="empty-state">No members yet.</div>}
+          </div>
+        }>
+          <TeamMemberManager
+            teamId={teamId}
+            team={team}
+            members={members}
+            onMembersChange={setMembers}
+            onMessage={(msg) => success(msg)}
+            onError={pushError}
+          />
+        </PermissionGate>
       </section>
     </div>
   );

@@ -13,9 +13,10 @@ import { useAuth } from "../../auth/hooks/useAuth";
  */
 const PermissionGate = ({ permission, children, fallback = null, adminOnly = false }) => {
   const { user } = useAuth();
-  const isAdmin = user?.role === "SUPER_ADMIN";
+  const role = String(user?.role || "").toUpperCase();
+  const isAdmin = role === "SUPER_ADMIN";
   const userPermissions = user?.permissions || [];
-  const userRole = user?.role;
+  const teamManagerRoles = ["ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "LEAD"];
 
   if (adminOnly) {
     return isAdmin ? children : fallback;
@@ -29,7 +30,12 @@ const PermissionGate = ({ permission, children, fallback = null, adminOnly = fal
     return children;
   }
 
-  const hasPermission = userRole === "SUPER_ADMIN" || userPermissions.includes(permission);
+  const teamRoleDefaults = ["TEAM_CREATE", "TEAM_UPDATE", "TEAM_MANAGE_MEMBERS"];
+  const teamMutatingPermissions = [...teamRoleDefaults, "TEAM_DELETE"];
+  const hasPermission = isAdmin ||
+    (teamMutatingPermissions.includes(permission)
+      ? (teamManagerRoles.includes(role) && (teamRoleDefaults.includes(permission) || userPermissions.includes(permission) || ["ADMIN", "ORGANIZATION_ADMIN"].includes(role)))
+      : userPermissions.includes(permission));
 
   return hasPermission ? children : fallback;
 };

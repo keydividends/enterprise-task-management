@@ -24,6 +24,7 @@ router.delete("/me/avatar", authenticate, userController.removeAvatar);
 router.get("/lookup/:customId", authenticate, authorize("USER_VIEW"), userController.getUserByCustomId);
 
 // Collection routes
+router.get("/eligible-team-leads", authenticate, authorize("TEAM_VIEW"), userController.getEligibleTeamLeads);
 router.get("/", authenticate, authorize("USER_VIEW"), userController.getUsers);
 router.post("/", authenticate, authorize("USER_CREATE"), userController.createUser);
 
