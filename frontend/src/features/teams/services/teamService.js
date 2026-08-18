@@ -15,7 +15,8 @@ const normalizeTeam = (team = {}) => ({
   id: team.id,
   name: team.name || '',
   description: team.description || '',
-  leadId: team.leadId || 'mock-admin',
+  leadId: team.leadId || '',
+  manager: team.manager || null,
   projectIds: Array.isArray(team.projectIds) ? team.projectIds : [],
   isActive: team.isActive !== false,
   status: team.status || (team.isActive !== false ? 'ACTIVE' : 'INACTIVE'),
@@ -50,6 +51,12 @@ const teamService = {
   async getTeam(teamId) {
     const response = await axiosClient.get(`/teams/${teamId}`);
     return normalizeTeam(unwrapData(response));
+  },
+
+  async getEligibleManagers() {
+    const response = await axiosClient.get('/users/eligible-team-leads');
+    const data = unwrapData(response);
+    return Array.isArray(data) ? data : [];
   },
 
   async createTeam(payload) {

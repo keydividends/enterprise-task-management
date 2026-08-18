@@ -26,7 +26,7 @@ const validateCreateTeam = (payload = {}) => {
   return {
     name,
     description: String(payload.description || "").trim(),
-    leadId: payload.leadId ? String(payload.leadId).trim() : null,
+    leadId: String(payload.leadId || "").trim(),
     members: Array.isArray(payload.members) ? payload.members.map((m) => String(m).trim()).filter(Boolean) : [],
     projectIds: Array.isArray(payload.projectIds) ? payload.projectIds.map((p) => String(p).trim()).filter(Boolean) : [],
   };
@@ -55,7 +55,10 @@ const validateUpdateTeam = (payload = {}) => {
   }
 
   if (payload.leadId !== undefined) {
-    cleaned.leadId = String(payload.leadId).trim();
+    cleaned.leadId = String(payload.leadId || "").trim();
+    if (!cleaned.leadId) {
+      throw createValidationError("Manager is required.", "leadId");
+    }
   }
 
   if (payload.projectIds !== undefined) {

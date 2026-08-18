@@ -25,6 +25,8 @@ router.delete("/me/avatar", authenticate, userController.removeAvatar);
 router.get("/lookup/:employeeId", authenticate, authorize("USER_VIEW"), userController.getUserByEmployeeId);
 
 // Collection routes
+router.get("/eligible-team-leads", authenticate, authorize("TEAM_VIEW"), userController.getEligibleTeamLeads);
+router.get("/team-member-candidates", authenticate, authorize("TEAM_MANAGE_MEMBERS"), userController.getTeamMemberCandidates);
 router.get("/", authenticate, authorize("USER_VIEW"), userController.getUsers);
 router.post("/", authenticate, authorize("USER_CREATE"), userController.createUser);
 

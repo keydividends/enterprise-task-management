@@ -33,7 +33,7 @@ const teamSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
-    leadId: { type: String, default: "mock-admin" },
+    leadId: { type: String, required: true },
     projectIds: { type: [String], default: [] },
     workspaceId: { type: mongoose.Schema.Types.ObjectId, default: null },
     isActive: { type: Boolean, default: true },
@@ -83,7 +83,7 @@ const createTeamRecord = (data) => {
     id: data.id || `team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: data.name,
     description: data.description || "",
-    leadId: data.leadId || "mock-admin",
+    leadId: data.leadId,
     projectIds: Array.isArray(data.projectIds) ? data.projectIds : [],
     isActive,
     isDeleted: false,

@@ -6,6 +6,11 @@ export const userService = {
     return response.data;
   },
 
+  async getTeamMemberCandidates(params = {}) {
+    const response = await axiosClient.get('/users/team-member-candidates', { params });
+    return response.data;
+  },
+
   async getUserById(userId) {
     const response = await axiosClient.get(`/users/${userId}`);
     return response.data;

@@ -58,6 +58,7 @@ const listTeams = async ({
   pageSize = 20,
   sortBy = "createdAt",
   sortOrder = -1,
+  memberUserId,
 } = {}) => {
   const normalized = String(search).trim().toLowerCase();
 
@@ -71,6 +72,27 @@ const listTeams = async ({
     }
     if (status) filter.status = String(status).toUpperCase();
     if (leadId) filter.leadId = String(leadId);
+    if (memberUserId) {
+      filter.$or = [
+        ...(filter.$or || []),
+        { leadId: String(memberUserId) },
+        { members: { $elemMatch: { userId: String(memberUserId), status: "ACTIVE", isDeleted: false } } },
+      ];
+      // A search filter and membership condition must both apply.
+      if (normalized) {
+        filter.$and = [
+          { $or: [
+            { name: { $regex: normalized, $options: "i" } },
+            { description: { $regex: normalized, $options: "i" } },
+          ] },
+          { $or: [
+            { leadId: String(memberUserId) },
+            { members: { $elemMatch: { userId: String(memberUserId), status: "ACTIVE", isDeleted: false } } },
+          ] },
+        ];
+        delete filter.$or;
+      }
+    }
 
     const totalItems = await Team.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize) || 1;
@@ -100,6 +122,10 @@ const listTeams = async ({
     );
   }
   if (leadId) items = items.filter((t) => String(t.leadId) === String(leadId));
+  if (memberUserId) {
+    items = items.filter((team) => String(team.leadId) === String(memberUserId)
+      || team.members?.some((member) => String(member.userId) === String(memberUserId) && member.status !== "REMOVED" && !member.isDeleted));
+  }
 
   items.sort((a, b) => {
     const va = a[sortBy] || "", vb = b[sortBy] || "";
@@ -317,6 +343,9 @@ const removeMember = async (teamId, userId) => {
 //   3. Mock users from team.model (used ONLY by automated tests without DB)
 
 const { mockUsers } = require("./team.model");
+const ELIGIBLE_TEAM_LEAD_ROLES = ["ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "LEAD"];
+const isEligibleTeamLead = (user) =>
+  Boolean(user) && ELIGIBLE_TEAM_LEAD_ROLES.includes(String(user.role || "").toUpperCase());
 
 const findUserById = async (userId) => {
   if (!userId) return null;
@@ -333,6 +362,7 @@ const findUserById = async (userId) => {
           lastName: realUser.lastName,
           role: realUser.role,
           status: realUser.status,
+          email: realUser.email,
         };
       }
     } catch (err) {
@@ -351,6 +381,7 @@ const findUserById = async (userId) => {
         lastName: authUser.lastName,
         role: authUser.role,
         status: authUser.status,
+        email: authUser.email,
       };
     }
   } catch (err) {
@@ -395,5 +426,6 @@ module.exports = {
   removeMember,
   findUserById,
   listUsers,
+  isEligibleTeamLead,
   getInMemoryTeams,
 };

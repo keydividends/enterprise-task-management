@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import PermissionGate from '../../roles/components/PermissionGate';
 import TeamForm from '../components/TeamForm';
 import TeamMemberManager from '../components/TeamMemberManager';
 import Toast from '../components/Toast';
@@ -14,7 +15,7 @@ const EditTeamPage = () => {
   const { teamId } = useParams();
   const { updateTeam } = useTeams();
   const { toasts, dismiss, success, error: pushError } = useToasts();
-  const [form, setForm] = useState({ name: '', description: '', leadId: 'mock-admin' });
+  const [form, setForm] = useState({ name: '', description: '', leadId: '' });
   const [team, setTeam] = useState(null);
   const [members, setMembers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +31,7 @@ const EditTeamPage = () => {
         setForm({
           name: current?.name || '',
           description: current?.description || '',
-          leadId: current?.leadId || 'mock-admin',
+          leadId: current?.leadId || '',
         });
       } catch (err) {
         setError(err?.response?.data?.message || err?.message || 'Unable to load the team.');
@@ -76,28 +77,32 @@ const EditTeamPage = () => {
 
       {error ? <p className="helper-copy" role="alert">{error}</p> : null}
 
-      <section className="panel-block glass-card">
-        <TeamForm
-          initialValues={form}
-          onSubmit={handleSubmit}
-          submitting={submitting}
-          submitLabel="Save changes"
-          error={error}
-          onCancel={() => navigate(`/teams/${teamId}`)}
-          onBack={() => navigate(`/teams/${teamId}`)}
-        />
-      </section>
+      <PermissionGate permission="TEAM_UPDATE" fallback={<div className="panel-block glass-card">You do not have permission to edit this team.</div>}>
+        <section className="panel-block glass-card">
+          <TeamForm
+            initialValues={form}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+            submitLabel="Save changes"
+            error={error}
+            onCancel={() => navigate(`/teams/${teamId}`)}
+            onBack={() => navigate(`/teams/${teamId}`)}
+          />
+        </section>
+      </PermissionGate>
 
       {team ? (
         <section className="content-grid" style={{ marginTop: '16px' }}>
-          <TeamMemberManager
-            teamId={teamId}
-            team={team}
-            members={members}
-            onMembersChange={setMembers}
-            onMessage={(msg) => success(msg)}
-            onError={pushError}
-          />
+          <PermissionGate permission="TEAM_MANAGE_MEMBERS" fallback={null}>
+            <TeamMemberManager
+              teamId={teamId}
+              team={team}
+              members={members}
+              onMembersChange={setMembers}
+              onMessage={(msg) => success(msg)}
+              onError={pushError}
+            />
+          </PermissionGate>
         </section>
       ) : null}
     </div>
