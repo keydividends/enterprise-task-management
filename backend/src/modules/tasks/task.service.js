@@ -61,7 +61,10 @@ const assertTaskPermission = (context, permission) => {
 };
 
 const hasProjectWideTaskAccess = (context = {}) =>
-  ["ADMIN", "SUPER_ADMIN", "ORG_ADMIN", "ORGANIZATION_ADMIN"].includes(
+  // Managers have project-management and task-creation permissions. Keep task
+  // access consistent with the projects module so a Manager is not blocked
+  // from creating a task for a project they can already manage.
+  ["ADMIN", "SUPER_ADMIN", "ORG_ADMIN", "ORGANIZATION_ADMIN", "MANAGER"].includes(
     String(context.user?.role || "").toUpperCase()
   );
 
@@ -124,6 +127,32 @@ const recordHistory = async (taskId, userId, field, oldValue, newValue) => {
   } catch {
     // History is best-effort; never fail an operation because of it.
   }
+};
+
+const userDisplayName = (user) => {
+  if (!user) return null;
+  return user.fullName
+    || [user.firstName, user.lastName].filter(Boolean).join(" ")
+    || user.email
+    || user.employeeId
+    || null;
+};
+
+// Task documents store user references as IDs. Resolve names at the API
+// boundary so every task card can display a person rather than an ObjectId.
+const mapTasksWithPeople = async (tasks) => {
+  const userIds = [...new Set(tasks.flatMap((task) => [task.primaryAssigneeId, task.reporterId])
+    .filter(Boolean)
+    .map(String))];
+  const people = await Promise.all(userIds.map(async (id) => [id, await contracts.findUserById(id)]));
+  const names = new Map(people.map(([id, user]) => [id, userDisplayName(user)]));
+
+  return tasks.map((task) => {
+    const mapped = mapTask(task);
+    mapped.primaryAssigneeName = mapped.primaryAssigneeId ? names.get(String(mapped.primaryAssigneeId)) || null : null;
+    mapped.reporterName = mapped.reporterId ? names.get(String(mapped.reporterId)) || null : null;
+    return mapped;
+  });
 };
 
 // ---------------------------------------------------------------------------
@@ -210,10 +239,10 @@ const listTasks = async (query, context = {}) => {
   const taskIds = tasks.map((t) => t._id);
   const labelMap = taskIds.length ? await repo.findLabelsByTaskIds(taskIds) : {};
 
-  const items = tasks.map((task) => {
-    const mapped = mapTask(task);
+  const items = await mapTasksWithPeople(tasks);
+  items.forEach((mapped, index) => {
+    const task = tasks[index];
     mapped.labels = labelMap[String(task._id)] || [];
-    return mapped;
   });
 
   return {
@@ -244,7 +273,7 @@ const getTaskDetail = async (taskId, context = {}) => {
     checklists.map(async (cl) => ({ checklist: cl, items: await repo.findItemsByChecklist(cl._id) }))
   );
 
-  const mapped = mapTask(task);
+  const [mapped] = await mapTasksWithPeople([task]);
   // Filter out mappings whose label was soft-deleted/missing before mapping,
   // so mapLabel never receives a null/undefined reference.
   mapped.labels = labels.map((row) => row.labelId).filter(Boolean).map(mapLabel);
@@ -322,9 +351,7 @@ const updateTask = async (taskId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
-
-  // TASK_CLOSE is explicitly separate from TASK_UPDATE in the RBAC matrix.
-  if (payload.status === "DONE") assertTaskPermission(context, "TASK_CLOSE");
+  await assertTaskReadAccess(task, context);
 
   const allowed = {};
   const fields = ["title", "description", "type", "priority", "storyPoints", "startDate", "dueDate", "parentTaskId", "sprintId", "epicId"];
@@ -360,6 +387,9 @@ const changeStatus = async (taskId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
+
+  if (payload.status === "DONE") assertTaskPermission(context, "TASK_CLOSE");
 
   if (!canTransition(task.status, payload.status)) {
     throw createError(
@@ -387,6 +417,7 @@ const changePriority = async (taskId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
 
   const updated = await repo.updateTask(taskId, workspaceId, { priority: payload.priority, updatedBy: userId });
   await recordHistory(taskId, userId, "priority", task.priority, payload.priority);
@@ -403,6 +434,7 @@ const assignTask = async (taskId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
 
   const isReassignment = task.primaryAssigneeId && String(task.primaryAssigneeId) !== String(payload.userId);
   assertTaskPermission(context, isReassignment ? "TASK_REASSIGN" : "TASK_ASSIGN");
@@ -438,6 +470,7 @@ const unassignTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
 
   assertTaskPermission(context, "TASK_REASSIGN");
 
@@ -459,7 +492,8 @@ const unassignTask = async (taskId, context = {}) => {
 const deleteTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
-  await assertTaskExists(taskId, workspaceId);
+  const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
   await repo.softDeleteTask(taskId, workspaceId, userId);
   await recordHistory(taskId, userId, "isDeleted", false, true);
   return { id: taskId };
@@ -468,8 +502,10 @@ const deleteTask = async (taskId, context = {}) => {
 const restoreTask = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
+  const deletedTask = await repo.findDeletedTaskById(taskId, workspaceId);
+  if (!deletedTask) throw createError("TASK_NOT_FOUND", "Task not found or not deleted.", 404);
+  await assertTaskReadAccess(deletedTask, context);
   const task = await repo.restoreTask(taskId, workspaceId);
-  if (!task) throw createError("TASK_NOT_FOUND", "Task not found or not deleted.", 404);
   await recordHistory(taskId, userId, "isDeleted", true, false);
   return mapTask(task);
 };
@@ -496,12 +532,13 @@ const getBoard = async (query, context = {}) => {
   const columns = {};
   for (const status of TASK_STATUSES) columns[status] = [];
 
-  for (const task of tasks) {
-    const mapped = mapTask(task);
+  const mappedTasks = await mapTasksWithPeople(tasks);
+  mappedTasks.forEach((mapped, index) => {
+    const task = tasks[index];
     mapped.labels = labelMap[String(task._id)] || [];
     columns[task.status] = columns[task.status] || [];
     columns[task.status].push(mapped);
-  }
+  });
 
   return columns;
 };
@@ -529,6 +566,7 @@ const createLabel = async (projectId, payload, context = {}) => {
   if (!project || String(project.workspaceId) !== String(workspaceId)) {
     throw createError("PROJECT_NOT_FOUND", "Project not found.", 404);
   }
+  await assertProjectAccess(projectId, userId, context);
   const existing = await repo.findLabelsByProject(projectId, name);
   if (existing.some((l) => l.name.toLowerCase() === name.toLowerCase())) {
     throw createError("LABEL_EXISTS", "A label with this name already exists.", 409);
@@ -549,6 +587,7 @@ const addLabelToTask = async (taskId, payload, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
   const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
 
   const label = await repo.findLabelById(payload.labelId, task.projectId);
   if (!label) throw createError("LABEL_NOT_FOUND", "Label not found in this project.", 404);
@@ -562,7 +601,8 @@ const addLabelToTask = async (taskId, payload, context = {}) => {
 
 const removeLabelFromTask = async (taskId, labelId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  await assertTaskExists(taskId, workspaceId);
+  const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
   const removed = await repo.removeLabelFromTask(taskId, labelId);
   if (!removed) throw createError("TASK_LABEL_NOT_FOUND", "Label mapping not found.", 404);
   return { taskId, labelId };
@@ -576,7 +616,8 @@ const createChecklist = async (taskId, payload, context = {}) => {
   const { title } = validateChecklistInput(payload);
   const workspaceId = await getWorkspaceId(context);
   const userId = getActorId(context);
-  await assertTaskExists(taskId, workspaceId);
+  const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
 
   const position = await repo.getNextChecklistPosition(taskId);
   const checklist = await repo.createChecklist({ taskId, title, position, createdBy: userId });
@@ -585,7 +626,8 @@ const createChecklist = async (taskId, payload, context = {}) => {
 
 const listChecklists = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  await assertTaskExists(taskId, workspaceId);
+  const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
   const checklists = await repo.findChecklistsByTask(taskId);
   const result = await Promise.all(
     checklists.map(async (cl) => {
@@ -605,6 +647,7 @@ const updateChecklist = async (checklistId, payload, context = {}) => {
 
   const task = await repo.findTaskById(checklist.taskId, workspaceId);
   if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+  await assertTaskReadAccess(task, context);
 
   const updated = await repo.updateChecklist(checklistId, { title, updatedBy: userId });
   const items = await repo.findItemsByChecklist(checklistId);
@@ -618,6 +661,7 @@ const deleteChecklist = async (checklistId, context = {}) => {
 
   const task = await repo.findTaskById(checklist.taskId, workspaceId);
   if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+  await assertTaskReadAccess(task, context);
 
   await repo.softDeleteChecklist(checklistId);
   return { id: checklistId };
@@ -632,6 +676,7 @@ const addChecklistItem = async (checklistId, payload, context = {}) => {
 
   const task = await repo.findTaskById(checklist.taskId, workspaceId);
   if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+  await assertTaskReadAccess(task, context);
 
   if (payload.assigneeId) await assertAssigneeEligible(task.projectId, payload.assigneeId);
 
@@ -658,6 +703,7 @@ const updateChecklistItem = async (checklistId, itemId, payload, context = {}) =
   const checklist = await repo.findChecklistById(checklistId);
   const task = await repo.findTaskById(checklist.taskId, workspaceId);
   if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+  await assertTaskReadAccess(task, context);
 
   const update = { updatedBy: userId };
   if (payload.text !== undefined) update.text = String(payload.text).trim();
@@ -677,6 +723,11 @@ const completeChecklistItem = async (checklistId, itemId, context = {}) => {
   const item = await repo.findChecklistItemById(itemId, checklistId);
   if (!item) throw createError("CHECKLIST_ITEM_NOT_FOUND", "Checklist item not found.", 404);
 
+  const checklist = await repo.findChecklistById(checklistId);
+  const task = await repo.findTaskById(checklist.taskId, workspaceId);
+  if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+  await assertTaskReadAccess(task, context);
+
   const updated = await repo.updateChecklistItem(itemId, checklistId, {
     isCompleted: !item.isCompleted,
     completedBy: item.isCompleted ? null : userId,
@@ -693,6 +744,7 @@ const deleteChecklistItem = async (checklistId, itemId, context = {}) => {
   const checklist = await repo.findChecklistById(checklistId);
   const task = await repo.findTaskById(checklist.taskId, workspaceId);
   if (!task) throw createError("TASK_NOT_FOUND", "Task not found.", 404);
+  await assertTaskReadAccess(task, context);
   await repo.softDeleteChecklistItem(itemId, checklistId);
   return { id: itemId };
 };
@@ -703,7 +755,8 @@ const deleteChecklistItem = async (checklistId, itemId, context = {}) => {
 
 const getHistory = async (taskId, context = {}) => {
   const workspaceId = await getWorkspaceId(context);
-  await assertTaskExists(taskId, workspaceId);
+  const task = await assertTaskExists(taskId, workspaceId);
+  await assertTaskReadAccess(task, context);
   const history = await repo.findHistoryByTask(taskId);
   return history.map(mapHistory);
 };

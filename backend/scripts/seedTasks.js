@@ -79,12 +79,20 @@ const seed = async () => {
 
   // Tasks
   let createdCount = 0;
+  const latestTask = await Task.findOne({
+    workspaceId: safeObjectId(WORKSPACE_ID),
+    projectId: safeObjectId(PROJECT.id),
+  })
+    .sort({ taskNumber: -1 })
+    .lean();
+  let nextTaskNumber = (latestTask?.taskNumber || 0) + 1;
+
   for (let i = 0; i < SEED_TASKS.length; i += 1) {
     const seedTask = SEED_TASKS[i];
     const existing = await Task.findOne({ projectId: safeObjectId(PROJECT.id), title: seedTask.title, isDeleted: false });
     if (existing) continue;
 
-    const taskNumber = i + 1;
+    const taskNumber = nextTaskNumber;
     const assignee = MEMBERS[i % MEMBERS.length];
     const task = await Task.create({
       workspaceId: safeObjectId(WORKSPACE_ID),
@@ -132,6 +140,7 @@ const seed = async () => {
     }
 
     createdCount += 1;
+    nextTaskNumber += 1;
   }
   console.log(`Tasks created: ${createdCount}`);
 

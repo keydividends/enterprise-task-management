@@ -30,6 +30,9 @@ const toProjectMemberDTO = (member) => {
   return {
     id: String(member._id || member.id),
     projectId: String(member.projectId),
+    // Keep the actual user identifier in the public membership contract. Task
+    // assignment consumes this value; the membership record id is not a user id.
+    userId: member.userId ? String(member.userId._id || member.userId.id || member.userId) : null,
     userName: member.userName || null,
     employeeId: member.employeeId || null,
     projectRole: member.projectRole || "DEVELOPER",

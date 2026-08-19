@@ -5,6 +5,7 @@ const app = require("../src/app");
 const { startDatabase, clearDatabase, stopDatabase } = require("./testDatabase");
 const { Task, Label, TaskLabel, Checklist, ChecklistItem } = require("../src/modules/tasks/task.model");
 const mockData = require("../src/modules/tasks/task.mockData");
+const taskService = require("../src/modules/tasks/task.service");
 
 const authHeader = "Bearer mock-token";
 const projectId = mockData.PROJECTS[0].id;
@@ -299,6 +300,61 @@ test("Permission: member with TASK_VIEW can list tasks", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.body.success, true);
   assert.equal(response.body.pagination.totalItems, 1);
+});
+
+test("Permission: task mutation requires access to the task project", async () => {
+  const created = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send(createTaskPayload());
+
+  await assert.rejects(
+    taskService.updateTask(
+      created.body.data.id,
+      { title: "Unauthorized update" },
+      {
+        workspaceId: mockData.WORKSPACE_ID,
+        userId: "64a1ffffffffffffffffffff",
+        user: { role: "DEVELOPER", permissions: ["TASK_UPDATE"] },
+      }
+    ),
+    (error) => error.code === "PROJECT_ACCESS_DENIED"
+  );
+});
+
+test("Permission: closing a task requires TASK_CLOSE", async () => {
+  const created = await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send({ ...createTaskPayload(), status: "IN_REVIEW" });
+
+  await assert.rejects(
+    taskService.changeStatus(
+      created.body.data.id,
+      { status: "DONE" },
+      {
+        workspaceId: mockData.WORKSPACE_ID,
+        userId: mockData.USERS[0].id,
+        user: { role: "DEVELOPER", permissions: ["TASK_UPDATE"] },
+      }
+    ),
+    (error) => error.code === "PERMISSION_DENIED"
+  );
+});
+
+test("Permission: creating a label requires project access", async () => {
+  await assert.rejects(
+    taskService.createLabel(
+      projectId,
+      { name: "Unauthorized label", color: "#123456" },
+      {
+        workspaceId: mockData.WORKSPACE_ID,
+        userId: "64a1ffffffffffffffffffff",
+        user: { role: "DEVELOPER", permissions: ["TASK_UPDATE"] },
+      }
+    ),
+    (error) => error.code === "PROJECT_ACCESS_DENIED"
+  );
 });
 
 test("Validation: invalid project is rejected with 404", async () => {

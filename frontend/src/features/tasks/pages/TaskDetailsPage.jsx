@@ -256,6 +256,7 @@ const labels = task.labels || [];
 
   // Resolve a userId to a display name, preferring the real users map.
   const getUserName = (userId) => resolveName(userId, userMap);
+  const getTaskPersonName = (userId, apiName) => apiName || getUserName(userId);
   const formatHistoryValue = (field, value) => {
     if (value === null || value === undefined || value === '') return '—';
 
@@ -371,7 +372,7 @@ const labels = task.labels || [];
             </div>
             <div className="meta-cell">
               <span className="meta-label">Reporter</span>
-              <span className="meta-value">{getUserName(task.reporterId)}</span>
+              <span className="meta-value">{getTaskPersonName(task.reporterId, task.reporterName)}</span>
             </div>
           </div>
 
@@ -388,8 +389,8 @@ const labels = task.labels || [];
         <div className="task-detail-side">
           <div className="glass-card task-detail-panel">
             <h4>Details</h4>
-            <div className="detail-row"><span>Assignee</span><strong>{getUserName(task.primaryAssigneeId)}</strong></div>
-            <div className="detail-row"><span>Reporter</span><strong>{getUserName(task.reporterId)}</strong></div>
+            <div className="detail-row"><span>Assignee</span><strong>{getTaskPersonName(task.primaryAssigneeId, task.primaryAssigneeName)}</strong></div>
+            <div className="detail-row"><span>Reporter</span><strong>{getTaskPersonName(task.reporterId, task.reporterName)}</strong></div>
             <div className="detail-row"><span>Created</span><strong>{formatDate(task.createdAt)}</strong></div>
             <div className="detail-row"><span>Updated</span><strong>{formatDate(task.updatedAt)}</strong></div>
           </div>

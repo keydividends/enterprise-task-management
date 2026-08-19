@@ -19,6 +19,12 @@ const findTaskById = (taskId, workspaceId) => {
   return Task.findOne(filter);
 };
 
+const findDeletedTaskById = (taskId, workspaceId) => {
+  const filter = { _id: taskId, isDeleted: true };
+  if (workspaceId) filter.workspaceId = workspaceId;
+  return Task.findOne(filter);
+};
+
 const findTasks = (filter, { skip = 0, limit = 20, sort = { createdAt: -1 } } = {}) =>
   Task.find({ ...filter, isDeleted: false }).sort(sort).skip(skip).limit(limit).lean();
 
@@ -231,6 +237,7 @@ module.exports = {
   getNextTaskNumber,
   createTask,
   findTaskById,
+  findDeletedTaskById,
   findTasks,
   findTasksAggregated,
   countTasks,

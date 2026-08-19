@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { CalendarDays, MessageSquareText, Paperclip, User } from 'lucide-react';
-import { getUserName } from '../hooks/useTasks';
 import { PRIORITY_LABELS, TYPE_LABELS, STATUS_LABELS, TASK_STATUS_TRANSITIONS } from '../taskConstants';
 
 const PriorityTag = ({ priority }) => {
@@ -16,7 +15,7 @@ const formatDate = (date) => {
 
 const TaskCard = ({ task, onStatusChange, showProject = false }) => {
   const labels = task.labels || [];
-  const assignee = task.assigneeName || task.primaryAssigneeName || getUserName(task.primaryAssigneeId);
+  const assignee = task.assigneeName || task.primaryAssigneeName || (task.primaryAssigneeId ? 'Assigned user' : 'Unassigned');
 
   return (
     <div className="task-card">
@@ -43,7 +42,7 @@ const TaskCard = ({ task, onStatusChange, showProject = false }) => {
 
       <div className="task-card-meta">
         <span title="Assignee">
-          <User size={13} /> {assignee || 'Unassigned'}
+          <User size={13} /> {assignee}
         </span>
         {task.dueDate && (
           <span title="Due date">

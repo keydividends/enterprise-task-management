@@ -1,1 +1,1799 @@
-{"info":{"name":"ETMS Tasks API","schema":"https://schema.getpostman.com/json/collection/v2.1.0/collection.json","description":"Task management CRUD, board, assignment, status, priority, labels, and checklists for ETMS. Requires a valid auth accessToken (see ETMS-Auth collection)."},"item":[{"name":"List Tasks","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });","const json = pm.response.json();","pm.expect(json.success).to.equal(true);","pm.expect(json.data).to.be.an('array');","pm.expect(json.pagination).to.be.an('object');","if (json.data.length) { pm.collectionVariables.set('taskId', json.data[0].id); }"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"page","value":"1"},{"key":"pageSize","value":"20"},{"key":"sortBy","value":"createdAt"},{"key":"sortOrder","value":"desc"}]}}},{"name":"List Tasks (sort by due date asc)","event":[{"listen":"test","script":{"exec":["pm.test(\"Status 200\", () => pm.response.to.have.status(200));","const json = pm.response.json();","pm.expect(json.data).to.be.an('array');","const dates = json.data.map(t => t.dueDate).filter(Boolean);","for (let i = 1; i < dates.length; i++) { pm.expect(new Date(dates[i-1]) <= new Date(dates[i])).to.be.true; }"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?sortBy=dueDate&sortOrder=asc&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"sortBy","value":"dueDate"},{"key":"sortOrder","value":"asc"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (sort by due date desc)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?sortBy=dueDate&sortOrder=desc&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"sortBy","value":"dueDate"},{"key":"sortOrder","value":"desc"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (sort by priority desc - highest first)","event":[{"listen":"test","script":{"exec":["pm.test(\"Status 200\", () => pm.response.to.have.status(200));","const json = pm.response.json();","pm.expect(json.data).to.be.an('array');","const rank = {LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4};","const ranks = json.data.map(t => rank[t.priority] || 0);","for (let i = 1; i < ranks.length; i++) { pm.expect(ranks[i-1] >= ranks[i]).to.be.true; }"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?sortBy=priority&sortOrder=desc&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"sortBy","value":"priority"},{"key":"sortOrder","value":"desc"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (sort by priority asc - lowest first)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?sortBy=priority&sortOrder=asc&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"sortBy","value":"priority"},{"key":"sortOrder","value":"asc"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (sort by createdAt asc - oldest first)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?sortBy=createdAt&sortOrder=asc&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"sortBy","value":"createdAt"},{"key":"sortOrder","value":"asc"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (filter + sort: HIGH priority, due date asc)","event":[{"listen":"test","script":{"exec":["pm.test(\"Status 200\", () => pm.response.to.have.status(200));","const json = pm.response.json();","json.data.forEach(t => pm.expect(t.priority).to.equal('HIGH'));"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?priority=HIGH&sortBy=dueDate&sortOrder=asc&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"priority","value":"HIGH"},{"key":"sortBy","value":"dueDate"},{"key":"sortOrder","value":"asc"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (pagination page 1)","event":[{"listen":"test","script":{"exec":["pm.test(\"Status 200\", () => pm.response.to.have.status(200));","const json = pm.response.json();","pm.expect(json.pagination.page).to.equal(1);","pm.expect(json.data.length).to.be.at.most(json.pagination.pageSize);"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?page=1&pageSize=12&sortBy=createdAt&sortOrder=desc","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"page","value":"1"},{"key":"pageSize","value":"12"},{"key":"sortBy","value":"createdAt"},{"key":"sortOrder","value":"desc"}]}}},{"name":"List Tasks (pagination page 2)","event":[{"listen":"test","script":{"exec":["pm.test(\"Status 200\", () => pm.response.to.have.status(200));","const json = pm.response.json();","pm.expect(json.pagination.page).to.equal(2);"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?page=2&pageSize=12&sortBy=createdAt&sortOrder=desc","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"page","value":"2"},{"key":"pageSize","value":"12"},{"key":"sortBy","value":"createdAt"},{"key":"sortOrder","value":"desc"}]}}},{"name":"List Tasks (search)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?search=board&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"search","value":"board"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (filter by sprint)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?sprintId={{sprintId}}&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"sprintId","value":"{{sprintId}}"},{"key":"pageSize","value":"20"}]}}},{"name":"List Tasks (filter by assignee)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks?assigneeId={{assigneeId}}&pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","tasks"],"query":[{"key":"assigneeId","value":"{{assigneeId}}"},{"key":"pageSize","value":"20"}]}}},{"name":"Project Task List","event":[{"listen":"test","script":{"exec":["pm.test(\"Status 200\", () => pm.response.to.have.status(200));","const json = pm.response.json();","pm.expect(json.data).to.be.an('array');","json.data.forEach(t => pm.expect(t.projectId).to.equal(pm.collectionVariables.get('projectId')));"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/projects/{{projectId}}/tasks?pageSize=20","host":["{{baseUrl}}"],"path":["api","v1","projects","{{projectId}}","tasks"],"query":[{"key":"pageSize","value":"20"}]}}},{"name":"Create Task","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });","const json = pm.response.json();","pm.expect(json.success).to.equal(true);","pm.expect(json.data.taskKey).to.match(/^[A-Z]+-\\d+$/);","pm.collectionVariables.set('taskId', json.data.id);","pm.collectionVariables.set('taskKey', json.data.taskKey);"],"type":"text/javascript"}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"title\": \"Implement JWT protected routes\",\n  \"description\": \"Secure frontend and backend routes\",\n  \"projectId\": \"{{projectId}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"epicId\": \"{{epicId}}\",\n  \"primaryAssigneeId\": \"{{assigneeId}}\",\n  \"type\": \"STORY\",\n  \"priority\": \"HIGH\",\n  \"storyPoints\": 5,\n  \"dueDate\": \"2026-08-10\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks","host":["{{baseUrl}}"],"path":["api","v1","tasks"]}}},{"name":"Get Task","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });","const json = pm.response.json();","pm.expect(json.success).to.equal(true);","pm.expect(json.data.id).to.equal(pm.collectionVariables.get('taskId'));","pm.expect(json.data.assignments).to.be.an('array');","pm.expect(json.data.checklists).to.be.an('array');"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}"]}}},{"name":"Update Task","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"title\": \"Implement JWT protected routes and refresh\",\n  \"priority\": \"CRITICAL\",\n  \"storyPoints\": 8\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}"]}}},{"name":"Change Task Status","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });","const json = pm.response.json();","pm.expect(json.data.status).to.equal('IN_REVIEW');"],"type":"text/javascript"}}],"request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"status\": \"IN_REVIEW\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/status","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","status"]}}},{"name":"Change Task Priority","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"priority\": \"HIGH\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/priority","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","priority"]}}},{"name":"Assign Task","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });","const json = pm.response.json();","pm.expect(json.data.primaryAssigneeId).to.equal(pm.collectionVariables.get('assigneeId'));"],"type":"text/javascript"}}],"request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"userId\": \"{{assigneeId}}\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/assignee","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","assignee"]}}},{"name":"Unassign Task","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/assignee","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","assignee"]}}},{"name":"Get Task Board","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });","const json = pm.response.json();","pm.expect(json.success).to.equal(true);","for (const col of ['BACKLOG','TODO','IN_PROGRESS','IN_REVIEW','QA','DONE','CANCELLED']) {","  pm.expect(json.data[col]).to.be.an('array');","}"],"type":"text/javascript"}}],"request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/board?projectId={{projectId}}","host":["{{baseUrl}}"],"path":["api","v1","tasks","board"],"query":[{"key":"projectId","value":"{{projectId}}"}]}}},{"name":"Get Task History","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/history","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","history"]}}},{"name":"List Labels","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/projects/{{projectId}}/labels","host":["{{baseUrl}}"],"path":["api","v1","projects","{{projectId}}","labels"]}}},{"name":"Create Label","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });","const json = pm.response.json();","pm.collectionVariables.set('labelId', json.data.id);"],"type":"text/javascript"}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"name\": \"security\",\n  \"color\": \"#123456\",\n  \"description\": \"Security work\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/projects/{{projectId}}/labels","host":["{{baseUrl}}"],"path":["api","v1","projects","{{projectId}}","labels"]}}},{"name":"Add Label to Task","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"labelId\": \"{{labelId}}\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/labels","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","labels"]}}},{"name":"Remove Label from Task","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/labels/{{labelId}}","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","labels","{{labelId}}"]}}},{"name":"Create Checklist","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });","const json = pm.response.json();","pm.collectionVariables.set('checklistId', json.data.id);"],"type":"text/javascript"}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"title\": \"Definition of Done\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/checklists","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","checklists"]}}},{"name":"List Checklists","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/checklists","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","checklists"]}}},{"name":"Add Checklist Item","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });","const json = pm.response.json();","pm.collectionVariables.set('itemId', json.data.id);"],"type":"text/javascript"}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"text\": \"Add unit tests\",\n  \"assigneeId\": \"{{assigneeId}}\",\n  \"dueDate\": \"2026-08-10\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/checklists/{{checklistId}}/items","host":["{{baseUrl}}"],"path":["api","v1","checklists","{{checklistId}}","items"]}}},{"name":"Complete Checklist Item","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/checklists/{{checklistId}}/items/{{itemId}}/complete","host":["{{baseUrl}}"],"path":["api","v1","checklists","{{checklistId}}","items","{{itemId}}","complete"]}}},{"name":"Update Checklist Item","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"text\": \"Add unit and integration tests\",\n  \"dueDate\": \"2026-08-11\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/checklists/{{checklistId}}/items/{{itemId}}","host":["{{baseUrl}}"],"path":["api","v1","checklists","{{checklistId}}","items","{{itemId}}"]}}},{"name":"Delete Checklist Item","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/checklists/{{checklistId}}/items/{{itemId}}","host":["{{baseUrl}}"],"path":["api","v1","checklists","{{checklistId}}","items","{{itemId}}"]}}},{"name":"Delete Task","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}"]}}},{"name":"Restore Task","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/restore","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","restore"]}}},{"name":"Validation: Create Task (missing title)","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });","const json = pm.response.json();","pm.expect(json.code).to.equal('VALIDATION_ERROR');","pm.expect(json.field).to.equal('title');"],"type":"text/javascript"}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"projectId\": \"{{projectId}}\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks","host":["{{baseUrl}}"],"path":["api","v1","tasks"]}}},{"name":"Validation: Invalid Project","event":[{"listen":"test","script":{"exec":["pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404); });","const json = pm.response.json();","pm.expect(json.code).to.equal('PROJECT_NOT_FOUND');"],"type":"text/javascript"}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"title\": \"Invalid project test\",\n  \"projectId\": \"64a2ffffffffffffffffffff\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks","host":["{{baseUrl}}"],"path":["api","v1","tasks"]}}},{"name":"Validation: Invalid Assignee","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"userId\": \"64a1ffffffffffffffffffff\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/assignee","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","assignee"]}}},{"name":"Validation: Invalid Status Transition","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"status\": \"IN_PROGRESS\"\n}"},"url":{"raw":"{{baseUrl}}/api/v1/tasks/{{taskId}}/status","host":["{{baseUrl}}"],"path":["api","v1","tasks","{{taskId}}","status"]}}},{"name":"Validation: Missing Token","request":{"method":"GET","header":[],"url":{"raw":"{{baseUrl}}/api/v1/tasks","host":["{{baseUrl}}"],"path":["api","v1","tasks"]}}},{"name":"Validation: Task Not Found","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/api/v1/tasks/64a2ffffffffffffffffffff","host":["{{baseUrl}}"],"path":["api","v1","tasks","64a2ffffffffffffffffffff"]}}}],"variable":[{"key":"baseUrl","value":"http://localhost:5000","type":"string"},{"key":"accessToken","value":"","type":"string"},{"key":"userId","value":"","type":"string"},{"key":"projectId","value":"64a200000000000000000001","type":"string"},{"key":"assigneeId","value":"64a100000000000000000002","type":"string"},{"key":"sprintId","value":"64a300000000000000000002","type":"string"},{"key":"epicId","value":"64a400000000000000000002","type":"string"},{"key":"taskId","value":"","type":"string"},{"key":"taskKey","value":"","type":"string"},{"key":"labelId","value":"","type":"string"},{"key":"checklistId","value":"","type":"string"},{"key":"itemId","value":"","type":"string"}]}
+{
+  "info": {
+    "name": "ETMS Tasks API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Task management CRUD, board, assignment, status, priority, labels, and checklists for ETMS. Requires a valid auth accessToken (see ETMS-Auth collection)."
+  },
+  "item": [
+    {
+      "name": "List Tasks",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "pm.expect(json.data).to.be.an('array');",
+              "pm.expect(json.pagination).to.be.an('object');",
+              "if (json.data.length) { pm.collectionVariables.set('taskId', json.data[0].id); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            },
+            {
+              "key": "sortBy",
+              "value": "createdAt"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (sort by due date asc)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.expect(json.data).to.be.an('array');",
+              "const dates = json.data.map(t => t.dueDate).filter(Boolean);",
+              "for (let i = 1; i < dates.length; i++) { pm.expect(new Date(dates[i-1]) <= new Date(dates[i])).to.be.true; }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?sortBy=dueDate&sortOrder=asc&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "dueDate"
+            },
+            {
+              "key": "sortOrder",
+              "value": "asc"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (sort by due date desc)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?sortBy=dueDate&sortOrder=desc&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "dueDate"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (sort by priority desc - highest first)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.expect(json.data).to.be.an('array');",
+              "const rank = {LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4};",
+              "const ranks = json.data.map(t => rank[t.priority] || 0);",
+              "for (let i = 1; i < ranks.length; i++) { pm.expect(ranks[i-1] >= ranks[i]).to.be.true; }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?sortBy=priority&sortOrder=desc&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "priority"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (sort by priority asc - lowest first)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?sortBy=priority&sortOrder=asc&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "priority"
+            },
+            {
+              "key": "sortOrder",
+              "value": "asc"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (sort by createdAt asc - oldest first)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?sortBy=createdAt&sortOrder=asc&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "createdAt"
+            },
+            {
+              "key": "sortOrder",
+              "value": "asc"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (filter + sort: HIGH priority, due date asc)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "json.data.forEach(t => pm.expect(t.priority).to.equal('HIGH'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?priority=HIGH&sortBy=dueDate&sortOrder=asc&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "priority",
+              "value": "HIGH"
+            },
+            {
+              "key": "sortBy",
+              "value": "dueDate"
+            },
+            {
+              "key": "sortOrder",
+              "value": "asc"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (pagination page 1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.expect(json.pagination.page).to.equal(1);",
+              "pm.expect(json.data.length).to.be.at.most(json.pagination.pageSize);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?page=1&pageSize=12&sortBy=createdAt&sortOrder=desc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "12"
+            },
+            {
+              "key": "sortBy",
+              "value": "createdAt"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (pagination page 2)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.expect(json.pagination.page).to.equal(2);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?page=2&pageSize=12&sortBy=createdAt&sortOrder=desc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "2"
+            },
+            {
+              "key": "pageSize",
+              "value": "12"
+            },
+            {
+              "key": "sortBy",
+              "value": "createdAt"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (search)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?search=board&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "board"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (filter by sprint)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?sprintId={{sprintId}}&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "sprintId",
+              "value": "{{sprintId}}"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Tasks (filter by assignee)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?assigneeId={{assigneeId}}&pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "assigneeId",
+              "value": "{{assigneeId}}"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Project Task List",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.expect(json.data).to.be.an('array');",
+              "json.data.forEach(t => pm.expect(t.projectId).to.equal(pm.collectionVariables.get('projectId')));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/tasks?pageSize=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "projects",
+            "{{projectId}}",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Task",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "pm.expect(json.data.taskKey).to.match(/^[A-Z]+-\\d+$/);",
+              "pm.collectionVariables.set('taskId', json.data.id);",
+              "pm.collectionVariables.set('taskKey', json.data.taskKey);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Implement JWT protected routes\",\n  \"description\": \"Secure frontend and backend routes\",\n  \"projectId\": \"{{projectId}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"epicId\": \"{{epicId}}\",\n  \"primaryAssigneeId\": \"{{assigneeId}}\",\n  \"type\": \"STORY\",\n  \"priority\": \"HIGH\",\n  \"storyPoints\": 5,\n  \"dueDate\": \"2026-08-10\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Task",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "pm.expect(json.data.id).to.equal(pm.collectionVariables.get('taskId'));",
+              "pm.expect(json.data.assignments).to.be.an('array');",
+              "pm.expect(json.data.checklists).to.be.an('array');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Task",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Implement JWT protected routes and refresh\",\n  \"priority\": \"CRITICAL\",\n  \"storyPoints\": 8\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Change Task Status",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.data.status).to.equal('IN_REVIEW');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"IN_REVIEW\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Change Task Priority",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"priority\": \"HIGH\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/priority",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "priority"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Assign Task",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.data.primaryAssigneeId).to.equal(pm.collectionVariables.get('assigneeId'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{assigneeId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/assignee",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "assignee"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Unassign Task",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/assignee",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "assignee"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Task Board",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.success).to.equal(true);",
+              "for (const col of ['BACKLOG','TODO','IN_PROGRESS','IN_REVIEW','QA','DONE','CANCELLED']) {",
+              "  pm.expect(json.data[col]).to.be.an('array');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/board?projectId={{projectId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "board"
+          ],
+          "query": [
+            {
+              "key": "projectId",
+              "value": "{{projectId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Task History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/history",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "history"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Labels",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/labels",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "projects",
+            "{{projectId}}",
+            "labels"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Label",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('labelId', json.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"security\",\n  \"color\": \"#123456\",\n  \"description\": \"Security work\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/labels",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "projects",
+            "{{projectId}}",
+            "labels"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Add Label to Task",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"labelId\": \"{{labelId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/labels",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "labels"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Remove Label from Task",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/labels/{{labelId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "labels",
+            "{{labelId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Checklist",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('checklistId', json.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Definition of Done\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/checklists",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "checklists"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Checklists",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/checklists",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "checklists"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Add Checklist Item",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('itemId', json.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Add unit tests\",\n  \"assigneeId\": \"{{assigneeId}}\",\n  \"dueDate\": \"2026-08-10\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/checklists/{{checklistId}}/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checklists",
+            "{{checklistId}}",
+            "items"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Complete Checklist Item",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/checklists/{{checklistId}}/items/{{itemId}}/complete",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checklists",
+            "{{checklistId}}",
+            "items",
+            "{{itemId}}",
+            "complete"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Checklist Item",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Add unit and integration tests\",\n  \"dueDate\": \"2026-08-11\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/checklists/{{checklistId}}/items/{{itemId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checklists",
+            "{{checklistId}}",
+            "items",
+            "{{itemId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Checklist Item",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/checklists/{{checklistId}}/items/{{itemId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checklists",
+            "{{checklistId}}",
+            "items",
+            "{{itemId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Task",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Restore Task",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/restore",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "restore"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Create Task (missing title)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.code).to.equal('VALIDATION_ERROR');",
+              "pm.expect(json.field).to.equal('title');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": \"{{projectId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Invalid Project",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.code).to.equal('PROJECT_NOT_FOUND');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Invalid project test\",\n  \"projectId\": \"64a2ffffffffffffffffffff\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Invalid Assignee",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", () => pm.response.to.have.status(404));",
+              "pm.expect(pm.response.json().code).to.equal('USER_NOT_FOUND');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"64a1ffffffffffffffffffff\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/assignee",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "assignee"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Invalid Status Transition",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 409\", () => pm.response.to.have.status(409));",
+              "pm.expect(pm.response.json().code).to.equal('INVALID_STATE_TRANSITION');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Missing Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401\", () => pm.response.to.have.status(401));",
+              "pm.expect(pm.response.json().code).to.equal('AUTH_REQUIRED');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Task Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", () => pm.response.to.have.status(404));",
+              "pm.expect(pm.response.json().code).to.equal('TASK_NOT_FOUND');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/64a2ffffffffffffffffffff",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "64a2ffffffffffffffffffff"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Invalid List Pagination",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", () => pm.response.to.have.status(400));",
+              "const json = pm.response.json();",
+              "pm.expect(json.code).to.equal('VALIDATION_ERROR');",
+              "pm.expect(json.field).to.equal('page');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks?page=0",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Invalid Label Color",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", () => pm.response.to.have.status(400));",
+              "const json = pm.response.json();",
+              "pm.expect(json.code).to.equal('VALIDATION_ERROR');",
+              "pm.expect(json.field).to.equal('color');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Invalid-color test\",\n  \"color\": \"blue\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/labels",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "projects",
+            "{{projectId}}",
+            "labels"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validation: Checklist Requires Title",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", () => pm.response.to.have.status(400));",
+              "const json = pm.response.json();",
+              "pm.expect(json.code).to.equal('VALIDATION_ERROR');",
+              "pm.expect(json.field).to.equal('title');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/checklists",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "{{taskId}}",
+            "checklists"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Authorization: Member Cannot Access Project Task Creation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 403\", () => pm.response.to.have.status(403));",
+              "pm.expect(pm.response.json().code).to.equal('PROJECT_ACCESS_DENIED');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer mock-member-token"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Unauthorized task creation\",\n  \"projectId\": \"{{projectId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tasks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "64a200000000000000000001",
+      "type": "string"
+    },
+    {
+      "key": "assigneeId",
+      "value": "64a100000000000000000002",
+      "type": "string"
+    },
+    {
+      "key": "sprintId",
+      "value": "64a300000000000000000002",
+      "type": "string"
+    },
+    {
+      "key": "epicId",
+      "value": "64a400000000000000000002",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "labelId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checklistId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

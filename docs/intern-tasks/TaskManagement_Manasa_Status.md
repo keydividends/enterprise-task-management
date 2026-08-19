@@ -43,10 +43,16 @@ This status file captures the current implementation state of the Task Managemen
 
 ## Remaining Work
 
-- Add seed tasks for board/dashboard verification by running `npm run seed:tasks` (or `node scripts/seedTasks.js`) against a live MongoDB, and confirm the board/dashboard populate.
-- Complete Postman coverage for task flows and error cases (the `ETMS-Tasks` collection exists but can be extended with error/edge-case requests).
-- Manual UI validation of list/board/detail/forms with real data.
 - When the Sprint and Epic modules are merged, wire `task.contracts.js` `findSprintById` / `findEpicById` to those modules' repositories (currently mock fallback).
+- Interactive manual UI validation of task list/board/detail/forms remains pending a browser-enabled session. The production frontend build has passed, but that is not a substitute for click-through validation.
+
+## Verification Completed (2026-08-19)
+
+- Seeded the local MongoDB task dataset successfully. The seeder now selects task numbers after the project's current maximum, preventing duplicate-key failures when it is rerun.
+- Confirmed the seeded project board returns all seven status columns and the live dashboard reports 16 project tasks (13 pending, 2 completed).
+- Expanded `backend/postman/ETMS-Tasks.postman_collection.json` with assertions for invalid pagination, label color, checklist input, missing authentication, missing tasks, invalid assignees/transitions, and member project-access denial.
+- Ran `node --test tests/task.test.js tests/task.api.test.js`: 46 tests passed, 0 failed, including project-access, task-close, and label-access permission regressions.
+- Ran the production frontend build successfully with `npm run build`.
 
 ## Notes
 

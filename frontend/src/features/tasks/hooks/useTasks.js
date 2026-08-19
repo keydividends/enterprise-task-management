@@ -52,33 +52,24 @@ export const fetchProjects = async () => {
   }
 };
 
-// fetchProjectMembers — calls the real project members API, resolves user names,
-// falls back to mock if the API is unavailable or returns no data.
+// fetchProjectMembers — calls the real project-members API. The API supplies
+// both the member's userId (needed for assignment) and display details, so a
+// second users request is unnecessary and can no longer hide valid members.
 export const fetchProjectMembers = async (projectId) => {
   if (!projectId) return [];
   try {
     const { data } = await axiosClient.get(`/projects/${projectId}/members`);
     const items = data?.data?.items || data?.data || data?.items || [];
-    if (items.length) {
-      // The project members API returns userId as a plain ID string (not populated).
-      // Resolve display names by fetching the users list and building a lookup map.
-      const userIds = items.map((m) => m.userId?._id || m.userId || m.id).filter(Boolean);
-      let userMap = {};
-      try {
-        const usersRes = await axiosClient.get('/users', { params: { pageSize: 200 } });
-        const users = usersRes.data?.data?.items || usersRes.data?.data || usersRes.data?.items || [];
-        users.forEach((u) => {
-          const uid = u.id || u._id;
-          if (uid) userMap[String(uid)] = u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || null;
-        });
-      } catch { /* user lookup failed — names will fall back to mock */ }
-
-      return userIds.map((uid) => {
-        const strId = String(uid);
-        const mockUser = MOCK_USERS.find((u) => u.id === strId);
-        const fullName = userMap[strId] || mockUser?.fullName || null;
-        return { id: strId, fullName };
-      }).filter((u) => u.fullName); // drop entries with no resolvable name
+    if (Array.isArray(items)) {
+      return items
+        .map((member) => {
+          const userId = member.userId?._id || member.userId?.id || member.userId;
+          const fullName = member.userName || member.displayName || member.fullName
+            || [member.firstName, member.lastName].filter(Boolean).join(' ')
+            || member.email || member.employeeId;
+          return userId && fullName ? { id: String(userId), fullName } : null;
+        })
+        .filter(Boolean);
     }
   } catch { /* fall through */ }
   return MOCK_PROJECT_MEMBERS[projectId] || [];
