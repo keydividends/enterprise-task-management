@@ -1090,7 +1090,7 @@ Valid project ID.
 ### Request
 
 ``` json
-{"name":"Enterprise Task Management","key":"ETMS","description":"Internship project","projectManagerId":"USER_ID","priority":"HIGH","startDate":"2026-08-01","targetEndDate":"2026-10-01"}
+{"name":"Enterprise Task Management","key":"ETMS","description":"Internship project","projectManagerEmployeeId":"MGR-001","priority":"HIGH","startDate":"2026-08-01","targetEndDate":"2026-10-01"}
 ```
 
 ### Validation
@@ -1225,7 +1225,7 @@ Project exists; pagination valid.
 ### Response
 
 ``` json
-{"success":true,"data":[{"userId":"USER_ID","name":"Ravi Kumar","projectRole":"DEVELOPER","status":"ACTIVE"}]}
+{"success":true,"data":[{"employeeId":"EMP-001","name":"Ravi Kumar","projectRole":"DEVELOPER","status":"ACTIVE"}]}
 ```
 
 ### Error Codes
@@ -1241,12 +1241,12 @@ Project exists; pagination valid.
 ### Request
 
 ``` json
-{"userId":"USER_ID","projectRole":"DEVELOPER","allocationPercentage":100}
+{"employeeId":"EMP-001","projectRole":"DEVELOPER","allocationPercentage":100}
 ```
 
 ### Validation
 
-User must exist and belong to workspace; duplicate active membership
+Employee ID must identify a user in the workspace; duplicate active membership
 forbidden.
 
 ### Response
@@ -1261,7 +1261,7 @@ forbidden.
 
 ## 7.10. Update Project Member
 
-**URL:** `/api/v1/projects/:projectId/members/:userId`\
+**URL:** `/api/v1/projects/:projectId/members/:employeeId`\
 **Method:** `PUT`\
 **Authorization:** `PROJECT_MANAGE_MEMBERS`
 
@@ -1287,7 +1287,7 @@ Membership exists; role/allocation valid.
 
 ## 7.11. Remove Project Member
 
-**URL:** `/api/v1/projects/:projectId/members/:userId`\
+**URL:** `/api/v1/projects/:projectId/members/:employeeId`\
 **Method:** `DELETE`\
 **Authorization:** `PROJECT_MANAGE_MEMBERS`
 

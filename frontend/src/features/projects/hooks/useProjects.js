@@ -9,6 +9,7 @@ const useProjects = () => {
 
   const fetchProjects = useCallback(async (search = '') => {
     setLoading(true);
+    setError(null);
     try {
       const result = await projectService.getProjects({ search });
       setProjects(result.items || []);

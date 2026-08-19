@@ -2437,6 +2437,40 @@ html[data-theme='dark'] .divider span {
 .project-member-row .ghost-button:hover { border-color: #fecaca; background: #fff1f2; color: #b91c1c; }
 .project-feedback { margin: 8px 0; }
 .project-feedback-error { color: #dc2626; }
+
+/* Project notifications */
+.project-toast-stack {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1300;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.project-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.2);
+  animation: toast-in 0.25s ease;
+}
+
+.project-toast-error { background: #dc2626; }
+
+.project-toast-dismiss {
+  margin-left: auto;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
 .project-state-card { max-width: 680px; padding: 28px; }
 .project-empty-state { margin-top: 16px; border: 1px dashed rgba(148, 163, 184, 0.5); border-radius: 16px; background: rgba(248, 250, 252, 0.65); }
 

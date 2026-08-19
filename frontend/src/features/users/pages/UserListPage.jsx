@@ -395,7 +395,7 @@ export const UserListPage = () => {
               filteredUsers.map((user) => {
                 const targetId = user.id || user.employeeId;
                 const displayEmployeeId = user.employeeId || 'EMP-000';
-                const rawManagerId = user.managerEmployeeId || user.managerId;
+                const rawManagerId = user.managerEmployeeId;
                 const displayManagerId = rawManagerId && String(rawManagerId).trim() ? String(rawManagerId).trim() : 'Not Assigned';
 
                 return (

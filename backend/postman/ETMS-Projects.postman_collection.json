@@ -9,7 +9,7 @@
     { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
     { "key": "token", "value": "mock-token" },
     { "key": "projectId", "value": "" },
-    { "key": "userId", "value": "user_demo_1" }
+    { "key": "employeeId", "value": "EMP-001" }
   ],
   "item": [
     {
@@ -55,7 +55,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Test Project\",\n  \"key\": \"TPRJ\",\n  \"description\": \"A test project created via Postman\",\n  \"projectManagerId\": \"{{userId}}\",\n  \"status\": \"PLANNING\",\n  \"priority\": \"MEDIUM\",\n  \"startDate\": \"2026-09-01\",\n  \"targetEndDate\": \"2026-12-31\"\n}"
+          "raw": "{\n  \"name\": \"Test Project\",\n  \"key\": \"TPRJ\",\n  \"description\": \"A test project created via Postman\",\n  \"projectManagerEmployeeId\": \"{{employeeId}}\",\n  \"status\": \"PLANNING\",\n  \"priority\": \"MEDIUM\",\n  \"startDate\": \"2026-09-01\",\n  \"targetEndDate\": \"2026-12-31\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/projects",
@@ -141,7 +141,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectRole\": \"DEVELOPER\",\n  \"allocationPercentage\": 80\n}"
+          "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"projectRole\": \"DEVELOPER\",\n  \"allocationPercentage\": 80\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/projects/{{projectId}}/members",
@@ -160,7 +160,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectRole\": \"DEVELOPER\"\n}"
+          "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"projectRole\": \"DEVELOPER\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/projects/{{projectId}}/members",
@@ -175,9 +175,9 @@
         "method": "DELETE",
         "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
         "url": {
-          "raw": "{{baseUrl}}/projects/{{projectId}}/members/{{userId}}",
+          "raw": "{{baseUrl}}/projects/{{projectId}}/members/{{employeeId}}",
           "host": ["{{baseUrl}}"],
-          "path": ["projects", "{{projectId}}", "members", "{{userId}}"]
+          "path": ["projects", "{{projectId}}", "members", "{{employeeId}}"]
         }
       }
     },

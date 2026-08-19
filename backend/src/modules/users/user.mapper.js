@@ -19,7 +19,7 @@ const toUserDTO = (user) => {
     id,
     ...rest,
     employeeId,
-    managerEmployeeId: rest.managerEmployeeId || rest.managerId || "",
+    managerEmployeeId: rest.managerEmployeeId || "",
     fullName: `${rest.firstName || ""} ${rest.lastName || ""}`.trim(),
   };
 };

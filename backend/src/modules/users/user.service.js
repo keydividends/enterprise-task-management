@@ -51,6 +51,7 @@ const getUserById = async (userId) => {
 
 const createUser = async (data = {}, currentUser = null) => {
   validateCreateUser(data);
+  const employeeId = validateEmployeeId(data.employeeId);
 
   const existing = await userRepository.findByEmail(data.email);
   if (existing) {
@@ -70,10 +71,9 @@ const createUser = async (data = {}, currentUser = null) => {
     department: data.department || "",
     title: data.title || "",
     bio: data.bio || "",
-    ...(data.employeeId ? { employeeId: String(data.employeeId).trim() } : {}),
-    // Accept the legacy managerId field as well as the canonical managerEmployeeId.
-    managerEmployeeId: data.managerEmployeeId || data.managerId
-      ? String(data.managerEmployeeId || data.managerId).trim()
+    employeeId,
+    managerEmployeeId: data.managerEmployeeId
+      ? String(data.managerEmployeeId).trim()
       : "",
     role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
     roleId: data.roleId || null,

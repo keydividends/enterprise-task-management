@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import userService from '../services/userService';
 
-// Helper function to ensure every user has a Custom Employee ID
+// Helper function to ensure every user has an Employee ID.
 const getEmployeeEmployeeId = (u) => {
   if (u.employeeId) return u.employeeId;
   if (u.email) return `EMP-${u.email.split('@')[0]}`;
@@ -14,13 +14,10 @@ const normalizeUserObj = (u) => {
   const managerEmployeeId =
     u.managerEmployeeId !== undefined && u.managerEmployeeId !== null
       ? u.managerEmployeeId
-      : u.managerId !== undefined && u.managerId !== null
-      ? u.managerId
       : '';
 
   return {
     ...u,
-    employeeId,
     employeeId: employeeId,
     managerEmployeeId,
   };

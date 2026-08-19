@@ -7,7 +7,6 @@ const {
   validateProjectId,
   validateUpdateProject,
   validateProjectMemberInput,
-  isValidObjectId,
 } = require("./project.validation");
 
 const createError = (code, message, statusCode = 400, field = null) => {
@@ -58,14 +57,10 @@ const resolveProjectManagerId = async (managerReference) => {
   const reference = String(managerReference || "").trim();
   if (!reference) return null;
 
-  // Project forms can use either a user's MongoDB ID or their Employee ID.
-  let manager = await userRepository.findByEmployeeId(reference);
-  if (!manager && isValidObjectId(reference)) {
-    manager = await userRepository.findById(reference);
-  }
+  const manager = await userRepository.findByEmployeeId(reference);
 
   if (!manager || manager.isDeleted || manager.status !== "ACTIVE") {
-    throw createError("USER_NOT_FOUND", "Project manager must be a valid active user.", 404, "projectManagerId");
+    throw createError("USER_NOT_FOUND", "Project manager must be a valid active employee.", 404, "projectManagerEmployeeId");
   }
 
   return String(manager._id || manager.id);
@@ -73,10 +68,10 @@ const resolveProjectManagerId = async (managerReference) => {
 
 const toProjectDTOWithManager = async (project) => {
   const dto = toProjectDTO(project);
-  if (!dto?.projectManagerId) return dto;
+  if (!project?.projectManagerId) return { ...dto, projectManagerEmployeeId: null };
 
   try {
-    const manager = await userRepository.findById(dto.projectManagerId);
+    const manager = await userRepository.findById(project.projectManagerId);
     return {
       ...dto,
       projectManagerEmployeeId: manager?.employeeId || null,
@@ -94,7 +89,9 @@ const listProjects = async (query = {}, context = {}) => {
     search: validated.search,
     status: validated.status,
     priority: validated.priority,
-    managerId: validated.managerId,
+    managerId: validated.projectManagerEmployeeId
+      ? await resolveProjectManagerId(validated.projectManagerEmployeeId)
+      : undefined,
     userId: canBrowseAllProjects(context) ? undefined : context.user?.id,
     page: validated.page,
     pageSize: validated.pageSize,
@@ -127,8 +124,8 @@ const createProject = async (payload, context = {}) => {
     throw createError("PROJECT_KEY_EXISTS", "Project key already exists in this workspace.", 409, "key");
   }
 
-  const projectManagerId = validated.projectManagerId
-    ? await resolveProjectManagerId(validated.projectManagerId)
+  const projectManagerId = validated.projectManagerEmployeeId
+    ? await resolveProjectManagerId(validated.projectManagerEmployeeId)
     : null;
 
   const projectData = {
@@ -165,10 +162,9 @@ const updateProject = async (projectId, payload, context = {}) => {
     }
   }
 
-  if (validated.projectManagerId !== undefined) {
-    validated.projectManagerId = validated.projectManagerId
-      ? await resolveProjectManagerId(validated.projectManagerId)
-      : null;
+  if (validated.projectManagerEmployeeId !== undefined) {
+    validated.projectManagerId = await resolveProjectManagerId(validated.projectManagerEmployeeId);
+    delete validated.projectManagerEmployeeId;
   }
 
   const updated = await projectRepository.updateProject(projectId, {

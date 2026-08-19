@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import useProjects from '../hooks/useProjects';
@@ -6,6 +6,8 @@ import projectService from '../services/projectService';
 import ProjectCard from '../components/ProjectCard';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { hasProjectPermission } from '../utils/projectPermissions';
+import ProjectToast from '../components/ProjectToast';
+import useProjectToasts from '../hooks/useProjectToasts';
 
 const ProjectListPage = () => {
   const { user } = useAuth();
@@ -14,6 +16,11 @@ const ProjectListPage = () => {
   const canCreate = hasProjectPermission(user, 'PROJECT_CREATE');
   const canUpdate = hasProjectPermission(user, 'PROJECT_UPDATE');
   const canDelete = hasProjectPermission(user, 'PROJECT_DELETE');
+  const { toasts, dismiss, error: showError } = useProjectToasts();
+
+  useEffect(() => {
+    if (error) showError(error);
+  }, [error, showError]);
 
   const summary = useMemo(() => ({
     count: projects.length,
@@ -32,12 +39,13 @@ const ProjectListPage = () => {
       await projectService.deleteProject(projectId);
       await refresh(search);
     } catch (err) {
-      console.error(err);
+      showError(err?.response?.data?.message || err?.message || 'Unable to archive project.');
     }
   };
 
   return (
     <div className="dashboard-page project-page project-list-page">
+      <div className="project-toast-stack">{toasts.map((toast) => <ProjectToast key={toast.id} toast={toast} onDismiss={dismiss} />)}</div>
       <section className="hero-panel glass-card project-hero">
         <div>
           <p className="eyebrow secondary">Project management</p>
@@ -83,7 +91,6 @@ const ProjectListPage = () => {
           </div>
 
           {loading ? <p className="helper-copy project-feedback">Loading projects...</p> : null}
-          {error ? <p className="helper-copy project-feedback project-feedback-error">{error}</p> : null}
           {!loading && projects.length === 0 ? <div className="empty-state project-empty-state">No projects found.</div> : null}
 
           <div className="project-card-list">

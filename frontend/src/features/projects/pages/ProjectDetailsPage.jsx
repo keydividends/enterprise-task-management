@@ -5,6 +5,8 @@ import projectService from '../services/projectService';
 import ProjectMemberManager from '../components/ProjectMemberManager';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { hasProjectPermission } from '../utils/projectPermissions';
+import ProjectToast from '../components/ProjectToast';
+import useProjectToasts from '../hooks/useProjectToasts';
 
 const TASK_STATUSES = ['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'QA', 'DONE', 'CANCELLED'];
 
@@ -15,8 +17,8 @@ const ProjectDetailsPage = () => {
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [summary, setSummary] = useState(null);
+  const { toasts, dismiss, error: showError } = useProjectToasts();
   const canUpdate = hasProjectPermission(user, 'PROJECT_UPDATE');
   const canDelete = hasProjectPermission(user, 'PROJECT_DELETE');
   const canManageMembers = hasProjectPermission(user, 'PROJECT_MANAGE_MEMBERS');
@@ -31,16 +33,15 @@ const ProjectDetailsPage = () => {
         setProject(projectData);
         setMembers(membersResult?.items || membersResult || []);
         setSummary(summaryData);
-        setError('');
       } catch (err) {
-        setError(err?.response?.data?.message || err?.message || 'Unable to load project details.');
+        showError(err?.response?.data?.message || err?.message || 'Unable to load project details.');
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [projectId]);
+  }, [projectId, showError]);
 
   const handleDelete = async () => {
     if (!window.confirm('Archive this project?')) return;
@@ -48,12 +49,13 @@ const ProjectDetailsPage = () => {
       await projectService.deleteProject(projectId);
       navigate('/projects');
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Unable to archive project.');
+      showError(err?.response?.data?.message || err?.message || 'Unable to archive project.');
     }
   };
 
   return (
     <div className="dashboard-page project-page project-details-page">
+      <div className="project-toast-stack">{toasts.map((toast) => <ProjectToast key={toast.id} toast={toast} onDismiss={dismiss} />)}</div>
       <section className="hero-panel glass-card project-hero project-details-hero">
         <div>
           <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
@@ -72,8 +74,6 @@ const ProjectDetailsPage = () => {
         </div>
       </section>
 
-      {error ? <p className="helper-copy project-feedback project-feedback-error">{error}</p> : null}
-
       {loading ? (
         <div className="panel-block glass-card project-state-card">Loading project details...</div>
       ) : project ? (
@@ -84,7 +84,7 @@ const ProjectDetailsPage = () => {
               <div><span>Project key</span><strong>{project.key}</strong></div>
               <div><span>Status</span><strong>{project.status}</strong></div>
               <div><span>Priority</span><strong>{project.priority}</strong></div>
-              <div><span>Manager</span><strong>{project.projectManagerEmployeeId || project.projectManagerId || 'Unassigned'}</strong></div>
+              <div><span>Manager</span><strong>{project.projectManagerEmployeeId || 'Unassigned'}</strong></div>
               <div><span>Start date</span><strong>{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</strong></div>
               <div><span>Target end date</span><strong>{project.targetEndDate ? new Date(project.targetEndDate).toLocaleDateString() : 'Not set'}</strong></div>
             </div>
@@ -115,7 +115,7 @@ const ProjectDetailsPage = () => {
             members={members}
             onMembersChange={setMembers}
             onMessage={() => {} }
-            onError={setError}
+            onError={showError}
             canManageMembers={canManageMembers}
           />
         </section>

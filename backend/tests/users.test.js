@@ -53,8 +53,10 @@ test("createUser creates user with hashed password and safe DTO", async () => {
       firstName: "Test",
       lastName: "User",
       email: newEmail,
+      employeeId: `EMP-${Date.now()}`,
       department: "Engineering",
       title: "QA Lead",
+      role: "MANAGER",
     },
     adminUser
   );
@@ -70,7 +72,9 @@ test("createUser retains the associate manager ID", async () => {
     {
       firstName: "Managed",
       email: `managed.test.${Date.now()}@etms.com`,
+      employeeId: `EMP-MANAGED-${Date.now()}`,
       managerEmployeeId: "MGR-001",
+      role: "MANAGER",
     },
     adminUser
   );
@@ -78,17 +82,11 @@ test("createUser retains the associate manager ID", async () => {
   assert.equal(created.managerEmployeeId, "MGR-001");
 });
 
-test("createUser accepts the legacy manager ID field", async () => {
-  const created = await userService.createUser(
-    {
-      firstName: "Legacy Managed",
-      email: `legacy-managed.test.${Date.now()}@etms.com`,
-      managerId: "MGR-002",
-    },
-    adminUser
+test("createUser requires an employee ID", async () => {
+  await assert.rejects(
+    () => userService.createUser({ firstName: "No ID", email: `no-id.${Date.now()}@etms.com`, role: "MANAGER" }, adminUser),
+    (error) => error.code === "VALIDATION_ERROR"
   );
-
-  assert.equal(created.managerEmployeeId, "MGR-002");
 });
 
 test("createUser rejects duplicate email", async () => {
@@ -99,6 +97,8 @@ test("createUser rejects duplicate email", async () => {
           firstName: "Duplicate",
           lastName: "Test",
           email: "admin@etms.com",
+          employeeId: "EMP-DUPLICATE",
+          role: "MANAGER",
         },
         adminUser
       ),

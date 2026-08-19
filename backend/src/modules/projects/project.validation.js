@@ -41,14 +41,14 @@ const validatePagination = ({ page = 1, pageSize = 20, sortOrder = -1, sortBy = 
 };
 
 const validateListQuery = (query = {}) => {
-  const { page, pageSize, sortOrder, sortBy, search, status, priority, managerId } = query;
+  const { page, pageSize, sortOrder, sortBy, search, status, priority, projectManagerEmployeeId } = query;
   const normalized = validatePagination({ page, pageSize, sortOrder, sortBy });
   return {
     ...normalized,
     search: String(search || "").trim(),
     status: status ? String(status).trim().toUpperCase() : undefined,
     priority: priority ? String(priority).trim().toUpperCase() : undefined,
-    managerId: managerId ? String(managerId).trim() : undefined,
+    projectManagerEmployeeId: projectManagerEmployeeId ? String(projectManagerEmployeeId).trim() : undefined,
   };
 };
 
@@ -86,7 +86,7 @@ const validateCreateProject = (payload = {}) => {
     description: String(payload.description || "").trim(),
     status: status || "PLANNING",
     priority: priority || "MEDIUM",
-    projectManagerId: payload.projectManagerId ? String(payload.projectManagerId).trim() : undefined,
+    projectManagerEmployeeId: payload.projectManagerEmployeeId ? String(payload.projectManagerEmployeeId).trim() : undefined,
     startDate: payload.startDate ? new Date(payload.startDate) : null,
     targetEndDate: payload.targetEndDate ? new Date(payload.targetEndDate) : null,
   };
@@ -125,12 +125,12 @@ const validateUpdateProject = (payload = {}) => {
   if (payload.description !== undefined) {
     nextPayload.description = String(payload.description || "").trim();
   }
-  if (payload.projectManagerId !== undefined) {
-    const projectManagerId = String(payload.projectManagerId || "").trim();
-    if (!projectManagerId) {
-      throw createValidationError("Project manager ID is required.", "projectManagerId");
+  if (payload.projectManagerEmployeeId !== undefined) {
+    const projectManagerEmployeeId = String(payload.projectManagerEmployeeId || "").trim();
+    if (!projectManagerEmployeeId) {
+      throw createValidationError("Project manager employee ID is required.", "projectManagerEmployeeId");
     }
-    nextPayload.projectManagerId = projectManagerId;
+    nextPayload.projectManagerEmployeeId = projectManagerEmployeeId;
   }
   if (payload.startDate !== undefined) {
     if (payload.startDate && Number.isNaN(Date.parse(payload.startDate))) {

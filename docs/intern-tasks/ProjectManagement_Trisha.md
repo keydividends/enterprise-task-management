@@ -37,7 +37,7 @@ Read all `docs/*.md` files and inspect existing backend/frontend code. Generate 
 | `DELETE` | `/api/v1/projects/:projectId` | Delete/archive project |
 | `GET` | `/api/v1/projects/:projectId/members` | List project members |
 | `POST` | `/api/v1/projects/:projectId/members` | Add project member |
-| `DELETE` | `/api/v1/projects/:projectId/members/:userId` | Remove project member |
+| `DELETE` | `/api/v1/projects/:projectId/members/:employeeId` | Remove project member |
 | `GET` | `/api/v1/projects/:projectId/tasks/summary` | Project task summary for dashboard/reporting |
 
 ## Database Collections And Models
@@ -92,7 +92,7 @@ frontend/src/features/projects/
 - Project name is required.
 - Project status must use documented enum values.
 - Dates must be valid if start/end dates are used.
-- Member user IDs must exist.
+- Member employee IDs must exist.
 - Duplicate project members are not allowed.
 - Only authorized users can create/update/delete projects or manage members.
 

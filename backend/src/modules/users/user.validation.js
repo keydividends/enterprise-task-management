@@ -12,7 +12,7 @@ const createValidationError = (message, details = null) => {
 };
 
 const validateCreateUser = (data = {}) => {
-  const { firstName, email, status, role } = data;
+  const { firstName, email, employeeId, status, role } = data;
 
   if (!firstName || typeof firstName !== "string" || !firstName.trim()) {
     throw createValidationError("First name is required.");
@@ -21,6 +21,8 @@ const validateCreateUser = (data = {}) => {
   if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
     throw createValidationError("A valid email address is required.");
   }
+
+  validateEmployeeId(employeeId);
 
   if (!role || !ALLOWED_EMPLOYEE_ROLES.includes(String(role).trim().toUpperCase())) {
     throw createValidationError("Please select a role.");

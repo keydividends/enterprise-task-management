@@ -5,13 +5,15 @@ import useProjects from '../hooks/useProjects';
 import ProjectForm from '../components/ProjectForm';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { hasProjectPermission } from '../utils/projectPermissions';
+import ProjectToast from '../components/ProjectToast';
+import useProjectToasts from '../hooks/useProjectToasts';
 
 const CreateProjectPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { createProject } = useProjects();
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const { toasts, dismiss, error: showError } = useProjectToasts();
 
   if (!hasProjectPermission(user, 'PROJECT_CREATE')) {
     return <div className="panel-block glass-card project-state-card">You do not have permission to create projects.</div>;
@@ -19,12 +21,11 @@ const CreateProjectPage = () => {
 
   const handleSubmit = async (payload) => {
     setSubmitting(true);
-    setError('');
     try {
       const project = await createProject(payload);
       navigate(`/projects/${project.id}`);
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Unable to create project.');
+      showError(err?.response?.data?.message || err?.message || 'Unable to create project.');
     } finally {
       setSubmitting(false);
     }
@@ -32,6 +33,7 @@ const CreateProjectPage = () => {
 
   return (
     <div className="dashboard-page project-page project-editor-page">
+      <div className="project-toast-stack">{toasts.map((toast) => <ProjectToast key={toast.id} toast={toast} onDismiss={dismiss} />)}</div>
       <section className="hero-panel glass-card project-hero project-editor-hero">
         <div>
           <button type="button" className="secondary-button compact" onClick={() => navigate('/projects')} style={{ marginBottom: '12px' }}>
@@ -44,7 +46,6 @@ const CreateProjectPage = () => {
       </section>
       <section className="panel-block glass-card project-form-panel">
         <div className="project-form-panel-heading"><span>Project information</span><small>Fields marked by validation are required.</small></div>
-        {error ? <p className="helper-copy project-feedback project-feedback-error">{error}</p> : null}
         <ProjectForm
           initialValues={{}}
           onSubmit={handleSubmit}

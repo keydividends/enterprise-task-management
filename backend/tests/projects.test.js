@@ -36,7 +36,7 @@ test('createProject creates a project successfully', async () => {
   assert.equal(result.key, 'PTST');
 });
 
-test('createProject resolves a project manager custom ID', async () => {
+test('createProject resolves a project manager employee ID', async () => {
   const originalFindByEmployeeId = userRepository.findByEmployeeId;
   const originalFindById = userRepository.findById;
   const managerId = '64a100000000000000000030';
@@ -51,10 +51,9 @@ test('createProject resolves a project manager custom ID', async () => {
     const result = await projectService.createProject({
       name: 'Custom Manager Project',
       key: 'CMGR',
-      projectManagerId: 'test-30',
+      projectManagerEmployeeId: 'test-30',
     }, mockContext);
 
-    assert.equal(result.projectManagerId, managerId);
     assert.equal(result.projectManagerEmployeeId, 'test-30');
   } finally {
     userRepository.findByEmployeeId = originalFindByEmployeeId;

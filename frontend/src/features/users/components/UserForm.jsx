@@ -33,7 +33,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         role: initialValues.role || '',
         status: initialValues.status || 'ACTIVE',
         employeeId: initialValues.employeeId || '',
-        managerEmployeeId: initialValues.managerEmployeeId || initialValues.managerId || '',
+        managerEmployeeId: initialValues.managerEmployeeId || '',
       });
     }
   }, [initialValues]);
@@ -55,6 +55,12 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
 
     if (!formData.role) {
       newErrors.role = 'Please select a role.';
+    }
+
+    if (!formData.employeeId.trim()) {
+      newErrors.employeeId = 'Employee ID is required.';
+    } else if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/.test(formData.employeeId.trim())) {
+      newErrors.employeeId = 'Employee ID may contain only letters, numbers, periods, hyphens, and underscores.';
     }
 
     // 2. Email Address Validation
@@ -86,12 +92,7 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      // `managerId` is retained as a compatibility alias for older API builds.
-      // The canonical field is `managerEmployeeId`.
-      onSubmit({
-        ...formData,
-        managerId: formData.managerEmployeeId,
-      });
+      onSubmit({ ...formData, employeeId: formData.employeeId.trim(), managerEmployeeId: formData.managerEmployeeId.trim() });
     }
   };
 
@@ -319,17 +320,16 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
         </div>
 
         <div className="form-group">
-          <label htmlFor="employee_custom_id" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
-            Employee ID <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used to assign projects)</span>
+          <label htmlFor="employeeId" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>
+            Employee ID * <span style={{ fontWeight: 400, opacity: 0.6, fontSize: '13px' }}>(used to assign projects)</span>
           </label>
           <input
-            id="employee_custom_id"
+            id="employeeId"
             type="text"
             name="employeeId"
             value={formData.employeeId}
             onChange={handleChange}
             placeholder="e.g. EMP-042 or john.dev"
-            disabled={isEditing}
             style={{
               width: '100%',
               padding: '10px 12px',
