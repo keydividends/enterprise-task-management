@@ -161,6 +161,26 @@ test('ordinary users can only list and view projects they manage or belong to', 
   }
 });
 
+test('managers only see and manage projects they own or belong to', async () => {
+  const managerA = { user: { id: 'manager-a', role: 'MANAGER', permissions: ['PROJECT_VIEW', 'PROJECT_CREATE', 'PROJECT_UPDATE'] }, workspaceId: mockContext.workspaceId };
+  const managerB = { user: { id: 'manager-b', role: 'MANAGER', permissions: ['PROJECT_VIEW', 'PROJECT_CREATE', 'PROJECT_UPDATE'] }, workspaceId: mockContext.workspaceId };
+  const projectA = await projectService.createProject({ name: 'Manager A Project', key: 'MGA1' }, managerA);
+  const projectB = await projectService.createProject({ name: 'Manager B Project', key: 'MGB1' }, managerB);
+
+  const managerAProjects = await projectService.listProjects({}, managerA);
+  assert.ok(managerAProjects.items.some((project) => project.id === projectA.id));
+  assert.ok(!managerAProjects.items.some((project) => project.id === projectB.id));
+
+  await assert.rejects(
+    () => projectService.getProjectById(projectB.id, managerA),
+    (error) => error.code === 'PROJECT_ACCESS_DENIED'
+  );
+  await assert.rejects(
+    () => projectService.updateProject(projectB.id, { name: 'Unauthorized update' }, managerA),
+    (error) => error.code === 'PROJECT_ACCESS_DENIED'
+  );
+});
+
 test('project API rejects unauthenticated and unauthorized requests', async () => {
   const unauthenticated = await request(app).get('/api/v1/projects');
   assert.equal(unauthenticated.status, 401);

@@ -27,6 +27,7 @@ const listProjects = async ({ workspaceId, search, status, priority, managerId, 
       filter.$and = [{
         $or: [
           { projectManagerId: toObjectId(userId) },
+          { createdBy: toObjectId(userId) },
           { _id: { $in: memberships.map((membership) => membership.projectId) } },
         ],
       }];
@@ -65,7 +66,11 @@ const listProjects = async ({ workspaceId, search, status, priority, managerId, 
         .filter((member) => String(member.userId) === String(userId) && !member.isDeleted && member.status === "ACTIVE")
         .map((member) => String(member.projectId))
     );
-    items = items.filter((project) => String(project.projectManagerId) === String(userId) || memberProjectIds.has(String(project._id || project.id)));
+    items = items.filter((project) => (
+      String(project.projectManagerId) === String(userId) ||
+      String(project.createdBy) === String(userId) ||
+      memberProjectIds.has(String(project._id || project.id))
+    ));
   }
   if (search) {
     const normalized = String(search).toLowerCase();

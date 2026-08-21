@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = false }) => {
+const ProjectForm = ({ initialValues, onSubmit, onCancel, submitting = false }) => {
   const [formData, setFormData] = useState({
     name: '',
     key: '',
@@ -12,22 +12,33 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
     targetEndDate: '',
   });
   const [errors, setErrors] = useState({});
+  const initialProjectId = initialValues?.id || initialValues?._id || null;
+  const initialName = initialValues?.name || '';
+  const initialKey = initialValues?.key || '';
+  const initialDescription = initialValues?.description || '';
+  const initialStatus = initialValues?.status || 'PLANNING';
+  const initialPriority = initialValues?.priority || 'MEDIUM';
+  const initialManagerEmployeeId = initialValues?.projectManagerEmployeeId || '';
+  const initialStartDate = initialValues?.startDate ? initialValues.startDate.slice(0, 10) : '';
+  const initialTargetEndDate = initialValues?.targetEndDate ? initialValues.targetEndDate.slice(0, 10) : '';
 
   useEffect(() => {
-    if (initialValues) {
-      // This synchronizes form state when an asynchronously loaded project changes.
-      setFormData({
-        name: initialValues.name || '',
-        key: initialValues.key || '',
-        description: initialValues.description || '',
-        status: initialValues.status || 'PLANNING',
-        priority: initialValues.priority || 'MEDIUM',
-        projectManagerEmployeeId: initialValues.projectManagerEmployeeId || '',
-        startDate: initialValues.startDate ? initialValues.startDate.slice(0, 10) : '',
-        targetEndDate: initialValues.targetEndDate ? initialValues.targetEndDate.slice(0, 10) : '',
-      });
-    }
-  }, [initialValues]);
+    if (!initialProjectId) return;
+
+    // Load values only when the edit page switches to a different project.
+    // Re-renders after a failed save must preserve the user's typed values.
+    setFormData({
+      name: initialName,
+      key: initialKey,
+      description: initialDescription,
+      status: initialStatus,
+      priority: initialPriority,
+      projectManagerEmployeeId: initialManagerEmployeeId,
+      startDate: initialStartDate,
+      targetEndDate: initialTargetEndDate,
+    });
+    setErrors({});
+  }, [initialProjectId, initialName, initialKey, initialDescription, initialStatus, initialPriority, initialManagerEmployeeId, initialStartDate, initialTargetEndDate]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -68,7 +79,7 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
       <div className="field-group">
         <span>Project key</span>
         <div className="input-wrap">
-          <input name="key" value={formData.key} onChange={handleChange} placeholder="ETMS" />
+          <input name="key" value={formData.key} onChange={handleChange} placeholder="Unique Indentifier of a Project" />
         </div>
         {errors.key && <span className="helper-copy" style={{ color: '#ef4444' }}>{errors.key}</span>}
       </div>
@@ -106,7 +117,7 @@ const ProjectForm = ({ initialValues = {}, onSubmit, onCancel, submitting = fals
       </div>
 
       <div className="field-group">
-        <span>Project manager employee ID</span>
+        <span>Project Manager ID</span>
         <div className="input-wrap">
           <input name="projectManagerEmployeeId" value={formData.projectManagerEmployeeId} onChange={handleChange} placeholder="e.g. MGR-001" />
         </div>

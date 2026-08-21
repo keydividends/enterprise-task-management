@@ -62,7 +62,13 @@ const DashboardPage = () => {
       </section>
 
       <section className="stats-grid">
-        {cards.map(([label, value, Icon]) => <div key={label} className="glass-card stat-card"><div className="stat-header"><span>{label}</span><div className="stat-icon"><Icon size={16} /></div></div><strong>{value}</strong></div>)}
+        {cards.map(([label, value, Icon]) => {
+          const destination = label === 'Projects' ? '/projects' : label === 'Tasks' ? '/tasks' : null;
+          const content = <><div className="stat-header"><span>{label}</span><div className="stat-icon"><Icon size={16} /></div></div><strong>{value}</strong></>;
+          return destination
+            ? <Link key={label} to={destination} className="glass-card stat-card dashboard-stat-link" aria-label={`View ${label}`}>{content}</Link>
+            : <div key={label} className="glass-card stat-card">{content}</div>;
+        })}
       </section>
 
       <section className="panel-block glass-card">

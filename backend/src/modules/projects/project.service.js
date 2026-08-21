@@ -19,28 +19,20 @@ const createError = (code, message, statusCode = 400, field = null) => {
 
 const getWorkspaceId = (context = {}) => context.workspaceId || null;
 
-// Route middleware enforces the RBAC permission matrix. Keep the legacy
-// ADMIN/MANAGER context support here for direct service callers and existing
-// project ownership flows.
-const isPrivilegedProjectUser = (context = {}) => ["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "PROJECT_MANAGER"].includes(String(context.user?.role || "").toUpperCase());
-const hasProjectPermission = (context = {}, permission) => (
-  Array.isArray(context.user?.permissions) && context.user.permissions.includes(permission)
-);
-
-const canBrowseAllProjects = (context = {}) => (
-  isPrivilegedProjectUser(context) ||
-  ["PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_MANAGE_MEMBERS"].some((permission) => hasProjectPermission(context, permission))
-);
+// Administrators may browse every project. Managers only see projects they
+// created, manage, or belong to; permissions grant actions, not global access.
+const isProjectAdministrator = (context = {}) => ["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN"].includes(String(context.user?.role || "").toUpperCase());
+const isProjectManager = (context = {}) => ["MANAGER", "PROJECT_MANAGER"].includes(String(context.user?.role || "").toUpperCase());
 
 const getProjectInWorkspace = async (projectId, context = {}) => (
   projectRepository.findProjectById(projectId, getWorkspaceId(context))
 );
 
 const assertProjectViewAccess = async (project, context = {}) => {
-  if (isPrivilegedProjectUser(context)) return;
+  if (isProjectAdministrator(context)) return;
   const userId = context.user?.id;
   if (!userId) throw createError("AUTH_REQUIRED", "Authentication required.", 401);
-  if (String(project.projectManagerId) === String(userId)) return;
+  if (String(project.projectManagerId) === String(userId) || String(project.createdBy) === String(userId)) return;
 
   const membership = await projectRepository.findProjectMember(project._id || project.id, userId);
   if (!membership) {
@@ -49,8 +41,14 @@ const assertProjectViewAccess = async (project, context = {}) => {
 };
 
 const assertProjectManagementAccess = async (project, context = {}, permission) => {
-  if (isPrivilegedProjectUser(context)) return;
-  throw createError("PROJECT_ACCESS_DENIED", "Only administrators and managers can modify projects.", 403);
+  if (isProjectAdministrator(context)) return;
+  const userId = context.user?.id;
+  const ownsProject = userId && (
+    String(project.projectManagerId) === String(userId) ||
+    String(project.createdBy) === String(userId)
+  );
+  if (isProjectManager(context) && ownsProject) return;
+  throw createError("PROJECT_ACCESS_DENIED", "You can only manage projects you created or manage.", 403);
 };
 
 const resolveProjectManagerId = async (managerReference) => {
@@ -92,7 +90,7 @@ const listProjects = async (query = {}, context = {}) => {
     managerId: validated.projectManagerEmployeeId
       ? await resolveProjectManagerId(validated.projectManagerEmployeeId)
       : undefined,
-    userId: canBrowseAllProjects(context) ? undefined : context.user?.id,
+    userId: isProjectAdministrator(context) ? undefined : context.user?.id,
     page: validated.page,
     pageSize: validated.pageSize,
     sortBy: validated.sortBy,
