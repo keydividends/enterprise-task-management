@@ -1,6 +1,7 @@
 const { verifyAccessToken } = require("../modules/auth/auth.service");
 const { getEffectivePermissions } = require("../modules/auth/rolePermissions");
 const { User } = require("../modules/users/user.model");
+const { isGlobalCompanyRole } = require("../utils/companyScope");
 const mongoose = require("mongoose");
 
 // Cache resolved mock-token → real MongoDB user so we only query once per process.
@@ -22,7 +23,9 @@ const resolveMockUser = async (email, staticProfile) => {
           lastName: dbUser.lastName,
           role: dbUser.role,
           permissions: getEffectivePermissions(dbUser),
-          workspaceId: staticProfile.workspaceId,
+          companyId: dbUser.companyId ? String(dbUser.companyId) : null,
+          companyName: dbUser.companyName || "",
+          workspaceId: dbUser.companyId ? String(dbUser.companyId) : staticProfile.workspaceId,
           status: dbUser.status,
         };
         _mockUserCache[email] = resolved;
@@ -51,6 +54,7 @@ const MOCK_TOKEN_PROFILES = {
       "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE", "TEAM_MANAGE_MEMBERS",
       "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_MANAGE_MEMBERS",
       "USER_VIEW", "USER_CREATE", "USER_UPDATE", "USER_DELETE",
+      "ROLE_CREATE", "ROLE_VIEW", "ROLE_UPDATE", "ROLE_DELETE",
       "TASK_VIEW", "TASK_CREATE", "TASK_UPDATE", "TASK_DELETE", "TASK_ASSIGN",
       "SPRINT_VIEW", "SPRINT_CREATE", "SPRINT_UPDATE", "SPRINT_MANAGE",
       "DASHBOARD_VIEW", "REPORT_VIEW",
@@ -64,7 +68,7 @@ const MOCK_TOKEN_PROFILES = {
     lastName: "User",
     role: "USER",
     workspaceId: "64a000000000000000000001",
-    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW", "DASHBOARD_VIEW", "REPORT_VIEW"],
+    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW", "DASHBOARD_VIEW"],
     status: "ACTIVE",
   },
 };
@@ -89,6 +93,11 @@ const authenticate = async (req, res, next) => {
     }
 
     const payload = verifyAccessToken(token);
+    const headerCompanyId = String(req.headers["x-company-id"] || "").trim() || null;
+    const tokenCompanyId = payload.companyId ? String(payload.companyId) : null;
+    const global = isGlobalCompanyRole(payload);
+    const activeCompanyId = global ? headerCompanyId : tokenCompanyId;
+
     req.user = {
       id: payload.id || payload.sub,
       email: payload.email,
@@ -96,7 +105,9 @@ const authenticate = async (req, res, next) => {
       lastName: payload.lastName,
       role: payload.role,
       permissions: getEffectivePermissions(payload),
-      workspaceId: payload.workspaceId || null,
+      companyId: activeCompanyId,
+      companyName: payload.companyName || "",
+      workspaceId: activeCompanyId || (global ? null : (payload.workspaceId || null)),
       status: payload.status,
     };
 

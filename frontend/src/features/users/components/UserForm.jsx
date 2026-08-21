@@ -499,6 +499,7 @@ export const UserForm = ({
               background: 'var(--bg-input, #ffffff)'
             }}
           >
+<<<<<<< HEAD
             <option value="" disabled>
               Select Role
             </option>
@@ -510,6 +511,16 @@ export const UserForm = ({
             <option value="MANAGER">
               Manager
             </option>
+=======
+            <option value="" disabled>Select Role</option>
+            <option value="EMPLOYEE">Employee (General Staff)</option>
+            <option value="DEVELOPER">Developer</option>
+            <option value="QA_ENGINEER">QA Engineer</option>
+            <option value="INTERN">Intern</option>
+            <option value="MANAGER">Manager</option>
+            <option value="COMPANY_ADMIN">Company Admin</option>
+            <option value="ADMIN">System Administrator</option>
+>>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
           </select>
 
           {errors.role && (

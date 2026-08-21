@@ -8,7 +8,7 @@ const createError = (message, statusCode = 403) => {
 };
 
 const isAdministrator = (context = {}) =>
-  ["ADMIN", "SUPER_ADMIN", "ORG_ADMIN", "ORGANIZATION_ADMIN"].includes(
+  ["ADMIN", "SUPER_ADMIN", "COMPANY_ADMIN", "ORGANIZATION_ADMIN"].includes(
     String(context.user?.role || "").toUpperCase()
   );
 

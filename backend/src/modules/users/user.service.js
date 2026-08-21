@@ -15,6 +15,13 @@ const {
   validateListQuery,
   createValidationError,
 } = require("./user.validation");
+const {
+  scopedCompanyId,
+  assertCompanyAccess,
+  resolveOwnedCompany,
+  isCompanyLockedRole,
+  getActiveCompanyId,
+} = require("../../utils/companyScope");
 
 const createUserError = (code, message, statusCode = 400) => {
   const error = new Error(message);
@@ -25,11 +32,19 @@ const createUserError = (code, message, statusCode = 400) => {
 
 const hashPassword = async (password) => bcrypt.hash(String(password), 10);
 
-const getUsers = async (query = {}) => {
+const getUsers = async (query = {}, currentUser = null) => {
   const validatedQuery = validateListQuery(query);
+<<<<<<< HEAD
 
   const { items, totalItems, page, pageSize, totalPages } =
     await userRepository.findAll(validatedQuery);
+=======
+  const companyId = scopedCompanyId(currentUser);
+  const { items, totalItems, page, pageSize, totalPages } = await userRepository.findAll({
+    ...validatedQuery,
+    companyId,
+  });
+>>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
 
   return {
     data: toUserListDTO(items),
@@ -42,7 +57,7 @@ const getUsers = async (query = {}) => {
   };
 };
 
-const getUserById = async (userId) => {
+const getUserById = async (userId, currentUser = null) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
   }
@@ -53,6 +68,7 @@ const getUserById = async (userId) => {
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
+  assertCompanyAccess(currentUser, user.companyId);
   return toUserDTO(user);
 };
 
@@ -75,6 +91,11 @@ const createUser = async (data = {}, currentUser = null) => {
     ? await hashPassword(data.password)
     : await hashPassword("User@123");
 
+  const owned = resolveOwnedCompany(currentUser, data.companyId);
+  if (isCompanyLockedRole(currentUser) && !owned.companyId) {
+    throw createUserError("COMPANY_REQUIRED", "Your account must belong to a company before creating employees.", 400);
+  }
+
   const createdUser = await userRepository.createUser({
     firstName: String(data.firstName).trim(),
     lastName: data.lastName ? String(data.lastName).trim() : "",
@@ -84,16 +105,24 @@ const createUser = async (data = {}, currentUser = null) => {
     department: data.department || "",
     title: data.title || "",
     bio: data.bio || "",
+    address: data.address || "",
     employeeId,
 
     managerEmployeeId: data.managerEmployeeId
       ? String(data.managerEmployeeId).trim()
+<<<<<<< HEAD
       : "",
 
     role: data.role
       ? String(data.role).trim().toUpperCase()
       : "INTERN",
 
+=======
+      : (currentUser?.employeeId || ""),
+    companyId: owned.companyId,
+    companyName: owned.forced ? (currentUser?.companyName || "") : (data.companyName || currentUser?.companyName || ""),
+    role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
+>>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
     roleId: data.roleId || null,
 
     permissions: getEffectivePermissions({
@@ -208,10 +237,17 @@ const updateUserStatus = async (
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
+<<<<<<< HEAD
   const updatedUser = await userRepository.updateUserStatus(
     userId,
     status
   );
+=======
+  assertCompanyAccess(currentUser, existingUser.companyId);
+  if (currentUser && String(currentUser.id) === String(userId)) {
+    throw createUserError("PROTECTED_USER", "You cannot deactivate or delete your own admin account.", 403);
+  }
+>>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
 
   return toUserDTO(updatedUser);
 };

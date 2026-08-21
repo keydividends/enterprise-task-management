@@ -7,8 +7,7 @@ const router = express.Router();
 
 const canManageProjects = (req, res, next) => {
   const role = String(req.user?.role || "").toUpperCase();
-  if (["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "PROJECT_MANAGER"].includes(role)) return next();
-
+  if (["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "PROJECT_MANAGER", "COMPANY_ADMIN"].includes(role)) return next();
   const error = new Error("Only administrators and managers can manage projects.");
   error.code = "PROJECT_ACCESS_DENIED";
   error.statusCode = 403;

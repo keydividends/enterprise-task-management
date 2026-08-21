@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, LockKeyhole, Mail, Sparkles, Eye, EyeOff, Globe, Building2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, LockKeyhole, Mail, Eye, EyeOff, Globe, Building2, ArrowLeft } from 'lucide-react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useMsal } from '@azure/msal-react';
+import AuthVisualPanel from '../components/AuthVisualPanel';
 
 const LoginPage = () => {
   const { login, loginWithGoogle, loginWithMicrosoft, isAuthenticated } = useAuth();
@@ -20,7 +21,6 @@ const LoginPage = () => {
     onSuccess: async (tokenResponse) => {
       try {
         setLoading(true);
-        // implicit flow returns access_token
         await loginWithGoogle(tokenResponse.access_token);
         navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
       } catch (err) {
@@ -31,25 +31,28 @@ const LoginPage = () => {
     },
     onError: () => {
       setError('Google login was cancelled or failed.');
-    }
+    },
   });
 
   const microsoftLogin = () => {
-    instance.loginPopup({
-      scopes: ["user.read"]
-    }).then(async (response) => {
-      try {
-        setLoading(true);
-        await loginWithMicrosoft(response.accessToken);
-        navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
-      } catch (err) {
-        setError(err.response?.data?.message || 'Microsoft login failed.');
-      } finally {
-        setLoading(false);
-      }
-    }).catch(() => {
-      setError('Microsoft login was cancelled or failed.');
-    });
+    instance
+      .loginPopup({
+        scopes: ['user.read'],
+      })
+      .then(async (response) => {
+        try {
+          setLoading(true);
+          await loginWithMicrosoft(response.accessToken);
+          navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+        } catch (err) {
+          setError(err.response?.data?.message || 'Microsoft login failed.');
+        } finally {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        setError('Microsoft login was cancelled or failed.');
+      });
   };
 
   if (isAuthenticated) {
@@ -60,6 +63,7 @@ const LoginPage = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    if (error) setError('');
   };
 
   const handleSubmit = async (event) => {
@@ -68,10 +72,13 @@ const LoginPage = () => {
     setError('');
 
     try {
-      await login(form);
-      navigate('/dashboard');
+      await login({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      });
+      navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Login failed. Please check your email and password.');
     } finally {
       setLoading(false);
     }
@@ -79,66 +86,7 @@ const LoginPage = () => {
 
   return (
     <div className="auth-page-shell">
-      <div className="auth-illustration-panel">
-        <div className="auth-brand-row">
-          <div className="brand-mark">E</div>
-          <span>ETMS</span>
-        </div>
-
-        <motion.div
-          className="hero-illustration"
-          initial={{ opacity: 0, x: -24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="float-card card-one">
-            <span className="tiny-label">Sprint velocity</span>
-            <strong>84%</strong>
-            <div className="mini-bars">
-              <span style={{ height: '28%' }} />
-              <span style={{ height: '52%' }} />
-              <span style={{ height: '64%' }} />
-              <span style={{ height: '76%' }} />
-              <span style={{ height: '100%' }} />
-            </div>
-          </div>
-
-          <div className="float-card card-two">
-            <div className="avatar-stack">
-              <span>A</span>
-              <span>M</span>
-              <span>J</span>
-            </div>
-            <div>
-              <strong>Team sync</strong>
-              <small>8 online</small>
-            </div>
-          </div>
-
-          <div className="main-visual">
-            <div className="visual-ring ring-one" />
-            <div className="visual-ring ring-two" />
-            <div className="visual-window">
-              <div className="window-top">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="window-body">
-                <div className="window-column column-a" />
-                <div className="window-column column-b" />
-                <div className="window-column column-c" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        <div className="auth-tagline-block">
-          <p className="eyebrow">Built for modern teams</p>
-          <h1>Manage Work Smarter.</h1>
-          <p className="tagline-copy">Plan projects, align teams, and ship work with clarity across every sprint.</p>
-        </div>
-      </div>
+      <AuthVisualPanel variant="login" />
 
       <div className="auth-card-panel">
         <motion.div
@@ -148,7 +96,15 @@ const LoginPage = () => {
           transition={{ duration: 0.45 }}
         >
           <div className="auth-card-header">
-            <p className="eyebrow secondary">Welcome back</p>
+            <div className="auth-header-top">
+              <Link to="/" className="auth-home-link">
+                <ArrowLeft size={18} />
+                <span>Back to Home</span>
+              </Link>
+
+              <p className="eyebrow secondary">Login back</p>
+            </div>
+
             <h2>Sign in to ETMS</h2>
           </div>
 
@@ -157,7 +113,15 @@ const LoginPage = () => {
               <span>Email</span>
               <div className="input-wrap">
                 <Mail size={18} />
-                <input id="email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@company.com" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="you@company.com"
+                  required
+                />
               </div>
             </label>
 
@@ -165,8 +129,21 @@ const LoginPage = () => {
               <span>Password</span>
               <div className="input-wrap">
                 <LockKeyhole size={18} />
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange} placeholder="Enter your password" />
-                <button type="button" className="icon-button" onClick={() => setShowPassword((current) => !current)} aria-label="Toggle password visibility">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label="Toggle password visibility"
+                >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
@@ -178,10 +155,16 @@ const LoginPage = () => {
                 <span>Remember me</span>
               </label>
 
-              <Link to="/forgot-password" className="text-link">Forgot password?</Link>
+              <Link to="/forgot-password" className="text-link">
+                Forgot password?
+              </Link>
             </div>
 
-            {error && <div className="form-banner danger"><CheckCircle2 size={16} /> {error}</div>}
+            {error && (
+              <div className="form-banner danger">
+                <CheckCircle2 size={16} /> {error}
+              </div>
+            )}
 
             <button type="submit" className="primary-button" disabled={loading}>
               {loading ? 'Signing in...' : 'Login'}
@@ -189,7 +172,9 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="divider"><span>or continue with</span></div>
+          <div className="divider">
+            <span>or continue with</span>
+          </div>
 
           <div className="social-buttons">
             <button type="button" className="social-button" onClick={() => googleLogin()}>
@@ -200,14 +185,13 @@ const LoginPage = () => {
             </button>
           </div>
 
-          <div className="signup-cta-row">
-            <span>Need an account?</span>
-            <Link to="/register" className="text-link">Create one</Link>
-          </div>
-
-          <div className="micro-badge-row">
-            <span><Sparkles size={14} /> Secure SSO ready</span>
-            <span>Enterprise grade</span>
+          <div className="auth-navigation">
+            <div>
+              <span>Don't have an employee account? </span>
+              <Link to="/register" className="text-link auth-nav-link">
+                Sign Up
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
