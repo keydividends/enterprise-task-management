@@ -57,11 +57,11 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
       newErrors.role = 'Please select a role.';
     }
 
-    if (!formData.employeeId.trim()) {
-      newErrors.employeeId = 'Employee ID is required.';
-    } else if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/.test(formData.employeeId.trim())) {
-      newErrors.employeeId = 'Employee ID may contain only letters, numbers, periods, hyphens, and underscores.';
-    }
+   if (!formData.employeeId.trim()) {
+  newErrors.employeeId = 'Employee ID is required.';
+} else if (!/^.{1,15}$/.test(formData.employeeId.trim())) {
+  newErrors.employeeId = 'Employee ID must be between 1 and 15 characters.';
+}
 
     // 2. Email Address Validation
     if (!formData.email || !formData.email.trim()) {

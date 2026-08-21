@@ -1,5 +1,5 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EMPLOYEE_ID_REGEX = /^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/;
+const EMPLOYEE_ID_REGEX = /^.{1,15}$/;
 const ALLOWED_STATUSES = ["ACTIVE", "DISABLED", "LOCKED", "DELETED"];
 const ALLOWED_EMPLOYEE_ROLES = ["ADMIN", "MANAGER"];
 
