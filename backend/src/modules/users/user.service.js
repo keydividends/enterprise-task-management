@@ -34,17 +34,11 @@ const hashPassword = async (password) => bcrypt.hash(String(password), 10);
 
 const getUsers = async (query = {}, currentUser = null) => {
   const validatedQuery = validateListQuery(query);
-<<<<<<< HEAD
-
-  const { items, totalItems, page, pageSize, totalPages } =
-    await userRepository.findAll(validatedQuery);
-=======
   const companyId = scopedCompanyId(currentUser);
   const { items, totalItems, page, pageSize, totalPages } = await userRepository.findAll({
     ...validatedQuery,
     companyId,
   });
->>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
 
   return {
     data: toUserListDTO(items),
@@ -110,19 +104,10 @@ const createUser = async (data = {}, currentUser = null) => {
 
     managerEmployeeId: data.managerEmployeeId
       ? String(data.managerEmployeeId).trim()
-<<<<<<< HEAD
-      : "",
-
-    role: data.role
-      ? String(data.role).trim().toUpperCase()
-      : "INTERN",
-
-=======
       : (currentUser?.employeeId || ""),
     companyId: owned.companyId,
     companyName: owned.forced ? (currentUser?.companyName || "") : (data.companyName || currentUser?.companyName || ""),
     role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
->>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
     roleId: data.roleId || null,
 
     permissions: getEffectivePermissions({
@@ -237,17 +222,14 @@ const updateUserStatus = async (
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
-<<<<<<< HEAD
   const updatedUser = await userRepository.updateUserStatus(
     userId,
     status
   );
-=======
   assertCompanyAccess(currentUser, existingUser.companyId);
   if (currentUser && String(currentUser.id) === String(userId)) {
     throw createUserError("PROTECTED_USER", "You cannot deactivate or delete your own admin account.", 403);
   }
->>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
 
   return toUserDTO(updatedUser);
 };

@@ -3,24 +3,12 @@ const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const EMPLOYEE_ID_REGEX = /^.{1,15}$/;
 
 const ALLOWED_STATUSES = ["ACTIVE", "DISABLED", "LOCKED", "DELETED"];
-<<<<<<< HEAD
-
-const ALLOWED_EMPLOYEE_ROLES = ["MANAGER"];
-=======
 const ALLOWED_EMPLOYEE_ROLES = [
-  "ADMIN",
   "COMPANY_ADMIN",
   "MANAGER",
   "EMPLOYEE",
-  "DEVELOPER",
-  "QA_ENGINEER",
-  "INTERN",
-  "USER",
-  "LEAD",
-  "TEAM_LEAD",
-  "PROJECT_MANAGER",
+  "SUPER_ADMIN",
 ];
->>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
 
 const createValidationError = (message, details = null) => {
   const error = new Error(message);
@@ -88,18 +76,8 @@ const validateUpdateUser = (data = {}) => {
     );
   }
 
-<<<<<<< HEAD
-  if (
-    data.role &&
-    !ALLOWED_EMPLOYEE_ROLES.includes(
-      String(data.role).trim().toUpperCase()
-    )
-  ) {
-    throw createValidationError("Role must be Manager.");
-=======
   if (data.role && !ALLOWED_EMPLOYEE_ROLES.includes(String(data.role).trim().toUpperCase())) {
     throw createValidationError("Please select a valid role.");
->>>>>>> b6d98348dcb526d992ffc3cd842db72f8434eded
   }
 };
 
