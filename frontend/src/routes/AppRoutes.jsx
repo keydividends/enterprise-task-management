@@ -1,5 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../features/auth/components/ProtectedRoute';
+import { useAuth } from '../features/auth/hooks/useAuth';
+import HomePage from '../pages/HomePage';
+import CreateCompanyPage from '../features/company/pages/CreateCompanyPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
 import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage';
@@ -33,14 +36,33 @@ import CreateProjectPage from '../features/projects/pages/CreateProjectPage';
 import EditProjectPage from '../features/projects/pages/EditProjectPage';
 import ProjectDetailsPage from '../features/projects/pages/ProjectDetailsPage';
 
+const HomeRoute = ({ toggleTheme }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return <div className="page-loading">Loading...</div>;
+  }
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <HomePage toggleTheme={toggleTheme} />;
+};
+
 const AppRoutes = ({ toggleTheme }) => (
   <BrowserRouter>
     <Routes>
+      {/* Public Landing & Onboarding */}
+      <Route path="/" element={<HomeRoute toggleTheme={toggleTheme} />} />
+      <Route path="/home" element={<HomeRoute toggleTheme={toggleTheme} />} />
+      <Route path="/create-company" element={<CreateCompanyPage />} />
+      <Route path="/register-company" element={<CreateCompanyPage />} />
+
+      {/* Public Auth Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+      {/* Protected Routes inside Main Layout */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout toggleTheme={toggleTheme} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -73,7 +95,6 @@ const AppRoutes = ({ toggleTheme }) => (
           <Route path="/roles/create" element={<CreateRolePage />} />
           <Route path="/roles/:roleId" element={<RoleDetailsPage />} />
           <Route path="/roles/:roleId/edit" element={<EditRolePage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>
 

@@ -87,11 +87,12 @@ const isDbConnected = () => mongoose.connection && mongoose.connection.readyStat
 
 const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
 
-const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, roleId = null, sortBy = "createdAt", sortOrder = -1 }) => {
+const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, roleId = null, companyId = null, sortBy = "createdAt", sortOrder = -1 }) => {
   if (isDbConnected()) {
     const filter = { isDeleted: false };
     if (status) filter.status = status;
     if (roleId) filter.roleId = roleId;
+    if (companyId) filter.companyId = companyId;
     if (search) {
       filter.$or = [
         { firstName: { $regex: search, $options: "i" } },
@@ -120,6 +121,9 @@ const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, ro
   }
   if (roleId) {
     list = list.filter((u) => u.roleId === roleId);
+  }
+  if (companyId) {
+    list = list.filter((u) => String(u.companyId || "") === String(companyId));
   }
   if (search) {
     const s = search.toLowerCase();
@@ -294,7 +298,7 @@ const restoreUser = async (userId) => {
   return updated;
 };
 
-const searchUsers = async (query = "", limit = 10) => {
+const searchUsers = async (query = "", limit = 10, companyId = null) => {
   const s = String(query).trim().toLowerCase();
 
   if (isDbConnected()) {
@@ -302,6 +306,7 @@ const searchUsers = async (query = "", limit = 10) => {
       isDeleted: false,
       status: "ACTIVE",
     };
+    if (companyId) filter.companyId = companyId;
     if (s) {
       filter.$or = [
         { firstName: { $regex: s, $options: "i" } },
@@ -316,6 +321,7 @@ const searchUsers = async (query = "", limit = 10) => {
 
   return Array.from(inMemoryUsers.values())
     .filter((u) => !u.isDeleted && u.status === "ACTIVE")
+    .filter((u) => !companyId || String(u.companyId || "") === String(companyId))
     .filter(
       (u) =>
         !s ||

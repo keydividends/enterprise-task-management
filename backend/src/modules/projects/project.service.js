@@ -21,7 +21,7 @@ const getWorkspaceId = (context = {}) => context.workspaceId || null;
 
 // Administrators may browse every project. Managers only see projects they
 // created, manage, or belong to; permissions grant actions, not global access.
-const isProjectAdministrator = (context = {}) => ["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN"].includes(String(context.user?.role || "").toUpperCase());
+const isProjectAdministrator = (context = {}) => ["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "COMPANY_ADMIN"].includes(String(context.user?.role || "").toUpperCase());
 const isProjectManager = (context = {}) => ["MANAGER", "PROJECT_MANAGER"].includes(String(context.user?.role || "").toUpperCase());
 
 const getProjectInWorkspace = async (projectId, context = {}) => (

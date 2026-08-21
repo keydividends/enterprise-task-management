@@ -20,6 +20,8 @@ const toUserDTO = (user) => {
     ...rest,
     employeeId,
     managerEmployeeId: rest.managerEmployeeId || "",
+    companyId: rest.companyId ? String(rest.companyId) : null,
+    companyName: rest.companyName || "",
     fullName: `${rest.firstName || ""} ${rest.lastName || ""}`.trim(),
   };
 };

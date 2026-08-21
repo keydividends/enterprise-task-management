@@ -21,13 +21,17 @@ const validateLoginInput = ({ email, password }) => {
   return true;
 };
 
-const validateRegisterInput = ({ firstName, lastName, email, password, confirmPassword }) => {
+const validateRegisterInput = ({ firstName, lastName, email, password, confirmPassword, companyId }) => {
   if (!firstName || !String(firstName).trim()) {
     throw createValidationError("First name is required.", "firstName");
   }
 
   if (!lastName || !String(lastName).trim()) {
     throw createValidationError("Last name is required.", "lastName");
+  }
+
+  if (!companyId || !String(companyId).trim()) {
+    throw createValidationError("Please select a valid company.", "companyId");
   }
 
   if (!email || !emailPattern.test(String(email).trim())) {

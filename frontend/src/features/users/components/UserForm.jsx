@@ -266,8 +266,13 @@ export const UserForm = ({ initialValues = {}, onSubmit, onCancel, isEditing = f
             }}
           >
             <option value="" disabled>Select Role</option>
-            <option value="ADMIN">Admin</option>
+            <option value="EMPLOYEE">Employee (General Staff)</option>
+            <option value="DEVELOPER">Developer</option>
+            <option value="QA_ENGINEER">QA Engineer</option>
+            <option value="INTERN">Intern</option>
             <option value="MANAGER">Manager</option>
+            <option value="COMPANY_ADMIN">Company Admin</option>
+            <option value="ADMIN">System Administrator</option>
           </select>
           {errors.role && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{errors.role}</span>}
         </div>
