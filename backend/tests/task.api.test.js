@@ -302,6 +302,25 @@ test("Permission: member with TASK_VIEW can list tasks", async () => {
   assert.equal(response.body.pagination.totalItems, 1);
 });
 
+test("Permission: manager only lists tasks from assigned or managed projects", async () => {
+  await request(app)
+    .post("/api/v1/tasks")
+    .set("Authorization", authHeader)
+    .send(createTaskPayload());
+
+  const result = await taskService.listTasks(
+    { page: 1, pageSize: 10 },
+    {
+      workspaceId: mockData.WORKSPACE_ID,
+      userId: "64a1ffffffffffffffffffff",
+      user: { role: "MANAGER", permissions: ["TASK_VIEW"] },
+    }
+  );
+
+  assert.equal(result.pagination.totalItems, 0);
+  assert.deepEqual(result.items, []);
+});
+
 test("Permission: task mutation requires access to the task project", async () => {
   const created = await request(app)
     .post("/api/v1/tasks")

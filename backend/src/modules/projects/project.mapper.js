@@ -29,6 +29,9 @@ const toProjectMemberDTO = (member) => {
   return {
     id: String(member._id || member.id),
     projectId: String(member.projectId),
+    // Task assignment stores the internal User id. Keep it with the
+    // employee-facing identifier so the client can submit primaryAssigneeId.
+    userId: member.userId ? String(member.userId) : null,
     userName: member.userName || null,
     employeeId: member.employeeId || null,
     projectRole: member.projectRole || "DEVELOPER",

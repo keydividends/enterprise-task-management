@@ -88,6 +88,7 @@ test('addProjectMember succeeds and duplicate members are rejected', async () =>
   await withMockProjectUser(async () => {
     const member = await projectService.addProjectMember(created.id, { employeeId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext);
     assert.equal(member.employeeId, 'user_admin_1');
+    assert.equal(member.userId, mockProjectUser.id);
 
     await assert.rejects(
       () => projectService.addProjectMember(created.id, { employeeId: 'user_admin_1', projectRole: 'DEVELOPER' }, mockContext),

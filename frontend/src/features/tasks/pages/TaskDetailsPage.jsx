@@ -20,19 +20,18 @@ import TaskStatusBadge from '../components/TaskStatusBadge';
 import ChecklistPanel from '../components/ChecklistPanel';
 import { PRIORITY_LABELS, TYPE_LABELS, STATUS_LABELS, TASK_STATUSES, TASK_PRIORITIES } from '../taskConstants';
 import { MOCK_USERS, fetchProjectMembers, fetchProjectSprints } from '../hooks/useTasks';
-import axiosClient from '../../../api/axiosClient';
 
 const formatDate = (date) => {
   if (!date) return '—';
   return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-// Resolve a userId to a display name using a pre-built userMap.
-// Falls back to MOCK_USERS, then to 'Unknown'.
-const resolveName = (userId, userMap) => {
+// Resolve a userId to a display name using data that is already available to
+// the task page. Listing every user requires USER_VIEW, which task viewers do
+// not necessarily have.
+const resolveName = (userId) => {
   if (!userId) return 'Unassigned';
   const str = String(userId);
-  if (userMap[str]) return userMap[str];
   const mock = MOCK_USERS.find((u) => u.id === str);
   return mock ? mock.fullName : 'Unknown';
 };
@@ -46,7 +45,6 @@ const TaskDetailsPage = () => {
   const [busy, setBusy] = useState(false);
   const [members, setMembers] = useState([]);
   const [sprints, setSprints] = useState([]);
-  const [userMap, setUserMap] = useState({});
   const [availableLabels, setAvailableLabels] = useState([]);
   const [selectedLabelId, setSelectedLabelId] = useState('');
   const [newLabelName, setNewLabelName] = useState('');
@@ -59,21 +57,6 @@ const TaskDetailsPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [toast, setToast] = useState(null);
-
-  // Build a userId -> fullName map from the real users API for reporter/assignee display.
-  useEffect(() => {
-    axiosClient.get('/users', { params: { pageSize: 200 } })
-      .then((res) => {
-        const users = res.data?.data?.items || res.data?.data || res.data?.items || [];
-        const map = {};
-        users.forEach((u) => {
-          const uid = u.id || u._id;
-          if (uid) map[String(uid)] = u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim();
-        });
-        setUserMap(map);
-      })
-      .catch(() => { /* silently fall back to mock */ });
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -254,8 +237,7 @@ const labels = task.labels || [];
   const checklists = task.checklists || [];
   const history = task.history || [];
 
-  // Resolve a userId to a display name, preferring the real users map.
-  const getUserName = (userId) => resolveName(userId, userMap);
+  const getUserName = (userId) => resolveName(userId);
   const getTaskPersonName = (userId, apiName) => apiName || getUserName(userId);
   const formatHistoryValue = (field, value) => {
     if (value === null || value === undefined || value === '') return '—';
