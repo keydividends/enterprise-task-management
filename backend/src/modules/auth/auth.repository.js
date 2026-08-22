@@ -115,7 +115,18 @@ const findUserByEmail = async (email) => {
   return user && !user.isDeleted ? user : null;
 };
 
-const createUser = async ({ firstName, lastName, email, passwordHash, googleId, microsoftId, role = "MANAGER", permissions = [] }) => {
+const createUser = async ({
+  firstName,
+  lastName,
+  email,
+  passwordHash,
+  googleId,
+  microsoftId,
+  role = "MANAGER",
+  permissions = [],
+  companyId = null,
+  companyName = "",
+}) => {
   const normalizedEmail = normalizeEmail(email);
 
   if (isDbConnected()) {
@@ -129,6 +140,8 @@ const createUser = async ({ firstName, lastName, email, passwordHash, googleId, 
         lastName: String(lastName || "").trim(),
         role,
         permissions,
+        companyId,
+        companyName,
         status: "ACTIVE",
       });
     } catch (error) {
@@ -172,6 +185,8 @@ const createUser = async ({ firstName, lastName, email, passwordHash, googleId, 
     lastName: String(lastName || "").trim(),
     role,
     permissions,
+    companyId,
+    companyName,
     status: "ACTIVE",
     isDeleted: false,
   };

@@ -7,6 +7,12 @@ const projectSchema = new mongoose.Schema(
     key: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
     projectManagerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true
+    },
     status: {
       type: String,
       enum: ["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"],

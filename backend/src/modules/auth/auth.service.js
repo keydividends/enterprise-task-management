@@ -50,6 +50,8 @@ const createAuthError = (code, message, statusCode = 401) => {
 const createTokenPair = (user) => {
   const userId = user.id || user._id;
   const permissions = getEffectivePermissions(user);
+  const companyId = user.companyId ? String(user.companyId) : null;
+  const isSuperAdmin = String(user.role || "").toUpperCase() === "SUPER_ADMIN";
   const accessToken = jwt.sign(
     {
       sub: userId,
@@ -59,7 +61,9 @@ const createTokenPair = (user) => {
       lastName: user.lastName,
       role: user.role,
       permissions,
-      workspaceId: user.workspaceId || "64a000000000000000000001",
+      companyId,
+      companyName: user.companyName || "",
+      workspaceId: companyId || (isSuperAdmin ? null : (user.workspaceId || "64a000000000000000000001")),
       status: user.status,
       type: "access",
     },
@@ -85,7 +89,7 @@ const createTokenPair = (user) => {
     ipAddress: null,
     userAgent: null,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  }).catch(() => {});
+  }).catch(() => { });
 
   return { accessToken, refreshToken };
 };
@@ -142,8 +146,21 @@ const verifyRefreshToken = (token) => {
   }
 };
 
-const registerUser = async ({ firstName, lastName, email, password, confirmPassword }) => {
-  validateRegisterInput({ firstName, lastName, email, password, confirmPassword });
+const registerUser = async ({ firstName, lastName, email, password, confirmPassword, companyId }) => {
+  validateRegisterInput({ firstName, lastName, email, password, confirmPassword, companyId });
+
+  let assignedCompanyId = null;
+  let assignedCompanyName = "";
+
+  if (companyId) {
+    const { Company } = require("../companies/company.model");
+    const company = await Company.findOne({ _id: companyId, isDeleted: false });
+    if (!company) {
+      throw createAuthError("COMPANY_NOT_FOUND", "The selected company does not exist. Please select a valid company.", 404);
+    }
+    assignedCompanyId = company._id;
+    assignedCompanyName = company.name;
+  }
 
   const normalizedEmail = String(email).trim().toLowerCase();
   if (process.env.NODE_ENV !== "production") {
@@ -151,6 +168,8 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
       incomingEmail: String(email),
       normalizedEmail,
       assignedRole: "MANAGER",
+      companyId: assignedCompanyId,
+      companyName: assignedCompanyName,
     });
   }
 
@@ -160,15 +179,14 @@ const registerUser = async ({ firstName, lastName, email, password, confirmPassw
   }
 
   const createdUser = await createUser({
-    firstName,
-    lastName,
+    firstName: String(firstName).trim(),
+    lastName: String(lastName).trim(),
     email: normalizedEmail,
     passwordHash: await hashPassword(password),
     role: "MANAGER",
-    permissions: [
-      "PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE",
-      "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW",
-    ],
+    companyId: assignedCompanyId,
+    companyName: assignedCompanyName,
+    permissions: getEffectivePermissions({ role: "MANAGER" }),
   });
 
   const tokens = createTokenPair(createdUser);

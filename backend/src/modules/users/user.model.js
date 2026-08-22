@@ -69,9 +69,42 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: null,
+      index: true,
+    },
+    companyName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     role: {
       type: String,
-      enum: ["MANAGER", "ADMIN", "USER", "INTERN"],
+      enum: [
+        "SUPER_ADMIN",
+        "COMPANY_ADMIN",
+        "ADMIN",
+        "ORGANIZATION_ADMIN",
+        "MANAGER",
+        "PROJECT_MANAGER",
+        "TEAM_LEAD",
+        "LEAD",
+        "SENIOR_DEVELOPER",
+        "DEVELOPER",
+        "QA_ENGINEER",
+        "EMPLOYEE",
+        "USER",
+        "INTERN",
+        "HR_MANAGER",
+        "AUDITOR"
+      ],
       default: "MANAGER",
     },
     roleId: {

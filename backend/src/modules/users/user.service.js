@@ -1,7 +1,11 @@
 const bcrypt = require("bcryptjs");
+
 const userRepository = require("./user.repository");
+
 const { getEffectivePermissions } = require("../auth/rolePermissions");
+
 const { toUserDTO, toUserListDTO } = require("./user.mapper");
+
 const {
   validateCreateUser,
   validateUpdateUser,
@@ -11,6 +15,13 @@ const {
   validateListQuery,
   createValidationError,
 } = require("./user.validation");
+const {
+  scopedCompanyId,
+  assertCompanyAccess,
+  resolveOwnedCompany,
+  isCompanyLockedRole,
+  getActiveCompanyId,
+} = require("../../utils/companyScope");
 
 const createUserError = (code, message, statusCode = 400) => {
   const error = new Error(message);
@@ -21,9 +32,13 @@ const createUserError = (code, message, statusCode = 400) => {
 
 const hashPassword = async (password) => bcrypt.hash(String(password), 10);
 
-const getUsers = async (query = {}) => {
+const getUsers = async (query = {}, currentUser = null) => {
   const validatedQuery = validateListQuery(query);
-  const { items, totalItems, page, pageSize, totalPages } = await userRepository.findAll(validatedQuery);
+  const companyId = scopedCompanyId(currentUser);
+  const { items, totalItems, page, pageSize, totalPages } = await userRepository.findAll({
+    ...validatedQuery,
+    companyId,
+  });
 
   return {
     data: toUserListDTO(items),
@@ -36,31 +51,44 @@ const getUsers = async (query = {}) => {
   };
 };
 
-const getUserById = async (userId) => {
+const getUserById = async (userId, currentUser = null) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
   }
 
   const user = await userRepository.findById(userId);
+
   if (!user) {
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
+  assertCompanyAccess(currentUser, user.companyId);
   return toUserDTO(user);
 };
 
 const createUser = async (data = {}, currentUser = null) => {
   validateCreateUser(data);
+
   const employeeId = validateEmployeeId(data.employeeId);
 
   const existing = await userRepository.findByEmail(data.email);
+
   if (existing) {
-    throw createUserError("USER_EMAIL_ALREADY_EXISTS", "A user with this email address already exists.", 409);
+    throw createUserError(
+      "USER_EMAIL_ALREADY_EXISTS",
+      "A user with this email address already exists.",
+      409
+    );
   }
 
   const passwordHash = data.password
     ? await hashPassword(data.password)
     : await hashPassword("User@123");
+
+  const owned = resolveOwnedCompany(currentUser, data.companyId);
+  if (isCompanyLockedRole(currentUser) && !owned.companyId) {
+    throw createUserError("COMPANY_REQUIRED", "Your account must belong to a company before creating employees.", 400);
+  }
 
   const createdUser = await userRepository.createUser({
     firstName: String(data.firstName).trim(),
@@ -71,59 +99,117 @@ const createUser = async (data = {}, currentUser = null) => {
     department: data.department || "",
     title: data.title || "",
     bio: data.bio || "",
+    address: data.address || "",
     employeeId,
+
     managerEmployeeId: data.managerEmployeeId
       ? String(data.managerEmployeeId).trim()
-      : "",
+      : (currentUser?.employeeId || ""),
+    companyId: owned.companyId,
+    companyName: owned.forced ? (currentUser?.companyName || "") : (data.companyName || currentUser?.companyName || ""),
     role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
     roleId: data.roleId || null,
+
     permissions: getEffectivePermissions({
-      role: data.role ? String(data.role).trim().toUpperCase() : "INTERN",
-      permissions: data.permissions || ["PROJECT_VIEW", "SPRINT_VIEW", "TASK_VIEW", "TASK_UPDATE", "COMMENT_CREATE", "ATTACHMENT_UPLOAD", "ATTACHMENT_VIEW", "DASHBOARD_VIEW"],
+      role: data.role
+        ? String(data.role).trim().toUpperCase()
+        : "INTERN",
+
+      permissions:
+        data.permissions || [
+          "PROJECT_VIEW",
+          "SPRINT_VIEW",
+          "TASK_VIEW",
+          "TASK_UPDATE",
+          "COMMENT_CREATE",
+          "ATTACHMENT_UPLOAD",
+          "ATTACHMENT_VIEW",
+          "DASHBOARD_VIEW",
+        ],
     }),
+
     status: data.status || "ACTIVE",
   });
 
   return toUserDTO(createdUser);
 };
 
-const updateUser = async (userId, updateData = {}, currentUser = null) => {
+const updateUser = async (
+  userId,
+  updateData = {},
+  currentUser = null
+) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
   }
 
-  // Restrict editing employee profiles strictly to Admins and Managers (unless self-updating)
+  // Restrict editing employee profiles to Managers
+  // or users with USER_UPDATE permission.
   if (currentUser && String(currentUser.id) !== String(userId)) {
-    const isAllowed = currentUser.role === "ADMIN" || currentUser.role === "MANAGER" || currentUser.permissions?.includes("USER_UPDATE");
+    const isAllowed =
+      currentUser.role === "MANAGER" ||
+      currentUser.permissions?.includes("USER_UPDATE");
+
     if (!isAllowed) {
-      throw createUserError("FORBIDDEN", "Only Administrators and Managers are permitted to edit employee profiles.", 403);
+      throw createUserError(
+        "FORBIDDEN",
+        "Only Managers are permitted to edit employee profiles.",
+        403
+      );
     }
   }
 
   validateUpdateUser(updateData);
 
   const existingUser = await userRepository.findById(userId);
+
   if (!existingUser) {
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
-  if (updateData.email && updateData.email.toLowerCase() !== existingUser.email.toLowerCase()) {
+  if (
+    updateData.email &&
+    updateData.email.toLowerCase() !== existingUser.email.toLowerCase()
+  ) {
     const emailCheck = await userRepository.findByEmail(updateData.email);
-    if (emailCheck && String(emailCheck.id || emailCheck._id) !== String(userId)) {
-      throw createUserError("USER_EMAIL_ALREADY_EXISTS", "A user with this email address already exists.", 409);
+
+    if (
+      emailCheck &&
+      String(emailCheck.id || emailCheck._id) !== String(userId)
+    ) {
+      throw createUserError(
+        "USER_EMAIL_ALREADY_EXISTS",
+        "A user with this email address already exists.",
+        409
+      );
     }
   }
 
   const normalizedUpdate = { ...updateData };
-  if (updateData.role && updateData.permissions === undefined) {
-    normalizedUpdate.permissions = getEffectivePermissions({ role: updateData.role, permissions: existingUser.permissions });
+
+  if (
+    updateData.role &&
+    updateData.permissions === undefined
+  ) {
+    normalizedUpdate.permissions = getEffectivePermissions({
+      role: updateData.role,
+      permissions: existingUser.permissions,
+    });
   }
 
-  const updatedUser = await userRepository.updateUser(userId, normalizedUpdate);
+  const updatedUser = await userRepository.updateUser(
+    userId,
+    normalizedUpdate
+  );
+
   return toUserDTO(updatedUser);
 };
 
-const updateUserStatus = async (userId, status, currentUser = null) => {
+const updateUserStatus = async (
+  userId,
+  status,
+  currentUser = null
+) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
   }
@@ -131,56 +217,79 @@ const updateUserStatus = async (userId, status, currentUser = null) => {
   validateStatusUpdate(status);
 
   const existingUser = await userRepository.findById(userId);
+
   if (!existingUser) {
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
-  if (existingUser.role === "ADMIN" && (status === "DISABLED" || status === "DELETED")) {
-    if (currentUser && String(currentUser.id) === String(userId)) {
-      throw createUserError("PROTECTED_USER", "You cannot deactivate or delete your own admin account.", 403);
-    }
+  const updatedUser = await userRepository.updateUserStatus(
+    userId,
+    status
+  );
+  assertCompanyAccess(currentUser, existingUser.companyId);
+  if (currentUser && String(currentUser.id) === String(userId)) {
+    throw createUserError("PROTECTED_USER", "You cannot deactivate or delete your own admin account.", 403);
   }
 
-  const updatedUser = await userRepository.updateUserStatus(userId, status);
   return toUserDTO(updatedUser);
 };
 
-const deactivateUser = async (userId, currentUser = null) => {
+const deactivateUser = async (
+  userId,
+  currentUser = null
+) => {
   return updateUserStatus(userId, "DISABLED", currentUser);
 };
 
-const activateUser = async (userId, currentUser = null) => {
+const activateUser = async (
+  userId,
+  currentUser = null
+) => {
   return updateUserStatus(userId, "ACTIVE", currentUser);
 };
 
-const deleteUser = async (userId, currentUser = null) => {
+const deleteUser = async (
+  userId,
+  currentUser = null
+) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
   }
 
   const existingUser = await userRepository.findById(userId);
+
   if (!existingUser) {
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
 
-  if (existingUser.role === "ADMIN") {
-    throw createUserError("PROTECTED_USER", "System administrator accounts cannot be deleted.", 403);
+  if (
+    currentUser &&
+    String(currentUser.id) === String(userId)
+  ) {
+    throw createUserError(
+      "PROTECTED_USER",
+      "You cannot delete your own logged-in account.",
+      403
+    );
   }
 
-  if (currentUser && String(currentUser.id) === String(userId)) {
-    throw createUserError("PROTECTED_USER", "You cannot delete your own logged-in account.", 403);
-  }
+  const deletedUser =
+    await userRepository.softDeleteUser(userId);
 
-  const deletedUser = await userRepository.softDeleteUser(userId);
   return toUserDTO(deletedUser);
 };
 
-const restoreUser = async (userId, currentUser = null) => {
+const restoreUser = async (
+  userId,
+  currentUser = null
+) => {
   if (!userId) {
     throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
   }
 
-  const restoredUser = await userRepository.restoreUser(userId);
+  const restoredUser =
+    await userRepository.restoreUser(userId);
+
   if (!restoredUser) {
     throw createUserError("USER_NOT_FOUND", "User not found.", 404);
   }
@@ -189,120 +298,295 @@ const restoreUser = async (userId, currentUser = null) => {
 };
 
 const getUserByEmployeeId = async (employeeId) => {
-  if (!employeeId) throw createUserError("INVALID_IDENTIFIER", "Employee ID is required.");
-  const user = await userRepository.findByEmployeeId(employeeId);
-  if (!user) throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+  if (!employeeId) {
+    throw createUserError(
+      "INVALID_IDENTIFIER",
+      "Employee ID is required."
+    );
+  }
+
+  const user =
+    await userRepository.findByEmployeeId(employeeId);
+
+  if (!user) {
+    throw createUserError(
+      "USER_NOT_FOUND",
+      "User not found.",
+      404
+    );
+  }
+
   return toUserDTO(user);
 };
 
-const getUserProfile = async (userId, currentUser = null) => {
-  const targetId = userId === "me" ? currentUser?.id : userId;
+const getUserProfile = async (
+  userId,
+  currentUser = null
+) => {
+  const targetId =
+    userId === "me" ? currentUser?.id : userId;
+
   return getUserById(targetId);
 };
 
-const updateMyProfile = async (currentUser, profileData = {}) => {
+const updateMyProfile = async (
+  currentUser,
+  profileData = {}
+) => {
   if (!currentUser || !currentUser.id) {
-    throw createUserError("AUTH_REQUIRED", "Authentication required.", 401);
+    throw createUserError(
+      "AUTH_REQUIRED",
+      "Authentication required.",
+      401
+    );
   }
 
   validateProfileUpdate(profileData);
 
   if (profileData.employeeId) {
-    const normalizedEmployeeId = validateEmployeeId(profileData.employeeId);
-    const existingUser = await userRepository.findByEmployeeId(normalizedEmployeeId);
-    if (existingUser && String(existingUser.id || existingUser._id) !== String(currentUser.id)) {
-      throw createUserError("EMPLOYEE_ID_ALREADY_EXISTS", "This Employee ID is already in use.", 409);
+    const normalizedEmployeeId =
+      validateEmployeeId(profileData.employeeId);
+
+    const existingUser =
+      await userRepository.findByEmployeeId(
+        normalizedEmployeeId
+      );
+
+    if (
+      existingUser &&
+      String(existingUser.id || existingUser._id) !==
+        String(currentUser.id)
+    ) {
+      throw createUserError(
+        "EMPLOYEE_ID_ALREADY_EXISTS",
+        "This Employee ID is already in use.",
+        409
+      );
     }
+
     profileData.employeeId = normalizedEmployeeId;
   }
 
-  return updateUser(currentUser.id, profileData, currentUser);
+  return updateUser(
+    currentUser.id,
+    profileData,
+    currentUser
+  );
 };
 
-const updateMyEmployeeId = async (currentUser, employeeId) => {
+const updateMyEmployeeId = async (
+  currentUser,
+  employeeId
+) => {
   if (!currentUser || !currentUser.id) {
-    throw createUserError("AUTH_REQUIRED", "Authentication required.", 401);
+    throw createUserError(
+      "AUTH_REQUIRED",
+      "Authentication required.",
+      401
+    );
   }
 
-  const normalizedEmployeeId = validateEmployeeId(employeeId);
-  const existingUser = await userRepository.findByEmployeeId(normalizedEmployeeId);
+  const normalizedEmployeeId =
+    validateEmployeeId(employeeId);
 
-  if (existingUser && String(existingUser.id || existingUser._id) !== String(currentUser.id)) {
-    throw createUserError("EMPLOYEE_ID_ALREADY_EXISTS", "This Employee ID is already in use.", 409);
+  const existingUser =
+    await userRepository.findByEmployeeId(
+      normalizedEmployeeId
+    );
+
+  if (
+    existingUser &&
+    String(existingUser.id || existingUser._id) !==
+      String(currentUser.id)
+  ) {
+    throw createUserError(
+      "EMPLOYEE_ID_ALREADY_EXISTS",
+      "This Employee ID is already in use.",
+      409
+    );
   }
 
-  const updatedUser = await userRepository.updateUser(currentUser.id, { employeeId: normalizedEmployeeId });
+  const updatedUser =
+    await userRepository.updateUser(
+      currentUser.id,
+      {
+        employeeId: normalizedEmployeeId,
+      }
+    );
+
   if (!updatedUser) {
-    throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+    throw createUserError(
+      "USER_NOT_FOUND",
+      "User not found.",
+      404
+    );
   }
 
   return toUserDTO(updatedUser);
 };
 
-const uploadAvatar = async (currentUser, avatarUrl) => {
+const uploadAvatar = async (
+  currentUser,
+  avatarUrl
+) => {
   if (!currentUser || !currentUser.id) {
-    throw createUserError("AUTH_REQUIRED", "Authentication required.", 401);
+    throw createUserError(
+      "AUTH_REQUIRED",
+      "Authentication required.",
+      401
+    );
   }
 
-  const updated = await userRepository.updateUser(currentUser.id, { avatarUrl });
+  const updated =
+    await userRepository.updateUser(
+      currentUser.id,
+      { avatarUrl }
+    );
+
   return toUserDTO(updated);
 };
 
 const removeAvatar = async (currentUser) => {
   if (!currentUser || !currentUser.id) {
-    throw createUserError("AUTH_REQUIRED", "Authentication required.", 401);
+    throw createUserError(
+      "AUTH_REQUIRED",
+      "Authentication required.",
+      401
+    );
   }
 
-  const updated = await userRepository.updateUser(currentUser.id, { avatarUrl: "" });
+  const updated =
+    await userRepository.updateUser(
+      currentUser.id,
+      {
+        avatarUrl: "",
+      }
+    );
+
   return toUserDTO(updated);
 };
 
-const searchUsers = async (query = "", limit = 10) => {
-  const list = await userRepository.searchUsers(query, limit);
+const searchUsers = async (
+  query = "",
+  limit = 10
+) => {
+  const list =
+    await userRepository.searchUsers(
+      query,
+      limit
+    );
+
   return toUserListDTO(list);
 };
 
 const getEligibleTeamLeads = async () => {
-  const result = await userRepository.findAll({ page: 1, pageSize: 100, status: "ACTIVE" });
-  const eligibleRoles = new Set(["ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "LEAD"]);
-  return toUserListDTO((result.items || []).filter((user) => eligibleRoles.has(String(user.role || "").toUpperCase())))
-    .map(({ id, fullName, email, role }) => ({ id, name: fullName, email, role }));
+  const result = await userRepository.findAll({
+    page: 1,
+    pageSize: 100,
+    status: "ACTIVE",
+  });
+
+  const eligibleRoles = new Set([
+    "ORGANIZATION_ADMIN",
+    "MANAGER",
+    "LEAD",
+  ]);
+
+  return toUserListDTO(
+    (result.items || []).filter((user) =>
+      eligibleRoles.has(
+        String(user.role || "").toUpperCase()
+      )
+    )
+  ).map(
+    ({
+      id,
+      fullName,
+      email,
+      role,
+    }) => ({
+      id,
+      name: fullName,
+      email,
+      role,
+    })
+  );
 };
 
-const getTeamMemberCandidates = async (query = {}) => {
-  const validatedQuery = validateListQuery({ ...query, status: "ACTIVE" });
-  const { items } = await userRepository.findAll(validatedQuery);
-  return toUserListDTO(items).map(({ id, firstName, lastName, fullName, email, role }) => ({
-    id,
-    firstName,
-    lastName,
-    name: fullName,
-    email,
-    role,
-  }));
+const getTeamMemberCandidates = async (
+  query = {}
+) => {
+  const validatedQuery = validateListQuery({
+    ...query,
+    status: "ACTIVE",
+  });
+
+  const { items } =
+    await userRepository.findAll(
+      validatedQuery
+    );
+
+  return toUserListDTO(items).map(
+    ({
+      id,
+      firstName,
+      lastName,
+      fullName,
+      email,
+      role,
+    }) => ({
+      id,
+      firstName,
+      lastName,
+      name: fullName,
+      email,
+      role,
+    })
+  );
 };
 
 const getUserProjects = async (userId) => {
-  const user = await userRepository.findById(userId);
+  const user =
+    await userRepository.findById(userId);
+
   if (!user) {
-    throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+    throw createUserError(
+      "USER_NOT_FOUND",
+      "User not found.",
+      404
+    );
   }
+
   return userRepository.getUserProjects(userId);
 };
 
 const getUserTeams = async (userId) => {
-  const user = await userRepository.findById(userId);
+  const user =
+    await userRepository.findById(userId);
+
   if (!user) {
-    throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+    throw createUserError(
+      "USER_NOT_FOUND",
+      "User not found.",
+      404
+    );
   }
+
   return userRepository.getUserTeams(userId);
 };
 
 const getUserWorkload = async (userId) => {
-  const user = await userRepository.findById(userId);
+  const user =
+    await userRepository.findById(userId);
+
   if (!user) {
-    throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+    throw createUserError(
+      "USER_NOT_FOUND",
+      "User not found.",
+      404
+    );
   }
+
   return userRepository.getUserWorkload(userId);
 };
 
