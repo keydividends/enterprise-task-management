@@ -1,6 +1,8 @@
 const path = require("path");
 const dotenv = require("dotenv");
 
+
+
 const backendEnvPath = path.resolve(__dirname, "../.env");
 const rootEnvPath = path.resolve(__dirname, "../../.env");
 const backendEnvResult = dotenv.config({ path: backendEnvPath, quiet: true });
@@ -23,12 +25,14 @@ if (process.env.NODE_ENV !== "production") {
 
 const app = require("./app");
 const connectDatabase = require("./config/database");
+const { ensureSuperAdmin } = require("./modules/auth/ensureSuperAdmin");
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDatabase();
 
+  await ensureSuperAdmin();
   app.listen(PORT, () => {
     console.log(`ETMS API running on port ${PORT}`);
   });

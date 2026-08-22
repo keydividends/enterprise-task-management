@@ -1,5 +1,5 @@
 const GLOBAL_ROLES = new Set(["SUPER_ADMIN"]);
-const COMPANY_LOCKED_ROLES = new Set(["MANAGER", "COMPANY_ADMIN", "EMPLOYEE", "USER", "DEVELOPER", "QA_ENGINEER", "INTERN", "TEAM_LEAD", "LEAD", "PROJECT_MANAGER"]);
+const COMPANY_LOCKED_ROLES = new Set(["MANAGER", "COMPANY_ADMIN", "EMPLOYEE"]);
 
 const isGlobalCompanyRole = (user) => GLOBAL_ROLES.has(String(user?.role || "").toUpperCase());
 
@@ -19,10 +19,12 @@ const sameCompany = (left, right) => {
 
 const getActiveCompanyId = (user) => toCompanyIdString(user?.companyId);
 
+const EMPTY_COMPANY_SCOPE = "__NO_COMPANY__";
+
 const shouldEnforceCompanyScope = (user) => {
   if (!user) return false;
   if (isGlobalCompanyRole(user)) return Boolean(getActiveCompanyId(user));
-  return Boolean(getActiveCompanyId(user));
+  return true;
 };
 
 const createScopeError = (message = "Resource not found.", statusCode = 404) => {
@@ -34,7 +36,9 @@ const createScopeError = (message = "Resource not found.", statusCode = 404) => 
 
 const assertCompanyAccess = (user, resourceCompanyId, message = "Resource not found.") => {
   if (!shouldEnforceCompanyScope(user)) return;
-  if (!sameCompany(getActiveCompanyId(user), resourceCompanyId)) {
+  const actorCompanyId = getActiveCompanyId(user);
+  if (!actorCompanyId && !resourceCompanyId) return;
+  if (!sameCompany(actorCompanyId, resourceCompanyId)) {
     throw createScopeError(message);
   }
 };
@@ -45,7 +49,11 @@ const workspaceIdForUser = (user) => {
   return getActiveCompanyId(user) || user.workspaceId || null;
 };
 
-const scopedCompanyId = (user) => (shouldEnforceCompanyScope(user) ? getActiveCompanyId(user) : null);
+const scopedCompanyId = (user) => {
+  if (!user) return null;
+  if (isGlobalCompanyRole(user) && !getActiveCompanyId(user)) return null;
+  return getActiveCompanyId(user) || EMPTY_COMPANY_SCOPE;
+};
 
 const resolveOwnedCompany = (actor, requestedCompanyId = null) => {
   if (isCompanyLockedRole(actor)) {
@@ -63,6 +71,7 @@ const resolveOwnedCompany = (actor, requestedCompanyId = null) => {
 module.exports = {
   GLOBAL_ROLES,
   COMPANY_LOCKED_ROLES,
+  EMPTY_COMPANY_SCOPE,
   isGlobalCompanyRole,
   isCompanyLockedRole,
   toCompanyIdString,

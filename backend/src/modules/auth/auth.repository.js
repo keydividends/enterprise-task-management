@@ -2,117 +2,55 @@ const crypto = require("node:crypto");
 const mongoose = require("mongoose");
 const { UserAuth, PasswordResetToken } = require("./auth.model");
 
-const isDbConnected = () => mongoose.connection && mongoose.connection.readyState === 1;
+const isDbConnected = () =>
+  mongoose.connection && mongoose.connection.readyState === 1;
 
-const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
-const hashResetToken = (token) => crypto.createHash("sha256").update(String(token)).digest("hex");
+const requireDatabase = () => {
+  if (!isDbConnected()) {
+    const error = new Error(
+      "Database connection is required for authentication."
+    );
+
+    error.code = "DATABASE_UNAVAILABLE";
+    error.statusCode = 503;
+
+    throw error;
+  }
+};
+
+const normalizeEmail = (email = "") =>
+  String(email).trim().toLowerCase();
+
+const hashResetToken = (token) =>
+  crypto
+    .createHash("sha256")
+    .update(String(token))
+    .digest("hex");
+
 const logRegistrationDebug = (message, details) => {
   if (process.env.NODE_ENV !== "production") {
     console.log(`[auth:register] ${message}`, details);
   }
 };
 
-const memoryUsers = new Map([
-  [
-    "admin@etms.com",
-    {
-      _id: "user_admin_1",
-      id: "user_admin_1",
-      firstName: "Admin",
-      lastName: "User",
-      email: "admin@etms.com",
-      passwordHash: "$2b$10$2LHil5UBjkY2Wuvcdln.VeScEors5MVuMy3qX5nkRwyxhHtoJGUUy",
-      role: "ADMIN",
-      permissions: [
-        "USER_VIEW",
-        "USER_CREATE",
-        "USER_UPDATE",
-        "USER_DELETE",
-        "PROJECT_VIEW",
-        "PROJECT_CREATE",
-        "PROJECT_UPDATE",
-        "PROJECT_DELETE",
-        "TASK_VIEW",
-        "TASK_CREATE",
-        "TASK_UPDATE",
-        "TASK_DELETE",
-        "TEAM_VIEW",
-        "TEAM_CREATE",
-        "TEAM_UPDATE",
-        "TEAM_DELETE",
-        "TEAM_MANAGE_MEMBERS",
-      ],
-      workspaceId: "64a000000000000000000001",
-      status: "ACTIVE",
-      isDeleted: false,
-    },
-  ],
-  [
-    "demo@etms.com",
-    {
-      _id: "user_demo_1",
-      id: "user_demo_1",
-      firstName: "Demo",
-      lastName: "User",
-      email: "demo@etms.com",
-      passwordHash: "$2b$10$XUA4r0D2oshUWDt1W7pej.qBPju9qQRx/FBR7s7o/alBkNZ6kCIUq",
-      role: "USER",
-      permissions: [
-        "USER_VIEW",
-        "PROJECT_VIEW",
-        "PROJECT_CREATE",
-        "PROJECT_UPDATE",
-        "TASK_VIEW",
-        "TASK_CREATE",
-        "TASK_UPDATE",
-        "TEAM_VIEW",
-      ],
-      workspaceId: "64a000000000000000000001",
-      status: "ACTIVE",
-      isDeleted: false,
-    },
-  ],
-  [
-    "disabled@etms.com",
-    {
-      _id: "user_disabled_1",
-      id: "user_disabled_1",
-      firstName: "Disabled",
-      lastName: "User",
-      email: "disabled@etms.com",
-      passwordHash: "$2b$10$R0sU2qLsYx5U.B8MCMteT.NxiI85.SCxSguv60TDvnVPZMnd4KUN2",
-      role: "USER",
-      permissions: [],
-      status: "DISABLED",
-      isDeleted: false,
-    },
-  ],
-]);
-
-const resetTokens = new Map();
-
 const findUserByEmail = async (email) => {
-  const normalizedEmail = normalizeEmail(email);
-  if (isDbConnected()) {
-    const user = await UserAuth.findOne({ email: normalizedEmail });
-    logRegistrationDebug("duplicate-email lookup", {
-      incomingEmail: String(email),
-      normalizedEmail,
-      collection: UserAuth.collection.name,
-      userFound: Boolean(user),
-      userId: user ? String(user._id) : null,
-    });
-    return user;
-  }
+  requireDatabase();
 
-  const user = memoryUsers.get(normalizedEmail);
-  logRegistrationDebug("duplicate-email lookup (in-memory)", {
-    incomingEmail: String(email),
-    normalizedEmail,
-    collection: "in-memory users",
-    userFound: Boolean(user && !user.isDeleted),
+  const normalizedEmail = normalizeEmail(email);
+
+  const user = await UserAuth.findOne({
+    email: normalizedEmail,
+    isDeleted: false,
   });
-  return user && !user.isDeleted ? user : null;
+
+  logRegistrationDebug("user lookup", {
+    normalizedEmail,
+    collection: UserAuth.collection.name,
+    userFound: Boolean(user),
+    userId: user ? String(user._id) : null,
+  });
+
+  return user;
 };
 
 const createUser = async ({
@@ -127,182 +65,165 @@ const createUser = async ({
   companyId = null,
   companyName = "",
 }) => {
+  requireDatabase();
+
   const normalizedEmail = normalizeEmail(email);
 
-  if (isDbConnected()) {
-    try {
-      return await UserAuth.create({
-        email: normalizedEmail,
-        passwordHash,
-        googleId,
-        microsoftId,
-        firstName: String(firstName || "").trim(),
-        lastName: String(lastName || "").trim(),
-        role,
-        permissions,
-        companyId,
-        companyName,
-        status: "ACTIVE",
-      });
-    } catch (error) {
-      const duplicateEmail = error && error.code === 11000 && (
-        error.keyPattern?.email || Object.prototype.hasOwnProperty.call(error.keyValue || {}, "email")
+  try {
+    return await UserAuth.create({
+      email: normalizedEmail,
+      passwordHash,
+      googleId,
+      microsoftId,
+      firstName: String(firstName || "").trim(),
+      lastName: String(lastName || "").trim(),
+      role,
+      permissions,
+      companyId,
+      companyName,
+      status: "ACTIVE",
+      isDeleted: false,
+    });
+  } catch (error) {
+    const duplicateEmail =
+      error &&
+      error.code === 11000 &&
+      (
+        error.keyPattern?.email ||
+        Object.prototype.hasOwnProperty.call(
+          error.keyValue || {},
+          "email"
+        )
       );
 
-      if (duplicateEmail) {
-        error.code = "USER_ALREADY_EXISTS";
-        error.statusCode = 409;
-        error.message = "A user with this email already exists.";
-      }
-
-      logRegistrationDebug("user creation failed", {
-        normalizedEmail,
-        collection: UserAuth.collection.name,
-        errorCode: error?.code,
-        duplicateEmail,
-        duplicateKey: error?.keyPattern || null,
-      });
-      throw error;
+    if (duplicateEmail) {
+      error.code = "USER_ALREADY_EXISTS";
+      error.statusCode = 409;
+      error.message = "A user with this email already exists.";
     }
-  }
 
-  if (memoryUsers.has(normalizedEmail)) {
-    const error = new Error("A user with this email already exists.");
-    error.code = "USER_ALREADY_EXISTS";
-    error.statusCode = 409;
+    logRegistrationDebug("user creation failed", {
+      normalizedEmail,
+      collection: UserAuth.collection.name,
+      errorCode: error?.code,
+      duplicateEmail,
+      duplicateKey: error?.keyPattern || null,
+    });
+
     throw error;
   }
-
-  const newId = `user_${Date.now()}`;
-  const newUser = {
-    _id: newId,
-    id: newId,
-    email: normalizedEmail,
-    passwordHash,
-    googleId,
-    microsoftId,
-    firstName: String(firstName || "").trim(),
-    lastName: String(lastName || "").trim(),
-    role,
-    permissions,
-    companyId,
-    companyName,
-    status: "ACTIVE",
-    isDeleted: false,
-  };
-
-  memoryUsers.set(normalizedEmail, newUser);
-  return newUser;
 };
 
 const findUserById = async (userId) => {
-  if (isDbConnected()) {
-    return UserAuth.findOne({ _id: userId, isDeleted: false });
+  requireDatabase();
+
+  if (!userId) {
+    return null;
   }
 
-  for (const user of memoryUsers.values()) {
-    if ((user.id === String(userId) || user._id === String(userId)) && !user.isDeleted) {
-      return user;
-    }
-  }
-  return null;
+  return UserAuth.findOne({
+    _id: userId,
+    isDeleted: false,
+  });
 };
 
 const updateUserPassword = async (userId, passwordHash) => {
-  if (isDbConnected()) {
-    return UserAuth.findOneAndUpdate(
-      { _id: userId, isDeleted: false },
-      { $set: { passwordHash } },
-      { new: true }
-    );
+  requireDatabase();
+
+  if (!userId) {
+    return null;
   }
 
-  const user = await findUserById(userId);
-  if (user) {
-    user.passwordHash = passwordHash;
-  }
-  return user;
+  return UserAuth.findOneAndUpdate(
+    {
+      _id: userId,
+      isDeleted: false,
+    },
+    {
+      $set: {
+        passwordHash,
+      },
+    },
+    {
+      new: true,
+    }
+  );
 };
 
 const storeResetToken = async (token, payload) => {
+  requireDatabase();
+
   const tokenHash = hashResetToken(token);
 
-  if (isDbConnected()) {
-    await PasswordResetToken.updateMany(
-      { userId: String(payload.userId), used: false },
-      { $set: { used: true, usedAt: new Date() } }
-    );
-
-    return PasswordResetToken.create({
+  await PasswordResetToken.updateMany(
+    {
       userId: String(payload.userId),
-      tokenHash,
-      expiresAt: payload.expiresAt,
-    });
-  }
-
-  for (const rec of resetTokens.values()) {
-    if (rec.userId === String(payload.userId) && !rec.used) {
-      rec.used = true;
-      rec.usedAt = new Date();
+      used: false,
+    },
+    {
+      $set: {
+        used: true,
+        usedAt: new Date(),
+      },
     }
-  }
+  );
 
-  const record = {
+  return PasswordResetToken.create({
     userId: String(payload.userId),
     tokenHash,
-    rawToken: token,
     expiresAt: payload.expiresAt,
     used: false,
-  };
-  resetTokens.set(tokenHash, record);
-  return record;
+  });
 };
 
 const findResetTokenByToken = async (token) => {
+  requireDatabase();
+
   const tokenHash = hashResetToken(token);
 
-  if (isDbConnected()) {
-    return PasswordResetToken.findOne({ tokenHash, used: false });
-  }
-
-  const record = resetTokens.get(tokenHash);
-  return record && !record.used ? record : null;
+  return PasswordResetToken.findOne({
+    tokenHash,
+    used: false,
+  });
 };
 
 const markResetTokenAsUsed = async (token) => {
+  requireDatabase();
+
   const tokenHash = hashResetToken(token);
 
-  if (isDbConnected()) {
-    return PasswordResetToken.findOneAndUpdate(
-      { tokenHash, used: false },
-      { $set: { used: true, usedAt: new Date() } },
-      { new: true }
-    );
-  }
-
-  const record = resetTokens.get(tokenHash);
-  if (record && !record.used) {
-    record.used = true;
-    record.usedAt = new Date();
-    return record;
-  }
-  return null;
+  return PasswordResetToken.findOneAndUpdate(
+    {
+      tokenHash,
+      used: false,
+    },
+    {
+      $set: {
+        used: true,
+        usedAt: new Date(),
+      },
+    },
+    {
+      new: true,
+    }
+  );
 };
 
 const invalidateAllResetTokensForUser = async (userId) => {
-  if (isDbConnected()) {
-    return PasswordResetToken.updateMany(
-      { userId: String(userId), used: false },
-      { $set: { used: true, usedAt: new Date() } }
-    );
-  }
+  requireDatabase();
 
-  for (const rec of resetTokens.values()) {
-    if (rec.userId === String(userId) && !rec.used) {
-      rec.used = true;
-      rec.usedAt = new Date();
+  return PasswordResetToken.updateMany(
+    {
+      userId: String(userId),
+      used: false,
+    },
+    {
+      $set: {
+        used: true,
+        usedAt: new Date(),
+      },
     }
-  }
+  );
 };
 
 module.exports = {
@@ -314,5 +235,4 @@ module.exports = {
   findResetTokenByToken,
   markResetTokenAsUsed,
   invalidateAllResetTokensForUser,
-  resetTokens,
 };

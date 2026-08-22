@@ -510,14 +510,6 @@ export const UserForm = ({
             <option value="MANAGER">
               Manager
             </option>
-            <option value="" disabled>Select Role</option>
-            <option value="EMPLOYEE">Employee (General Staff)</option>
-            <option value="DEVELOPER">Developer</option>
-            <option value="QA_ENGINEER">QA Engineer</option>
-            <option value="INTERN">Intern</option>
-            <option value="MANAGER">Manager</option>
-            <option value="COMPANY_ADMIN">Company Admin</option>
-            <option value="ADMIN">System Administrator</option>
           </select>
 
           {errors.role && (

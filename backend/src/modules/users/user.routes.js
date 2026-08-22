@@ -7,7 +7,7 @@ const router = express.Router();
 
 const canSearchProjectMembers = (req, res, next) => {
   const role = String(req.user?.role || "").toUpperCase();
-  if (["SUPER_ADMIN", "ADMIN", "ORGANIZATION_ADMIN", "MANAGER", "PROJECT_MANAGER"].includes(role) || req.user?.permissions?.includes("USER_VIEW")) return next();
+  if (["SUPER_ADMIN", "EMPLOYEE", "COMPANY_ADMIN", "MANAGER"].includes(role) || req.user?.permissions?.includes("USER_VIEW")) return next();
 
   const error = new Error("Permission denied.");
   error.code = "PERMISSION_DENIED";

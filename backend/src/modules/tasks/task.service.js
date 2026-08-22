@@ -61,9 +61,10 @@ const assertTaskPermission = (context, permission) => {
 };
 
 const hasProjectWideTaskAccess = (context = {}) =>
-  // Managers are scoped to projects they own, manage, or belong to. Only
-  // organisation-wide administrator roles bypass project membership.
-  ["ADMIN", "SUPER_ADMIN", "ORG_ADMIN", "ORGANIZATION_ADMIN"].includes(
+  // Managers have project-management and task-creation permissions. Keep task
+  // access consistent with the projects module so a Manager is not blocked
+  // from creating a task for a project they can already manage.
+  ["ADMIN", "SUPER_ADMIN", "ORG_ADMIN", "COMPANY_ADMIN", "MANAGER", "EMPLOYEE"].includes(
     String(context.user?.role || "").toUpperCase()
   );
 

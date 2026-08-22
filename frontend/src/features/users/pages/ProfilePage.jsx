@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Save, Camera, Check } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import userService from '../services/userService';
+import companyService from '../../company/services/companyService';
 
 export const ProfilePage = () => {
   const { user: authUser, setUser, refreshUser } = useAuth();
@@ -15,6 +16,9 @@ export const ProfilePage = () => {
     title: '',
     bio: '',
     avatarUrl: '',
+    companyId: '',
+    companyName: '',
+    role:'',
   });
   const [savedProfile, setSavedProfile] = useState(null);
 
@@ -22,6 +26,53 @@ export const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+
+  const suggestRef = useRef(null);
+
+  const [companySuggestions, setCompanySuggestions] = useState([]);
+  const [showCompanySuggestions, setShowCompanySuggestions] = useState(false);
+  const [searchingCompanies, setSearchingCompanies] = useState(false);
+
+  useEffect(() => {
+    if (profile.role !== 'SUPER_ADMIN') {
+      setCompanySuggestions([]);
+      return undefined;
+    }
+
+    const query = profile.companyName.trim();
+
+    if (!query) {
+      setCompanySuggestions([]);
+      return undefined;
+    }
+
+    let active = true;
+
+    const timer = setTimeout(async () => {
+      try {
+        setSearchingCompanies(true);
+
+        const data = await companyService.searchCompanies(query);
+
+        if (active) {
+          setCompanySuggestions(data || []);
+        }
+      } catch {
+        if (active) {
+          setCompanySuggestions([]);
+        }
+      } finally {
+        if (active) {
+          setSearchingCompanies(false);
+        }
+      }
+    }, 220);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [profile.companyName, profile.role]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -42,6 +93,9 @@ export const ProfilePage = () => {
             title: res.data.title || '',
             bio: res.data.bio || '',
             avatarUrl: res.data.avatarUrl || '',
+            companyId: res.data.companyId || authUser?.companyId || '',
+            companyName: res.data.companyName || authUser?.companyName || '',
+            role: res.data.role || authUser?.role || 'USER',
           };
           setProfile(initialData);
           setSavedProfile(initialData);
@@ -62,6 +116,8 @@ export const ProfilePage = () => {
             bio: '',
             avatarUrl: '',
             role: authUser.role || 'USER',
+            companyId: authUser.companyId || '',
+            companyName: authUser.companyName || '',
           };
           setProfile(initialData);
           setSavedProfile(initialData);
@@ -108,7 +164,7 @@ export const ProfilePage = () => {
         }
       }
 
-      const res = await userService.updateMyProfile({
+      const updatePayload = {
         employeeId: profile.employeeId,
         firstName: profile.firstName,
         lastName: profile.lastName,
@@ -116,18 +172,35 @@ export const ProfilePage = () => {
         department: profile.department,
         title: profile.title,
         bio: profile.bio,
-      });
+      };
+
+      if (profile.role === 'SUPER_ADMIN') {
+        updatePayload.companyId = profile.companyId;
+        updatePayload.companyName = profile.companyName;
+      }
+
+      const res = await userService.updateMyProfile(updatePayload);
 
       const updatedData = res?.data || profile;
       setSavedProfile((prev) => ({ ...prev, ...updatedData, employeeId: profile.employeeId }));
       if (setUser) {
-        setUser((prev) => (prev ? {
-          ...prev,
-          employeeId: profile.employeeId,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          fullName: `${profile.firstName} ${profile.lastName}`.trim(),
-        } : null));
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                employeeId: profile.employeeId,
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                fullName: `${profile.firstName} ${profile.lastName}`.trim(),
+                ...(profile.role === 'SUPER_ADMIN'
+                  ? {
+                      companyId: profile.companyId,
+                      companyName: profile.companyName,
+                    }
+                  : {}),
+              }
+            : null
+        );
       }
       if (refreshUser) {
         try {
@@ -340,6 +413,134 @@ export const ProfilePage = () => {
               }}
             />
           </div>
+
+
+
+          
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label
+              htmlFor="profile_companyName"
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontWeight: 600,
+                fontSize: '14px',
+              }}
+            >
+              Company
+            </label>
+
+            {profile.role === 'SUPER_ADMIN' ? (
+              <div
+                ref={suggestRef}
+                style={{
+                  position: 'relative',
+                }}
+              >
+                <input
+                  id="profile_companyName"
+                  type="text"
+                  name="companyName"
+                  value={profile.companyName}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setProfile((prev) => ({
+                      ...prev,
+                      companyName: value,
+                      companyId: '',
+                    }));
+
+                    setShowCompanySuggestions(true);
+                  }}
+                  onFocus={() => setShowCompanySuggestions(true)}
+                  placeholder="Select company"
+                  autoComplete="off"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: 'var(--bg-input, #ffffff)',
+                  }}
+                />
+
+                {showCompanySuggestions && profile.companyName.trim() && (
+                  <ul
+                    style={{
+                      position: 'absolute',
+                      zIndex: 20,
+                      width: '100%',
+                      margin: '4px 0 0',
+                      padding: 0,
+                      listStyle: 'none',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color, #e2e8f0)',
+                      background: 'var(--bg-input, #ffffff)',
+                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {searchingCompanies && (
+                      <li style={{ padding: '10px 12px' }}>
+                        Searching companies...
+                      </li>
+                    )}
+
+                    {!searchingCompanies &&
+                      companySuggestions.length === 0 && (
+                        <li style={{ padding: '10px 12px' }}>
+                          No matching companies.
+                        </li>
+                      )}
+
+                    {!searchingCompanies &&
+                      companySuggestions.map((company) => (
+                        <li
+                          key={company.id}
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+
+                            setProfile((prev) => ({
+                              ...prev,
+                              companyId: company.id,
+                              companyName: company.name,
+                            }));
+
+                            setShowCompanySuggestions(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {company.name}
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <input
+                id="profile_companyName"
+                type="text"
+                value={profile.companyName}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  background: 'var(--bg-disabled, #f1f5f9)',
+                }}
+              />
+            )}
+
+            
+          </div>
+
+
 
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label htmlFor="profile_title" style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '14px' }}>Job Title</label>

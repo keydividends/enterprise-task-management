@@ -2,81 +2,14 @@ const { verifyAccessToken } = require("../modules/auth/auth.service");
 const { getEffectivePermissions } = require("../modules/auth/rolePermissions");
 const { User } = require("../modules/users/user.model");
 const { isGlobalCompanyRole } = require("../utils/companyScope");
-const mongoose = require("mongoose");
-
-// Cache resolved mock-token → real MongoDB user so we only query once per process.
-const _mockUserCache = {};
-
-// Resolve a mock token to a real MongoDB user by email.
-// Falls back to the static profile if MongoDB is not yet connected.
-const resolveMockUser = async (email, staticProfile) => {
-  if (_mockUserCache[email]) return _mockUserCache[email];
-
-  if (mongoose.connection && mongoose.connection.readyState === 1) {
-    try {
-      const dbUser = await User.findOne({ email, isDeleted: false }).lean();
-      if (dbUser) {
-        const resolved = {
-          id: String(dbUser._id),
-          email: dbUser.email,
-          firstName: dbUser.firstName,
-          lastName: dbUser.lastName,
-          role: dbUser.role,
-          permissions: getEffectivePermissions(dbUser),
-          companyId: dbUser.companyId ? String(dbUser.companyId) : null,
-          companyName: dbUser.companyName || "",
-          workspaceId: dbUser.companyId ? String(dbUser.companyId) : staticProfile.workspaceId,
-          status: dbUser.status,
-        };
-        _mockUserCache[email] = resolved;
-        return resolved;
-      }
-    } catch (_) {
-      // DB lookup failed — fall through to static profile
-    }
-  }
-
-  return staticProfile;
-};
-
-// Static profiles used when MongoDB is unavailable (tests / cold start).
-// Permissions are the full admin/member sets — IDs are placeholders until
-// resolveMockUser() replaces them with real MongoDB _ids.
-const MOCK_TOKEN_PROFILES = {
-  "mock-token": {
-    id: "mock-admin",
-    email: "admin@etms.com",
-    firstName: "Admin",
-    lastName: "User",
-    role: "ADMIN",
-    workspaceId: "64a000000000000000000001",
-    permissions: [
-      "TEAM_VIEW", "TEAM_CREATE", "TEAM_UPDATE", "TEAM_DELETE", "TEAM_MANAGE_MEMBERS",
-      "PROJECT_VIEW", "PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_MANAGE_MEMBERS",
-      "USER_VIEW", "USER_CREATE", "USER_UPDATE", "USER_DELETE",
-      "ROLE_CREATE", "ROLE_VIEW", "ROLE_UPDATE", "ROLE_DELETE",
-      "TASK_VIEW", "TASK_CREATE", "TASK_UPDATE", "TASK_DELETE", "TASK_ASSIGN",
-      "SPRINT_VIEW", "SPRINT_CREATE", "SPRINT_UPDATE", "SPRINT_MANAGE",
-      "DASHBOARD_VIEW", "REPORT_VIEW",
-    ],
-    status: "ACTIVE",
-  },
-  "mock-member-token": {
-    id: "mock-demo",
-    email: "demo@etms.com",
-    firstName: "Demo",
-    lastName: "User",
-    role: "USER",
-    workspaceId: "64a000000000000000000001",
-    permissions: ["TEAM_VIEW", "PROJECT_VIEW", "TASK_VIEW", "USER_VIEW", "DASHBOARD_VIEW"],
-    status: "ACTIVE",
-  },
-};
 
 const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
 
     if (!token) {
       const error = new Error("Authentication required.");
@@ -85,33 +18,72 @@ const authenticate = async (req, res, next) => {
       return next(error);
     }
 
-    const mockProfile = MOCK_TOKEN_PROFILES[token];
-    if (mockProfile) {
-      // Resolve to real MongoDB user so team member IDs match DB records.
-      req.user = await resolveMockUser(mockProfile.email, mockProfile);
-      return next();
+    // Verify JWT
+    const payload = verifyAccessToken(token);
+
+    const userId = payload.id || payload.sub;
+
+    if (!userId) {
+      const error = new Error("Invalid authentication token.");
+      error.code = "AUTH_INVALID_TOKEN";
+      error.statusCode = 401;
+      return next(error);
     }
 
-    const payload = verifyAccessToken(token);
-    const headerCompanyId = String(req.headers["x-company-id"] || "").trim() || null;
-    const tokenCompanyId = payload.companyId ? String(payload.companyId) : null;
-    const global = isGlobalCompanyRole(payload);
-    const activeCompanyId = global ? headerCompanyId : tokenCompanyId;
+    // Always get the current user from MongoDB.
+    const user = await User.findOne({
+      _id: userId,
+      isDeleted: false,
+    }).lean();
+
+    if (!user) {
+      const error = new Error("Authenticated user not found.");
+      error.code = "AUTH_USER_NOT_FOUND";
+      error.statusCode = 401;
+      return next(error);
+    }
+
+    // Optional: prevent inactive users from accessing the system.
+    if (user.status !== "ACTIVE") {
+      const error = new Error("Your account is not active.");
+      error.code = "AUTH_USER_INACTIVE";
+      error.statusCode = 403;
+      return next(error);
+    }
+
+    const isGlobalRole = isGlobalCompanyRole(user);
+
+    /*
+     * Normal users always belong to their own company.
+     *
+     * Global users, such as SUPER_ADMIN, may optionally
+     * operate within a company selected through x-company-id.
+     */
+    const requestedCompanyId =
+      String(req.headers["x-company-id"] || "").trim() || null;
+
+    const companyId = isGlobalRole
+      ? requestedCompanyId
+      : user.companyId
+        ? String(user.companyId)
+        : null;
 
     req.user = {
-      id: payload.id || payload.sub,
-      email: payload.email,
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      role: payload.role,
-      permissions: getEffectivePermissions(payload),
-      companyId: activeCompanyId,
-      companyName: payload.companyName || "",
-      workspaceId: activeCompanyId || (global ? null : (payload.workspaceId || null)),
-      status: payload.status,
+      id: String(user._id),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      permissions: getEffectivePermissions(user),
+
+      // Real company context
+      companyId,
+
+      companyName: user.companyName || "",
+      status: user.status,
     };
 
-    next();
+    return next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       error.code = "AUTH_TOKEN_EXPIRED";
@@ -121,7 +93,7 @@ const authenticate = async (req, res, next) => {
       error.statusCode = 401;
     }
 
-    next(error);
+    return next(error);
   }
 };
 

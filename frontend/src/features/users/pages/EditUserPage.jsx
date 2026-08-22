@@ -15,7 +15,7 @@ export const EditUserPage = () => {
   const [error, setError] = useState(null);
 
   // Rule 3: Only Admins and Managers are allowed to edit employee profiles
-  const canEdit = currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER' || currentUser?.permissions?.includes('USER_UPDATE') || String(currentUser?.id) === String(userId);
+  const canEdit = currentUser?.role === 'COMPANY_ADMIN' || currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'MANAGER' || currentUser?.permissions?.includes('USER_UPDATE') || String(currentUser?.id) === String(userId);
 
   useEffect(() => {
     const fetchUser = async () => {

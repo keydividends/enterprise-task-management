@@ -89,7 +89,10 @@ const validateStatusUpdate = (status) => {
   }
 };
 
-const validateProfileUpdate = (data = {}) => {
+const validateProfileUpdate = (
+  data = {},
+  currentUser = {}
+) => {
   const allowedProfileFields = [
     "employeeId",
     "firstName",
@@ -100,10 +103,20 @@ const validateProfileUpdate = (data = {}) => {
     "bio",
   ];
 
+  const allowedCompanyFields =
+    String(currentUser.role || "").toUpperCase() === "SUPER_ADMIN"
+      ? ["companyId", "companyName"]
+      : [];
+
+  const allowedFields = [
+    ...allowedProfileFields,
+    ...allowedCompanyFields,
+  ];
+
   const keys = Object.keys(data);
 
   const disallowed = keys.filter(
-    (k) => !allowedProfileFields.includes(k)
+    (k) => !allowedFields.includes(k)
   );
 
   if (disallowed.length > 0) {

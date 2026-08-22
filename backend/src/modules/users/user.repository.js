@@ -83,7 +83,27 @@ const inMemoryUsers = new Map([
   ],
 ]);
 
+const { EMPTY_COMPANY_SCOPE } = require("../../utils/companyScope");
+
 const isDbConnected = () => mongoose.connection && mongoose.connection.readyState === 1;
+
+const applyCompanyFilter = (target, companyId) => {
+  if (companyId === EMPTY_COMPANY_SCOPE) {
+    target.companyId = { $in: [] };
+    return true;
+  }
+  if (companyId) {
+    target.companyId = companyId;
+    return true;
+  }
+  return false;
+};
+
+const matchesCompany = (user, companyId) => {
+  if (companyId === EMPTY_COMPANY_SCOPE) return false;
+  if (!companyId) return true;
+  return String(user.companyId || "") === String(companyId);
+};
 
 const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
 
@@ -123,7 +143,7 @@ const findAll = async ({ page = 1, pageSize = 20, search = "", status = null, ro
     list = list.filter((u) => u.roleId === roleId);
   }
   if (companyId) {
-    list = list.filter((u) => String(u.companyId || "") === String(companyId));
+    list = list.filter((u) => matchesCompany(u, companyId));
   }
   if (search) {
     const s = search.toLowerCase();
@@ -226,6 +246,8 @@ const createUser = async (userData) => {
     bio: userData.bio || "",
     employeeId: userData.employeeId || null,
     managerEmployeeId: userData.managerEmployeeId || "",
+    companyId: userData.companyId || null,
+    companyName: userData.companyName || "",
     role: userData.role || "USER",
     permissions: userData.permissions || [
       "USER_VIEW",

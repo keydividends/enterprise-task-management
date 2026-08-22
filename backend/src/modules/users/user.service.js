@@ -140,42 +140,79 @@ const updateUser = async (
   currentUser = null
 ) => {
   if (!userId) {
-    throw createUserError("INVALID_IDENTIFIER", "User ID is required.");
+    throw createUserError(
+      "INVALID_IDENTIFIER",
+      "User ID is required."
+    );
   }
 
-  // Restrict editing employee profiles to Managers
-  // or users with USER_UPDATE permission.
-  if (currentUser && String(currentUser.id) !== String(userId)) {
+  const currentRole = String(
+    currentUser?.role || ""
+  ).toUpperCase();
+
+  const isSuperAdmin = currentRole === "SUPER_ADMIN";
+
+  const isUpdatingOwnProfile =
+    currentUser &&
+    String(currentUser.id) === String(userId);
+
+  // Restrict editing other employee profiles to
+  // SUPER_ADMIN, Managers, or users with USER_UPDATE.
+  if (currentUser && !isUpdatingOwnProfile) {
     const isAllowed =
-      currentUser.role === "MANAGER" ||
+      isSuperAdmin ||
+      currentRole === "MANAGER" ||
       currentUser.permissions?.includes("USER_UPDATE");
 
     if (!isAllowed) {
       throw createUserError(
         "FORBIDDEN",
-        "Only Managers are permitted to edit employee profiles.",
+        "You do not have permission to edit this user profile.",
         403
       );
     }
   }
 
+  // Only SUPER_ADMIN can modify company information.
+  const isUpdatingCompany =
+    updateData.companyId !== undefined ||
+    updateData.companyName !== undefined;
+
+  if (isUpdatingCompany && !isSuperAdmin) {
+    throw createUserError(
+      "FORBIDDEN",
+      "Only Super Admins are permitted to edit company information.",
+      403
+    );
+  }
+
   validateUpdateUser(updateData);
 
-  const existingUser = await userRepository.findById(userId);
+  const existingUser =
+    await userRepository.findById(userId);
 
   if (!existingUser) {
-    throw createUserError("USER_NOT_FOUND", "User not found.", 404);
+    throw createUserError(
+      "USER_NOT_FOUND",
+      "User not found.",
+      404
+    );
   }
 
   if (
     updateData.email &&
-    updateData.email.toLowerCase() !== existingUser.email.toLowerCase()
+    updateData.email.toLowerCase() !==
+      existingUser.email.toLowerCase()
   ) {
-    const emailCheck = await userRepository.findByEmail(updateData.email);
+    const emailCheck =
+      await userRepository.findByEmail(
+        updateData.email
+      );
 
     if (
       emailCheck &&
-      String(emailCheck.id || emailCheck._id) !== String(userId)
+      String(emailCheck.id || emailCheck._id) !==
+        String(userId)
     ) {
       throw createUserError(
         "USER_EMAIL_ALREADY_EXISTS",
@@ -185,22 +222,42 @@ const updateUser = async (
     }
   }
 
-  const normalizedUpdate = { ...updateData };
+  const normalizedUpdate = {
+    ...updateData,
+  };
 
+  // Normalize company name if supplied by SUPER_ADMIN
+  if (normalizedUpdate.companyName !== undefined) {
+    normalizedUpdate.companyName =
+      String(normalizedUpdate.companyName).trim();
+  }
+
+  // Normalize email
+  if (normalizedUpdate.email !== undefined) {
+    normalizedUpdate.email =
+      String(normalizedUpdate.email)
+        .trim()
+        .toLowerCase();
+  }
+
+  // If role changes and permissions were not explicitly supplied,
+  // calculate permissions from the new role.
   if (
     updateData.role &&
     updateData.permissions === undefined
   ) {
-    normalizedUpdate.permissions = getEffectivePermissions({
-      role: updateData.role,
-      permissions: existingUser.permissions,
-    });
+    normalizedUpdate.permissions =
+      getEffectivePermissions({
+        role: updateData.role,
+        permissions: existingUser.permissions,
+      });
   }
 
-  const updatedUser = await userRepository.updateUser(
-    userId,
-    normalizedUpdate
-  );
+  const updatedUser =
+    await userRepository.updateUser(
+      userId,
+      normalizedUpdate
+    );
 
   return toUserDTO(updatedUser);
 };
@@ -341,7 +398,7 @@ const updateMyProfile = async (
     );
   }
 
-  validateProfileUpdate(profileData);
+  validateProfileUpdate(profileData, currentUser);
 
   if (profileData.employeeId) {
     const normalizedEmployeeId =

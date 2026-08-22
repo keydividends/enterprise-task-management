@@ -35,7 +35,13 @@ const projectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-projectSchema.index({ workspaceId: 1, key: 1 }, { unique: true, sparse: true, partialFilterExpression: { isDeleted: false } });
+projectSchema.index(
+  { companyId: 1, workspaceId: 1, key: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: false }
+  }
+);
 projectSchema.index({ workspaceId: 1, status: 1 });
 projectSchema.index({ projectManagerId: 1, status: 1 });
 projectSchema.index({ targetEndDate: 1 });

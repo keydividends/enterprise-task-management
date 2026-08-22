@@ -1,11 +1,25 @@
 const projectService = require("./project.service");
 
-const sendSuccess = (res, statusCode, payload) => res.status(statusCode).json(payload);
+const sendSuccess = (res, statusCode, payload) =>
+  res.status(statusCode).json(payload);
+
+const getProjectContext = (req) => ({
+  user: req.user,
+  companyId: req.user?.companyId,
+  workspaceId: req.user?.workspaceId,
+});
 
 const listProjects = async (req, res, next) => {
   try {
-    const result = await projectService.listProjects(req.query, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, data: result });
+    const result = await projectService.listProjects(
+      req.query,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
@@ -13,8 +27,15 @@ const listProjects = async (req, res, next) => {
 
 const getProject = async (req, res, next) => {
   try {
-    const project = await projectService.getProjectById(req.params.projectId, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, data: project });
+    const project = await projectService.getProjectById(
+      req.params.projectId,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      data: project,
+    });
   } catch (error) {
     next(error);
   }
@@ -22,8 +43,16 @@ const getProject = async (req, res, next) => {
 
 const createProject = async (req, res, next) => {
   try {
-    const project = await projectService.createProject(req.body, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 201, { success: true, message: "Project created successfully", data: project });
+    const project = await projectService.createProject(
+      req.body,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 201, {
+      success: true,
+      message: "Project created successfully",
+      data: project,
+    });
   } catch (error) {
     next(error);
   }
@@ -31,8 +60,17 @@ const createProject = async (req, res, next) => {
 
 const updateProject = async (req, res, next) => {
   try {
-    const project = await projectService.updateProject(req.params.projectId, req.body, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, message: "Project updated", data: project });
+    const project = await projectService.updateProject(
+      req.params.projectId,
+      req.body,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      message: "Project updated",
+      data: project,
+    });
   } catch (error) {
     next(error);
   }
@@ -40,8 +78,16 @@ const updateProject = async (req, res, next) => {
 
 const deleteProject = async (req, res, next) => {
   try {
-    const project = await projectService.deleteProject(req.params.projectId, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, message: "Project deleted", data: project });
+    const project = await projectService.deleteProject(
+      req.params.projectId,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      message: "Project deleted",
+      data: project,
+    });
   } catch (error) {
     next(error);
   }
@@ -49,8 +95,16 @@ const deleteProject = async (req, res, next) => {
 
 const restoreProject = async (req, res, next) => {
   try {
-    const project = await projectService.restoreProject(req.params.projectId, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, message: "Project restored", data: project });
+    const project = await projectService.restoreProject(
+      req.params.projectId,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      message: "Project restored",
+      data: project,
+    });
   } catch (error) {
     next(error);
   }
@@ -58,8 +112,16 @@ const restoreProject = async (req, res, next) => {
 
 const listProjectMembers = async (req, res, next) => {
   try {
-    const result = await projectService.listProjectMembers(req.params.projectId, req.query, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, data: result });
+    const result = await projectService.listProjectMembers(
+      req.params.projectId,
+      req.query,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
@@ -67,8 +129,17 @@ const listProjectMembers = async (req, res, next) => {
 
 const addProjectMember = async (req, res, next) => {
   try {
-    const member = await projectService.addProjectMember(req.params.projectId, req.body, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 201, { success: true, message: "Project member added", data: member });
+    const member = await projectService.addProjectMember(
+      req.params.projectId,
+      req.body,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 201, {
+      success: true,
+      message: "Project member added",
+      data: member,
+    });
   } catch (error) {
     next(error);
   }
@@ -76,8 +147,17 @@ const addProjectMember = async (req, res, next) => {
 
 const removeProjectMember = async (req, res, next) => {
   try {
-    const member = await projectService.removeProjectMember(req.params.projectId, req.params.employeeId, { user: req.user, workspaceId: req.user.workspaceId });
-    sendSuccess(res, 200, { success: true, message: "Project member removed", data: member });
+    const member = await projectService.removeProjectMember(
+      req.params.projectId,
+      req.params.employeeId,
+      getProjectContext(req)
+    );
+
+    sendSuccess(res, 200, {
+      success: true,
+      message: "Project member removed",
+      data: member,
+    });
   } catch (error) {
     next(error);
   }
@@ -87,10 +167,14 @@ const getProjectTaskSummary = async (req, res, next) => {
   try {
     const summary = await projectService.getProjectTaskSummary(
       req.params.projectId,
-      { user: req.user, workspaceId: req.user.workspaceId },
+      getProjectContext(req),
       req.query || {}
     );
-    sendSuccess(res, 200, { success: true, data: summary });
+
+    sendSuccess(res, 200, {
+      success: true,
+      data: summary,
+    });
   } catch (error) {
     next(error);
   }
